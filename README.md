@@ -1,5 +1,5 @@
 # ProyetoGPS2026
-Proyecto de desarrollo correspondiende a la asignatura de Gestión de Proyecto de Software
+Proyecto de desarrollo correspondiende a la asignatura de Gestión de Proyecto de Software.
 
 ## ¿Cómo organizamos el repo?
 Se armó una estructura tipo monorepo, para que cada uno pueda avanzar de manera independiente en el mismo proyecto:
