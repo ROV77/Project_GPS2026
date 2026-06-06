@@ -127,6 +127,7 @@ dist
 
 # pnpm
 .pnpm-store
+pnpm-debug.log*
 
 # yarn v3
 .pnp.*
@@ -144,3 +145,13 @@ vite.config.ts.timestamp-*
 
 # Windows crash dumps
 *.stackdump
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Claude Code (configuración personal local)
+.claude/settings.local.json
