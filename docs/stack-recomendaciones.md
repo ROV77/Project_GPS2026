@@ -42,6 +42,14 @@ Stack: **Node.js 20 LTS + Express + Prisma + PostgreSQL**
 | **multer** | Middleware de Express para archivos multipart | Recibe la imagen del request antes de enviarla a Cloudinary | `^1.4.5` |
 | **expo-server-sdk** | SDK oficial de Expo para push notifications | Envía notificaciones push desde Express usando el servicio gratuito de Expo, sin Firebase | `^3.14.0` |
 
+### Dev Runner — `apps/api`
+
+| Librería | Qué es | Qué aporta al proyecto | Versión |
+|---|---|---|---|
+| **tsx** | Ejecutor TypeScript para Node.js (esbuild) | Corre `src/server.ts` directamente en desarrollo (`tsx watch`) y ejecuta `prisma/seed.ts` sin compilar | `^4.19.0` |
+
+> **Tests de endpoints:** se usan colecciones de **Postman** contra el servidor levantado con `pnpm dev`. Los endpoints disponibles están en `apps/api/src/routes/index.ts`.
+
 ### Compatibilidad Backend
 
 - Express v5 requiere **Node.js ≥ 18**; con Node 20 LTS funciona perfecto.
@@ -211,6 +219,8 @@ Backend (apps/api)
   multer             1.4.x
   expo-server-sdk    3.14.x
   PostgreSQL         16
+  tsx                4.19.x     ← dev runner + seed
+  Postman            (externo)  ← tests manuales de endpoints
 
 Web (apps/web)
   Vite               6.3.x
