@@ -1,4 +1,4 @@
-# ProyetoGPS2026
+# Project_GPS2026
 Proyecto de desarrollo correspondiende a la asignatura de Gestión de Proyecto de Software.
 
 ## ¿Cómo organizamos el repo?
