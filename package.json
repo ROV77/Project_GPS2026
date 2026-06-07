@@ -1,15 +1,20 @@
 {
   "name": "proyeto-gps-2026",
   "version": "1.0.0",
-  "description": "Proyecto de Gestión de Proyectos de Software 2026",
-  "main": "src/index.js",
+  "description": "Proyecto de Gestión de Proyectos de Software 2026 - CaseritaApp",
+  "private": true,
+  "packageManager": "pnpm@11.1.1",
   "scripts": {
-    "start": "node src/index.js",
-    "test": "jest",
-    "lint": "eslint src/**/*.js"
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build"
   },
-  "devDependencies": {
-    "eslint": "^8.57.0",
-    "jest": "^29.7.0"
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
   }
 }
