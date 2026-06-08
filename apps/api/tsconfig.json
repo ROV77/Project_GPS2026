@@ -7,7 +7,7 @@
     "outDir": "dist",
     "noEmit": false,
     "resolveJsonModule": true,
-    "types": ["node", "jest"]
+    "types": ["node"]
   },
   "include": ["src"]
 }
