@@ -155,3 +155,6 @@ vite.config.ts.timestamp-*
 
 # Claude Code (configuración personal local)
 .claude/settings.local.json
+.claude/skills/
+.agents/
+skills-lock.json
