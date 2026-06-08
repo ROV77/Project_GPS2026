@@ -1,4 +1,4 @@
-import { z } from 'zod';
+simport { z } from 'zod';
 import { prisma } from '../config/prisma';
 import { makeCrud } from '../lib/crud';
 import { crudRouter } from '../lib/router';
