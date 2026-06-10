@@ -7,6 +7,10 @@ import { usersRouter } from './users.routes';
 import { storesRouter } from './stores.routes';
 import { productsRouter } from './products.routes';
 
+import { deliveryVacanciesRouter } from './delivery/deliveryVacancies.routes';
+import { deliveryApplicationsRouter } from './delivery/deliveryApplications.routes';
+import { courierRatingsRouter } from './delivery/courierRatings.routes';
+
 export const apiRouter = Router();
 
 apiRouter.use('/regions', regionsRouter);
@@ -16,3 +20,7 @@ apiRouter.use('/plans', plansRouter);
 apiRouter.use('/users', usersRouter);
 apiRouter.use('/stores', storesRouter);
 apiRouter.use('/products', productsRouter);
+
+apiRouter.use('/delivery-vacancies', deliveryVacanciesRouter);
+apiRouter.use('/delivery-applications', deliveryApplicationsRouter);
+apiRouter.use('/courier-ratings', courierRatingsRouter);
