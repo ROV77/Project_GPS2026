@@ -44,6 +44,7 @@ model communes {
   stores    stores[]
 
   @@index([region_id], map: "idx_communes_region")
+  @@index([region_id, name], map: "idx_communes_region_name")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -301,6 +302,8 @@ model stores {
   @@index([commune_id], map: "idx_stores_commune")
   @@index([owner_id], map: "idx_stores_owner")
   @@index([region_id], map: "idx_stores_region")
+  @@index([region_id, commune_id], map: "idx_stores_region_commune")
+  @@index([region_id, commune_id, category_id], map: "idx_stores_region_commune_category")
 }
 
 model subscriptions {
