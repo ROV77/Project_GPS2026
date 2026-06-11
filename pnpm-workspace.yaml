@@ -6,3 +6,15 @@ allowBuilds:
   '@prisma/engines': true
   esbuild: true
   prisma: true
+# @tanstack/react-query y @headlessui/react declaran @types/react como peer
+# OPCIONAL con rango amplio, y caían al @types/react 18 que arrastra mobile,
+# chocando con la 19 de web (ReactNode incluye bigint en 19 y no en 18).
+# Estrechamos su peer a ^19. Como son exclusivas de web, no afecta a mobile
+# (React Native 0.76 va con React 18.3.1, que conserva sus tipos de React 18).
+packageExtensions:
+  '@tanstack/react-query':
+    peerDependencies:
+      '@types/react': ^19.1.0
+  '@headlessui/react':
+    peerDependencies:
+      '@types/react': ^19.1.0

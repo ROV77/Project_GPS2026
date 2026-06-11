@@ -16,6 +16,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@caserita/shared-types": "workspace:*",
     "@caserita/validations": "workspace:*",
     "@prisma/client": "^6.8.0",
     "bcryptjs": "^3.0.2",
