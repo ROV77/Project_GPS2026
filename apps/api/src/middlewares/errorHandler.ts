@@ -28,5 +28,5 @@ export function errorHandler(
   }
 
   console.error(err);
-  res.status(500).json({ error: 'Error interno del servidor' });
+  res.status(500).json({ error: 'Error interno del servidor', details: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
 }
