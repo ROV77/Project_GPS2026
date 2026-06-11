@@ -3,7 +3,7 @@ import { createStoreSchema, updateStoreSchema, StoreFiltersSchema } from '@caser
 import { prisma } from '../config/prisma';
 import { makeCrud } from '../lib/crud';
 import { crudRouter } from '../lib/router';
-import { searchStores } from '../controllers/store.controller';
+import { searchStores, getStoreStats } from '../controllers/store.controller';
 import { validateQuery } from '../middlewares/validate';
 
 const fkFields = ['owner_id', 'category_id', 'region_id', 'commune_id'] as const;
@@ -27,7 +27,13 @@ export const storesRouter = Router();
  */
 storesRouter.get('/search', validateQuery(StoreFiltersSchema), searchStores);
 
+/**
+ * GET /stores/:id/stats
+ * Métricas agregadas de la tienda para el dashboard.
+ */
+storesRouter.get('/:id/stats', getStoreStats);
+
 // ─── Montar rutas CRUD genéricas después de las rutas específicas ────────────
-// (para que /search no colisione con /:id)
+// (para que /search y /:id/stats no colisionen con /:id)
 const crudRoutes = crudRouter(crud);
 storesRouter.use('/', crudRoutes);

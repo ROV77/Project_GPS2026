@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { searchStoresService } from '../services/store.service';
+import { searchStoresService, getStoreStatsService } from '../services/store.service';
+import { parseBigIntId } from '../lib/http';
 
 export const searchStores = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -17,6 +18,21 @@ export const searchStores = async (req: Request, res: Response, next: NextFuncti
     );
 
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getStoreStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const id = parseBigIntId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'ID inválido' });
+      return;
+    }
+
+    const stats = await getStoreStatsService(id);
+    res.json(stats);
   } catch (error) {
     next(error);
   }

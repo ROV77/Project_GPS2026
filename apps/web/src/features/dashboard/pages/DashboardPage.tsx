@@ -1,4 +1,4 @@
-import { Eye, Package, Users, ShoppingCart } from 'lucide-react';
+import { Package, Boxes, Star, MessageSquare } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -8,61 +8,70 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { cn } from '@/shared/lib/cn';
 import { Alert, Card } from '@/shared/ui';
 import { KpiCard } from '@/shared/components/KpiCard';
 import { useProducts } from '@/features/products/hooks/useProducts';
-
-// Datos MOCK: la API aún no expone analytics (visitas, seguidores, pedidos).
-// Cuando existan esos endpoints, se reemplazan estas constantes por hooks reales.
-const hourlyVisits = [
-  { hora: '08h', visitas: 12 },
-  { hora: '10h', visitas: 28 },
-  { hora: '12h', visitas: 41 },
-  { hora: '14h', visitas: 35 },
-  { hora: '16h', visitas: 52 },
-  { hora: '18h', visitas: 47 },
-  { hora: '20h', visitas: 30 },
-];
-
-const recentActivity = [
-  { dot: 'bg-green-500', text: 'Nuevo seguidor: María López — hace 5 min' },
-  { dot: 'bg-blue-500', text: 'Pedido #142 completado — hace 23 min' },
-  { dot: 'bg-slate-400', text: 'Producto "Pan amasado" actualizado — hace 1 h' },
-];
+import { useMyStore } from '@/features/stores/hooks/useStores';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
 export function DashboardPage() {
-  // Dato REAL: "productos populares" se alimenta del catálogo (primeros 5).
+  const { data: store } = useMyStore();
+  const { data: stats } = useDashboardStats(store?.id);
+
+  // "Productos populares" y el gráfico de stock se alimentan del catálogo real.
   const { data } = useProducts({ page: 1, limit: 5 });
   const popular = data?.data ?? [];
+  const stockChart = popular.map((p) => ({ name: p.name, stock: p.stock }));
 
   return (
     <>
-      <Alert
-        className="mb-4"
-        type="info"
-        title="Los KPIs, el gráfico y la actividad son datos de demostración"
-        description="La API todavía no expone endpoints de visitas, seguidores ni pedidos. 'Productos populares' sí usa datos reales del catálogo."
-      />
+      {store && (
+        <p className="mb-4 text-sm text-slate-500">
+          Resumen de <span className="font-medium text-slate-700">{store.name}</span>
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Visitas al perfil" value={342} icon={<Eye className="size-5" />} trend={{ value: 12, positive: true }} />
-        <KpiCard title="Productos vistos" value={1205} icon={<Package className="size-5" />} trend={{ value: 8, positive: true }} />
-        <KpiCard title="Seguidores" value={89} icon={<Users className="size-5" />} trend={{ value: 5, positive: true }} />
-        <KpiCard title="Pedidos hoy" value={14} icon={<ShoppingCart className="size-5" />} trend={{ value: 3, positive: false }} />
+        <KpiCard
+          title="Productos en catálogo"
+          value={stats?.product_count ?? 0}
+          icon={<Package className="size-5" />}
+        />
+        <KpiCard
+          title="Stock total"
+          value={stats?.total_stock ?? 0}
+          icon={<Boxes className="size-5" />}
+        />
+        <KpiCard
+          title="Reseñas recibidas"
+          value={stats?.review_count ?? 0}
+          icon={<MessageSquare className="size-5" />}
+        />
+        <KpiCard
+          title="Rating promedio"
+          value={stats?.avg_rating ?? 0}
+          suffix="/ 5"
+          icon={<Star className="size-5" />}
+        />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card title="Visitas por hora" className="lg:col-span-2">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={hourlyVisits}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="hora" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="visitas" fill="#1e3a5f" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <Card title="Stock por producto" className="lg:col-span-2">
+          {stockChart.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={stockChart}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="stock" fill="#1e3a5f" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="py-10 text-center text-sm text-slate-400">
+              Aún no hay productos en el catálogo.
+            </p>
+          )}
         </Card>
 
         <Card title="Productos populares">
@@ -82,18 +91,12 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <div className="mt-4">
-        <Card title="Actividad reciente">
-          <ol className="space-y-3">
-            {recentActivity.map((a) => (
-              <li key={a.text} className="flex items-start gap-3 text-sm">
-                <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', a.dot)} />
-                <span className="text-slate-600">{a.text}</span>
-              </li>
-            ))}
-          </ol>
-        </Card>
-      </div>
+      <Alert
+        className="mt-4"
+        type="info"
+        title="Próximamente: analítica de visitas"
+        description="Las métricas de visitas, seguidores y pedidos requieren el módulo de analytics, que aún no está disponible en la API."
+      />
     </>
   );
 }
