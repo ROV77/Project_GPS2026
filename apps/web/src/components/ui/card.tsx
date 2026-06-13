@@ -1,19 +1,23 @@
 import type { HTMLAttributes, ReactNode } from 'react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 
 interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   /** Encabezado opcional de la tarjeta. */
   title?: ReactNode;
 }
 
+/** Tarjeta del panel. Superficie `card` con borde y sombra sutil. */
 export function Card({ title, className, children, ...props }: CardProps) {
   return (
     <div
-      className={cn('rounded-xl border border-slate-200 bg-white shadow-sm', className)}
+      className={cn(
+        'rounded-xl border border-border bg-card text-card-foreground shadow-xs',
+        className,
+      )}
       {...props}
     >
       {title && (
-        <div className="border-b border-slate-100 px-5 py-3 font-medium text-slate-800">
+        <div className="border-b border-border px-5 py-3 font-medium text-foreground">
           {title}
         </div>
       )}

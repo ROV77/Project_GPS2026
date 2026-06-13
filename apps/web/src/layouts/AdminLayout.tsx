@@ -113,14 +113,14 @@ export function AdminLayout() {
             <Popover className="relative">
               <PopoverButton
                 aria-label="Notificaciones"
-                className="flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                className="flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
               >
                 <Bell className="size-5" />
               </PopoverButton>
               <PopoverPanel
                 anchor="bottom end"
                 transition
-                className="z-50 w-72 rounded-lg border border-slate-200 bg-white shadow-lg [--anchor-gap:0.5rem] transition duration-100 ease-out focus:outline-none data-[closed]:opacity-0"
+                className="z-50 w-72 rounded-lg border border-slate-200 bg-white shadow-lg [--anchor-gap:0.5rem] transition duration-100 ease-out focus:outline-hidden data-[closed]:opacity-0"
               >
                 <div className="border-b border-slate-100 px-4 py-3">
                   <p className="text-sm font-semibold text-slate-800">Notificaciones</p>

@@ -4,7 +4,7 @@ Recursos y workflow para darle estilo al panel admin de **CaseritApp**.
 
 **Contexto:**
 
-- **Stack:** React 19 + Tailwind CSS 3 + `lucide-react` (iconos) + Headless UI (componentes accesibles).
+- **Stack:** React 19 + Tailwind CSS 4 + shadcn/ui + `lucide-react` (iconos). Algunos primitivos aún usan Headless UI (migración gradual a shadcn). Ver [`./frontend-shadcn-guia.md`](./frontend-shadcn-guia.md).
 - **Dirección visual elegida:** verde esmeralda, cálido y cercano, estilo Shopify / Squarespace.
 - **Presupuesto:** todo gratis / open source.
 - **Imágenes necesarias:** ilustraciones de estados vacíos, logos y avatares, e imágenes hero/marketing.
@@ -32,32 +32,30 @@ No empieces a diseñar en blanco. Junta primero 5–10 referencias de paneles ad
 
 ## 2. Paleta de color verde esmeralda
 
-Tu proyecto ya tiene la arquitectura de color correcta: una escala `brand-*` en `apps/web/tailwind.config.js`, y los componentes la consumen con clases como `bg-brand-700`, `bg-brand-900`, `hover:bg-brand-800`.
+Tu proyecto ya tiene la arquitectura de color correcta: una escala `brand-*` (navy) definida en `apps/web/src/index.css`, que alimenta los tokens semánticos de shadcn (`--primary`, `--ring`, `--sidebar`…). Los componentes la consumen con clases como `bg-primary`, `bg-brand-700`, `bg-sidebar`.
 
 **Esto significa que para cambiar TODO el panel a verde, solo cambias los valores de esa escala.** No tienes que tocar componente por componente.
 
 ### Opción rápida: usar la escala `emerald` oficial de Tailwind
 
-Reemplaza el bloque `brand` en `apps/web/tailwind.config.js` por los valores de `emerald`:
+Reemplaza el bloque `--brand-*` en `apps/web/src/index.css` (dentro de `:root`) por los valores de `emerald`:
 
-```js
-colors: {
-  brand: {
-    50:  '#ecfdf5',
-    100: '#d1fae5',
-    200: '#a7f3d0',
-    300: '#6ee7b7',
-    400: '#34d399',
-    500: '#10b981',
-    600: '#059669',
-    700: '#047857', // primario (botones, item activo)
-    800: '#065f46', // hover
-    900: '#064e3b', // sidebar oscuro
-  },
+```css
+:root {
+  --brand-50:  #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857; /* primario (botones, item activo) */
+  --brand-800: #065f46; /* hover */
+  --brand-900: #064e3b; /* sidebar oscuro */
 }
 ```
 
-Con solo eso, el sidebar, los botones primarios y los estados activos pasan a verde, porque los componentes ya apuntan a `brand-*`.
+Con solo eso, el sidebar, los botones primarios y los estados activos pasan a verde, porque los tokens (`--primary`, `--sidebar`…) apuntan a `--brand-*`.
 
 > Hay un valor hardcodeado a revisar: el color de las barras del gráfico en `DashboardPage.tsx` (`fill="#1e3a5f"`, el navy viejo). Cámbialo a `#047857` para que el gráfico también quede verde.
 
@@ -208,7 +206,7 @@ Para cada pantalla que quieras estilizar, sigue este flujo:
 1. INSPIRACIÓN   → Abre 2–3 referencias en Mobbin/Dribbble de una pantalla similar.
                    Roba layout y espaciado, no el color.
 
-2. COLOR         → Ya tienes la paleta verde en tailwind.config (sección 2).
+2. COLOR         → Ya tienes los tokens de marca en src/index.css (sección 2).
                    Usa siempre las clases brand-* y los neutros slate-*.
 
 3. ESTRUCTURA    → Reusa tus componentes de shared/ui (Card, Button, Table…).
@@ -231,7 +229,7 @@ Para cada pantalla que quieras estilizar, sigue este flujo:
 
 ### Prioridad sugerida (qué tocar primero)
 
-1. **Cambiar la paleta a verde** en `tailwind.config.js` + el `fill` del gráfico → impacto inmediato en todo el panel, 5 minutos.
+1. **Cambiar la paleta a verde** en `src/index.css` (bloque `--brand-*`) + el `fill` del gráfico → impacto inmediato en todo el panel, 5 minutos.
 2. **Estados vacíos con ilustraciones** de unDraw → calidez instantánea.
 3. **Avatares/logos** con fallback a iniciales/DiceBear.
 4. **Pulido de spacing y sombras** pantalla por pantalla con los principios de Refactoring UI.

@@ -2,18 +2,27 @@ import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { updateStoreSchema, type UpdateStoreInput } from '@caserita/validations';
+import { Store as StoreIcon } from 'lucide-react';
+import { storeProfileSchema, type StoreProfileInput } from '@caserita/validations';
 import { useCatalogOptions } from '@/shared/hooks/useCatalogOptions';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
 
+/** Iniciales (1–2 letras) a partir del nombre; fallback con un icono. */
+function getInitials(name?: string | null): string {
+  if (!name?.trim()) return '';
+  const parts = name.trim().split(/\s+/);
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
 /**
- * "Mi Tienda": una cuenta administra una sola tienda. Esta página carga esa
- * tienda y permite editar los datos que el cliente verá en la app mobile. Usa
- * updateStoreSchema (campos parciales) porque es una edición, no un alta.
+ * "Mi Tienda": una cuenta administra una sola tienda. Los datos del perfil son
+ * obligatorios (el cliente los ve en la app mobile); el logo es opcional. Usa
+ * storeProfileSchema (campos requeridos + logo opcional aceptando '').
  */
 export function MyStorePage() {
   const { data: store, isLoading } = useMyStore();
@@ -26,10 +35,11 @@ export function MyStorePage() {
     control,
     handleSubmit,
     reset,
+    watch,
     setError,
     formState: { errors },
-  } = useForm<UpdateStoreInput>({
-    resolver: zodResolver(updateStoreSchema),
+  } = useForm<StoreProfileInput>({
+    resolver: zodResolver(storeProfileSchema),
     defaultValues: {},
   });
 
@@ -46,7 +56,7 @@ export function MyStorePage() {
     });
   }, [store, reset]);
 
-  const onSubmit = (values: UpdateStoreInput) => {
+  const onSubmit = (values: StoreProfileInput) => {
     if (!store) return;
     update.mutate(
       { id: store.id, data: values },
@@ -60,122 +70,158 @@ export function MyStorePage() {
     );
   };
 
+  const logoUrl = watch('logo_url');
+  const initials = getInitials(store?.name);
+
   return (
     <>
       <PageHeader
         title="Mi Tienda"
         subtitle="Datos de tu comercio, visibles para los clientes en la app"
       />
-      <Card className="max-w-2xl">
+      <Card className="max-w-4xl">
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-10 w-1/2" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-20 w-full md:col-span-2" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         ) : !store ? (
           <EmptyState description="Aún no hay una tienda asociada a esta cuenta" />
         ) : (
           <div>
-            <Field label="Nombre" required error={errors.name?.message}>
-              <Controller
-                name="name"
-                control={control}
-                render={({ field }) => (
-                  <Input value={field.value ?? ''} onChange={field.onChange} invalid={!!errors.name} />
-                )}
-              />
-            </Field>
+            {/* Encabezado con preview del logo */}
+            <div className="mb-6 flex items-center gap-4 border-b border-border pb-5">
+              <Avatar size="lg" className="size-14">
+                {logoUrl ? <AvatarImage src={logoUrl} alt={store.name} /> : null}
+                <AvatarFallback className="bg-brand-700 text-white">
+                  {initials || <StoreIcon className="size-6" />}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium text-foreground">{store.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  El logo es opcional; el resto de los datos son obligatorios.
+                </p>
+              </div>
+            </div>
 
-            <Field label="Descripción">
-              <Controller
-                name="description"
-                control={control}
-                render={({ field }) => (
-                  <Textarea
-                    value={field.value ?? ''}
-                    onChange={field.onChange}
-                    rows={3}
-                    placeholder="Cuéntale a tus clientes qué ofreces"
+            <div className="grid gap-x-6 md:grid-cols-2">
+              <Field label="Nombre" required error={errors.name?.message}>
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field }) => (
+                    <Input value={field.value ?? ''} onChange={field.onChange} invalid={!!errors.name} />
+                  )}
+                />
+              </Field>
+
+              <Field label="Teléfono" required error={errors.store_phone?.message}>
+                <Controller
+                  name="store_phone"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      invalid={!!errors.store_phone}
+                      placeholder="+56 9 ..."
+                    />
+                  )}
+                />
+              </Field>
+
+              <div className="md:col-span-2">
+                <Field label="Descripción" required error={errors.description?.message}>
+                  <Controller
+                    name="description"
+                    control={control}
+                    render={({ field }) => (
+                      <Textarea
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        rows={3}
+                        placeholder="Cuéntale a tus clientes qué ofreces"
+                      />
+                    )}
                   />
-                )}
-              />
-            </Field>
+                </Field>
+              </div>
 
-            <Field label="Categoría">
-              <Controller
-                name="category_id"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value != null ? String(field.value) : null}
-                    onChange={(v) => field.onChange(v ?? undefined)}
-                    options={categories.options}
-                    loading={categories.isLoading}
-                    placeholder="Sin categoría"
-                    allowClear
+              <Field label="Categoría" required error={errors.category_id?.message}>
+                <Controller
+                  name="category_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value != null ? String(field.value) : null}
+                      onChange={(v) => field.onChange(v ?? undefined)}
+                      options={categories.options}
+                      loading={categories.isLoading}
+                      placeholder="Selecciona una categoría"
+                    />
+                  )}
+                />
+              </Field>
+
+              <Field label="Región" required error={errors.region_id?.message}>
+                <Controller
+                  name="region_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value != null ? String(field.value) : null}
+                      onChange={(v) => field.onChange(v ?? undefined)}
+                      options={regions.options}
+                      loading={regions.isLoading}
+                      placeholder="Selecciona una región"
+                    />
+                  )}
+                />
+              </Field>
+
+              <Field label="Comuna" required error={errors.commune_id?.message}>
+                <Controller
+                  name="commune_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value != null ? String(field.value) : null}
+                      onChange={(v) => field.onChange(v ?? undefined)}
+                      options={communes.options}
+                      loading={communes.isLoading}
+                      placeholder="Selecciona una comuna"
+                    />
+                  )}
+                />
+              </Field>
+
+              <div className="md:col-span-2">
+                <Field label="Logo (URL)" error={errors.logo_url?.message}>
+                  <Controller
+                    name="logo_url"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        invalid={!!errors.logo_url}
+                        placeholder="https://..."
+                      />
+                    )}
                   />
-                )}
-              />
-            </Field>
+                </Field>
+              </div>
+            </div>
 
-            <Field label="Región">
-              <Controller
-                name="region_id"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value != null ? String(field.value) : null}
-                    onChange={(v) => field.onChange(v ?? undefined)}
-                    options={regions.options}
-                    loading={regions.isLoading}
-                    placeholder="Sin región"
-                    allowClear
-                  />
-                )}
-              />
-            </Field>
-
-            <Field label="Comuna">
-              <Controller
-                name="commune_id"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value != null ? String(field.value) : null}
-                    onChange={(v) => field.onChange(v ?? undefined)}
-                    options={communes.options}
-                    loading={communes.isLoading}
-                    placeholder="Sin comuna"
-                    allowClear
-                  />
-                )}
-              />
-            </Field>
-
-            <Field label="Teléfono">
-              <Controller
-                name="store_phone"
-                control={control}
-                render={({ field }) => (
-                  <Input value={field.value ?? ''} onChange={field.onChange} placeholder="+56 9 ..." />
-                )}
-              />
-            </Field>
-
-            <Field label="Logo (URL)">
-              <Controller
-                name="logo_url"
-                control={control}
-                render={({ field }) => (
-                  <Input value={field.value ?? ''} onChange={field.onChange} placeholder="https://..." />
-                )}
-              />
-            </Field>
-
-            <Button variant="primary" loading={update.isPending} onClick={handleSubmit(onSubmit)}>
-              Guardar cambios
-            </Button>
+            <div className="mt-6 flex justify-end">
+              <Button variant="primary" loading={update.isPending} onClick={handleSubmit(onSubmit)}>
+                Guardar cambios
+              </Button>
+            </div>
           </div>
         )}
       </Card>

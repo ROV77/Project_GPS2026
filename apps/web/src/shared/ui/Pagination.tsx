@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 
 /** Controles de paginación server-side (page/pageSize/total). */
 export function Pagination({
@@ -23,7 +23,7 @@ export function Pagination({
         <select
           value={pageSize}
           onChange={(e) => onChange(1, Number(e.target.value))}
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40"
+          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm focus:outline-hidden focus:ring-2 focus:ring-brand-500/40"
         >
           {pageSizeOptions.map((s) => (
             <option key={s} value={s}>

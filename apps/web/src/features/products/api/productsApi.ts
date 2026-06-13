@@ -1,19 +1,28 @@
 import { api } from '@/shared/api/client';
-import type { Paginated, Id, PageParams } from '@/shared/api/types';
+import type { Paginated, Id } from '@/shared/api/types';
 import type {
   CreateProductInput,
   UpdateProductInput,
 } from '@caserita/validations';
-import type { Product } from '../types';
+import type { Product, ProductListParams } from '../types';
 
 /**
  * Funciones puras de acceso a /api/products. No saben de React: solo hacen la
  * llamada y devuelven datos. Los hooks de TanStack Query (useProducts) las usan.
  */
 export const productsApi = {
-  list: ({ page, limit }: PageParams) =>
+  list: ({ page, limit, search, featured, lowStock, sort }: ProductListParams) =>
     api
-      .get<Paginated<Product>>('/products', { params: { page, limit } })
+      .get<Paginated<Product>>('/products', {
+        params: {
+          page,
+          limit,
+          ...(search ? { search } : {}),
+          ...(featured ? { featured: true } : {}),
+          ...(lowStock ? { lowStock: true } : {}),
+          ...(sort && sort !== 'id_asc' ? { sort } : {}),
+        },
+      })
       .then((r) => r.data),
 
   create: (data: CreateProductInput) =>

@@ -1,33 +1,53 @@
 import { Package, Boxes, Star, MessageSquare } from 'lucide-react';
+import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+import { Alert, Card, EmptyState } from '@/shared/ui';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-import { Alert, Card } from '@/shared/ui';
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { KpiCard } from '@/shared/components/KpiCard';
+import { ProductThumb } from '@/shared/components/ProductThumb';
+import { formatCLP } from '@/shared/lib/format';
 import { useProducts } from '@/features/products/hooks/useProducts';
 import { useMyStore } from '@/features/stores/hooks/useStores';
 import { useDashboardStats } from '../hooks/useDashboardStats';
+
+/** Paleta de la dona/barras: tokens de marca (navy) definidos en index.css. */
+const CHART_COLORS = [
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
+];
+
+const stockChartConfig = {
+  stock: { label: 'Stock' },
+} satisfies ChartConfig;
 
 export function DashboardPage() {
   const { data: store } = useMyStore();
   const { data: stats } = useDashboardStats(store?.id);
 
-  // "Productos populares" y el gráfico de stock se alimentan del catálogo real.
-  const { data } = useProducts({ page: 1, limit: 5 });
-  const popular = data?.data ?? [];
-  const stockChart = popular.map((p) => ({ name: p.name, stock: p.stock }));
+  // Top productos por stock para el gráfico (Bar Chart - Mixed).
+  const { data: topStock } = useProducts({ page: 1, limit: 6, sort: 'stock_desc' });
+  const stockData = (topStock?.data ?? []).map((p, i) => ({
+    name: p.name,
+    stock: p.stock,
+    fill: CHART_COLORS[i % CHART_COLORS.length],
+  }));
+
+  // Productos destacados (dato real: featured = true).
+  const { data: featuredData } = useProducts({ page: 1, limit: 5, featured: true });
+  const featured = featuredData?.data ?? [];
 
   return (
     <>
       {store && (
-        <p className="mb-4 text-sm text-slate-500">
-          Resumen de <span className="font-medium text-slate-700">{store.name}</span>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Resumen de <span className="font-medium text-foreground">{store.name}</span>
         </p>
       )}
 
@@ -57,37 +77,53 @@ export function DashboardPage() {
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card title="Stock por producto" className="lg:col-span-2">
-          {stockChart.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={stockChart}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="stock" fill="#1e3a5f" radius={[6, 6, 0, 0]} />
+          {stockData.length > 0 ? (
+            <ChartContainer config={stockChartConfig} className="h-[280px] w-full">
+              <BarChart
+                accessibilityLayer
+                data={stockData}
+                layout="vertical"
+                margin={{ left: 12, right: 16 }}
+              >
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tickLine={false}
+                  axisLine={false}
+                  width={120}
+                  tickFormatter={(v: string) =>
+                    v.length > 16 ? `${v.slice(0, 16)}…` : v
+                  }
+                />
+                <XAxis dataKey="stock" type="number" hide />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                <Bar dataKey="stock" radius={5} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           ) : (
-            <p className="py-10 text-center text-sm text-slate-400">
-              Aún no hay productos en el catálogo.
-            </p>
+            <EmptyState description="Aún no hay productos en el catálogo." />
           )}
         </Card>
 
-        <Card title="Productos populares">
-          <ul className="divide-y divide-slate-100">
-            {popular.map((p, i) => (
-              <li key={p.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="text-slate-700">
-                  #{i + 1} {p.name}
-                </span>
-                <span className="text-slate-400">Stock {p.stock}</span>
-              </li>
-            ))}
-            {popular.length === 0 && (
-              <li className="py-2 text-sm text-slate-400">Sin productos</li>
-            )}
-          </ul>
+        <Card title="Productos destacados">
+          {featured.length > 0 ? (
+            <ul className="divide-y divide-border">
+              {featured.map((p) => (
+                <li key={p.id} className="flex items-center gap-3 py-2">
+                  <ProductThumb src={p.image_url} alt={p.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatCLP(p.price)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              icon={<Star className="size-10" />}
+              description="Marca productos como destacados para que aparezcan aquí."
+            />
+          )}
         </Card>
       </div>
 
