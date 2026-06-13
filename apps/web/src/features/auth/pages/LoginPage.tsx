@@ -48,18 +48,18 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <h2 className="text-xl font-semibold text-slate-800">Inicia sesión</h2>
-      <p className="text-sm text-slate-500">Ingresa al panel de tu comercio.</p>
+      <h2 className="text-center text-2xl font-bold text-slate-900">Inicia sesión</h2>
+      <p className="mt-1 text-center text-slate-500">Ingresa al panel de tu comercio.</p>
 
       <Alert
-        className="mt-4"
+        className="mt-5"
         type="info"
         title="Cuenta de demostración"
         description="Usa demo@caserita.cl con la contraseña demo123 (datos del seed)."
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-5">
-        <Field label="Correo electrónico" required error={errors.email?.message}>
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
+        <Field label="Correo electrónico" required error={errors.email?.message} className="mb-5">
           <Controller
             name="email"
             control={control}
@@ -67,19 +67,25 @@ export function LoginPage() {
               <Input
                 {...field}
                 invalid={!!errors.email}
-                prefix={<User className="size-4" />}
+                prefix={<User className="size-5" />}
                 placeholder="contacto@donarosa.cl"
+                className="h-12 text-base"
               />
             )}
           />
         </Field>
 
-        <Field label="Contraseña" required error={errors.password?.message}>
+        <Field label="Contraseña" required error={errors.password?.message} className="mb-5">
           <Controller
             name="password"
             control={control}
             render={({ field }) => (
-              <PasswordInput {...field} invalid={!!errors.password} placeholder="••••••••" />
+              <PasswordInput
+                {...field}
+                invalid={!!errors.password}
+                placeholder="••••••••"
+                className="h-12 text-base"
+              />
             )}
           />
         </Field>
@@ -96,7 +102,12 @@ export function LoginPage() {
           />
         </Field>
 
-        <Button type="submit" variant="primary" className="w-full" loading={isSubmitting}>
+        <Button
+          type="submit"
+          variant="primary"
+          className="h-12 w-full text-base"
+          loading={isSubmitting}
+        >
           Iniciar sesión
         </Button>
       </form>
