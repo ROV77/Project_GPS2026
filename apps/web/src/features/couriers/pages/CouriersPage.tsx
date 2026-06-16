@@ -11,7 +11,7 @@ export function CouriersPage() {
     <div className="space-y-6">
       <PageHeader
         title="Repartidores"
-        description="Gestiona las vacantes, revisa las postulaciones y evalúa a tus repartidores."
+        subtitle="Gestiona las vacantes, revisa las postulaciones y evalúa a tus repartidores."
       />
       
       {/* Navegación de Pestañas (Tabs) */}

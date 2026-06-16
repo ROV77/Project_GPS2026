@@ -30,7 +30,7 @@ export function ApplicationsTab() {
         // Asumiendo 1=Pendiente, 2=Aceptada, 3=Rechazada basado en convenciones comunes
         if (a.state_id === '2') return <Badge tone="green">Aceptada</Badge>;
         if (a.state_id === '3') return <Badge tone="red">Rechazada</Badge>;
-        return <Badge tone="yellow">Pendiente</Badge>;
+        return <Badge tone="gold">Pendiente</Badge>;
       } 
     },
     {
