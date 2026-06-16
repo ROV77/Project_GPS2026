@@ -60,6 +60,7 @@ Las rutas actuales están bien y son suficientes para el MVP del panel:
 /dashboard       → DashboardPage
 /mi-tienda       → MyStorePage
 /productos       → ProductsListPage
+/repartidores    → CouriersPage
 /planes          → PlansListPage
 /mi-cuenta       → MyAccountPage
 ```

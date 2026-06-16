@@ -24,3 +24,12 @@ export const CreateCourierRatingSchema = z.object({
 });
 
 export const UpdateCourierRatingSchema = CreateCourierRatingSchema.partial();
+
+export type CreateVacancyInput = z.infer<typeof CreateVacancySchema>;
+export type UpdateVacancyInput = z.infer<typeof UpdateVacancySchema>;
+
+export type CreateApplicationInput = z.infer<typeof CreateApplicationSchema>;
+export type UpdateApplicationInput = z.infer<typeof UpdateApplicationSchema>;
+
+export type CreateCourierRatingInput = z.infer<typeof CreateCourierRatingSchema>;
+export type UpdateCourierRatingInput = z.infer<typeof UpdateCourierRatingSchema>;
