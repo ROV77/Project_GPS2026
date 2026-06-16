@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Store, Package, CreditCard, LayoutDashboard } from 'lucide-react';
+import { Store, Package, CreditCard, LayoutDashboard, Bike } from 'lucide-react';
 
 /**
  * Fuente única de la navegación del panel. La `key` ES la ruta: así el menú
@@ -18,6 +18,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { key: '/mi-tienda', label: 'Mi Tienda', icon: <Store className="size-5" /> },
   { key: '/productos', label: 'Productos', icon: <Package className="size-5" /> },
+  { key: '/repartidores', label: 'Repartidores', icon: <Bike className="size-5" /> },
   { key: '/planes', label: 'Planes', icon: <CreditCard className="size-5" /> },
   { key: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="size-5" /> },
 ];
