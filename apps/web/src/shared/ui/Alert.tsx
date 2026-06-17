@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Info, CircleCheck, TriangleAlert, CircleX } from 'lucide-react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 
 type AlertType = 'info' | 'success' | 'warning' | 'error';
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export interface Column<T> {

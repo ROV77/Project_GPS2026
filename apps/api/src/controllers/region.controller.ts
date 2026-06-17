@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { getAllRegionsService, getCommunesByRegionService } from '../services/region.service';
+import { findAllRegions, findCommunesByRegion } from '../repositories/region.repository';
 
 export const getRegions = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const regions = await getAllRegionsService();
+    const regions = await findAllRegions();
     res.json(regions);
   } catch (error) {
     next(error);
@@ -19,7 +19,7 @@ export const getCommunesByRegion = async (req: Request, res: Response, next: Nex
       return;
     }
 
-    const communes = await getCommunesByRegionService(regionId);
+    const communes = await findCommunesByRegion(regionId);
     res.json(communes);
   } catch (error) {
     next(error);

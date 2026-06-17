@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 /**

@@ -7,7 +7,7 @@ import {
   ComboboxOption,
 } from '@headlessui/react';
 import { ChevronsUpDown, Check, X } from 'lucide-react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 import { controlBase, controlBorder } from './_control';
 
 export interface SelectOption {

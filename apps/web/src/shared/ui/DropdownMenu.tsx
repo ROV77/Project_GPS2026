@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 
 export interface DropdownItem {
   key: string;

@@ -1,5 +1,5 @@
 import { Switch as HSwitch } from '@headlessui/react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 
 /** Toggle on/off (Headless UI Switch). */
 export function Switch({

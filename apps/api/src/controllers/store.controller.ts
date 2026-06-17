@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { searchStoresService, getStoreStatsService } from '../services/store.service';
+import { findStoresWithRating, findStoreStats } from '../repositories/store.repository';
 import { parseBigIntId } from '../lib/http';
 
 export const searchStores = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -7,7 +7,7 @@ export const searchStores = async (req: Request, res: Response, next: NextFuncti
     // res.locals.query is populated by the validateQuery middleware
     const { region_id, commune_id, category_id, verified_only, page, limit } = res.locals.query as any;
 
-    const result = await searchStoresService(
+    const result = await findStoresWithRating(
       {
         regionId: region_id,
         communeId: commune_id,
@@ -31,7 +31,7 @@ export const getStoreStats = async (req: Request, res: Response, next: NextFunct
       return;
     }
 
-    const stats = await getStoreStatsService(id);
+    const stats = await findStoreStats(id);
     res.json(stats);
   } catch (error) {
     next(error);
