@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import type { LoginInput } from '@caserita/validations';
-import { loginService, getMeService } from '../services/auth.service';
+import type { LoginInput, RegisterInput } from '@caserita/validations';
+import {
+  loginService,
+  registerService,
+  getMeService,
+} from '../services/auth.service';
 
 /** POST /auth/login — el body ya viene validado por validateBody(loginSchema). */
 export const login = async (
@@ -12,6 +16,20 @@ export const login = async (
     const { email, password } = res.locals.body as LoginInput;
     const result = await loginService(email, password);
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** POST /auth/register — body validado por validateBody(registerSchema). */
+export const register = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await registerService(res.locals.body as RegisterInput);
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }

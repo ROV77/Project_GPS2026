@@ -2,7 +2,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { HttpError } from '../lib/httpError';
+import type { RegisterInput } from '@caserita/validations';
 import {
+  createUserWithStore,
   findUserByEmail,
   findUserWithStoreById,
 } from '../repositories/auth.repository';
@@ -29,6 +31,34 @@ export async function loginService(email: string, password: string) {
   if (!ok) {
     throw new HttpError(401, 'Credenciales inválidas');
   }
+
+  return {
+    token: signToken(user.id),
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    },
+  };
+}
+
+/**
+ * Registra un dueño de negocio: crea su cuenta + tienda y devuelve el mismo
+ * shape que el login ({ token, user }) para iniciar sesión de inmediato.
+ * Lanza 409 si el email ya está registrado.
+ */
+export async function registerService(input: RegisterInput) {
+  const existing = await findUserByEmail(input.email);
+  if (existing) {
+    throw new HttpError(409, 'El correo ya está registrado');
+  }
+
+  const user = await createUserWithStore({
+    name: input.name,
+    email: input.email,
+    passwordHash: bcrypt.hashSync(input.password, 10),
+    storeName: input.storeName,
+  });
 
   return {
     token: signToken(user.id),
