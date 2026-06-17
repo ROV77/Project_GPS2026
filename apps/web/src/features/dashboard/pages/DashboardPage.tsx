@@ -1,99 +1,138 @@
-import { Eye, Package, Users, ShoppingCart } from 'lucide-react';
+import { Package, Boxes, Star, MessageSquare } from 'lucide-react';
+import { Bar, BarChart, XAxis, YAxis } from 'recharts';
+import { Alert, Card, EmptyState } from '@/shared/ui';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-import { cn } from '@/shared/lib/cn';
-import { Alert, Card } from '@/shared/ui';
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
 import { KpiCard } from '@/shared/components/KpiCard';
+import { ProductThumb } from '@/shared/components/ProductThumb';
+import { formatCLP } from '@/shared/lib/format';
 import { useProducts } from '@/features/products/hooks/useProducts';
+import { useMyStore } from '@/features/stores/hooks/useStores';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
-// Datos MOCK: la API aún no expone analytics (visitas, seguidores, pedidos).
-// Cuando existan esos endpoints, se reemplazan estas constantes por hooks reales.
-const hourlyVisits = [
-  { hora: '08h', visitas: 12 },
-  { hora: '10h', visitas: 28 },
-  { hora: '12h', visitas: 41 },
-  { hora: '14h', visitas: 35 },
-  { hora: '16h', visitas: 52 },
-  { hora: '18h', visitas: 47 },
-  { hora: '20h', visitas: 30 },
+/** Paleta de la dona/barras: tokens de marca (navy) definidos en index.css. */
+const CHART_COLORS = [
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
 ];
 
-const recentActivity = [
-  { dot: 'bg-green-500', text: 'Nuevo seguidor: María López — hace 5 min' },
-  { dot: 'bg-blue-500', text: 'Pedido #142 completado — hace 23 min' },
-  { dot: 'bg-slate-400', text: 'Producto "Pan amasado" actualizado — hace 1 h' },
-];
+const stockChartConfig = {
+  stock: { label: 'Stock' },
+} satisfies ChartConfig;
 
 export function DashboardPage() {
-  // Dato REAL: "productos populares" se alimenta del catálogo (primeros 5).
-  const { data } = useProducts({ page: 1, limit: 5 });
-  const popular = data?.data ?? [];
+  const { data: store } = useMyStore();
+  const { data: stats } = useDashboardStats(store?.id);
+
+  // Top productos por stock para el gráfico (Bar Chart - Mixed).
+  const { data: topStock } = useProducts({ page: 1, limit: 6, sort: 'stock_desc' });
+  const stockData = (topStock?.data ?? []).map((p, i) => ({
+    name: p.name,
+    stock: p.stock,
+    fill: CHART_COLORS[i % CHART_COLORS.length],
+  }));
+
+  // Productos destacados (dato real: featured = true).
+  const { data: featuredData } = useProducts({ page: 1, limit: 5, featured: true });
+  const featured = featuredData?.data ?? [];
 
   return (
     <>
-      <Alert
-        className="mb-4"
-        type="info"
-        title="Los KPIs, el gráfico y la actividad son datos de demostración"
-        description="La API todavía no expone endpoints de visitas, seguidores ni pedidos. 'Productos populares' sí usa datos reales del catálogo."
-      />
+      {store && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Resumen de <span className="font-medium text-foreground">{store.name}</span>
+        </p>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Visitas al perfil" value={342} icon={<Eye className="size-5" />} trend={{ value: 12, positive: true }} />
-        <KpiCard title="Productos vistos" value={1205} icon={<Package className="size-5" />} trend={{ value: 8, positive: true }} />
-        <KpiCard title="Seguidores" value={89} icon={<Users className="size-5" />} trend={{ value: 5, positive: true }} />
-        <KpiCard title="Pedidos hoy" value={14} icon={<ShoppingCart className="size-5" />} trend={{ value: 3, positive: false }} />
+        <KpiCard
+          title="Productos en catálogo"
+          value={stats?.product_count ?? 0}
+          icon={<Package className="size-5" />}
+        />
+        <KpiCard
+          title="Stock total"
+          value={stats?.total_stock ?? 0}
+          icon={<Boxes className="size-5" />}
+        />
+        <KpiCard
+          title="Reseñas recibidas"
+          value={stats?.review_count ?? 0}
+          icon={<MessageSquare className="size-5" />}
+        />
+        <KpiCard
+          title="Rating promedio"
+          value={stats?.avg_rating ?? 0}
+          suffix="/ 5"
+          icon={<Star className="size-5" />}
+        />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card title="Visitas por hora" className="lg:col-span-2">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={hourlyVisits}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="hora" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="visitas" fill="#1e3a5f" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <Card title="Stock por producto" className="lg:col-span-2">
+          {stockData.length > 0 ? (
+            <ChartContainer config={stockChartConfig} className="h-[280px] w-full">
+              <BarChart
+                accessibilityLayer
+                data={stockData}
+                layout="vertical"
+                margin={{ left: 12, right: 16 }}
+              >
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tickLine={false}
+                  axisLine={false}
+                  width={120}
+                  tickFormatter={(v: string) =>
+                    v.length > 16 ? `${v.slice(0, 16)}…` : v
+                  }
+                />
+                <XAxis dataKey="stock" type="number" hide />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                <Bar dataKey="stock" radius={5} />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <EmptyState description="Aún no hay productos en el catálogo." />
+          )}
         </Card>
 
-        <Card title="Productos populares">
-          <ul className="divide-y divide-slate-100">
-            {popular.map((p, i) => (
-              <li key={p.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="text-slate-700">
-                  #{i + 1} {p.name}
-                </span>
-                <span className="text-slate-400">Stock {p.stock}</span>
-              </li>
-            ))}
-            {popular.length === 0 && (
-              <li className="py-2 text-sm text-slate-400">Sin productos</li>
-            )}
-          </ul>
+        <Card title="Productos destacados">
+          {featured.length > 0 ? (
+            <ul className="divide-y divide-border">
+              {featured.map((p) => (
+                <li key={p.id} className="flex items-center gap-3 py-2">
+                  <ProductThumb src={p.image_url} alt={p.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatCLP(p.price)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState
+              icon={<Star className="size-10" />}
+              description="Marca productos como destacados para que aparezcan aquí."
+            />
+          )}
         </Card>
       </div>
 
-      <div className="mt-4">
-        <Card title="Actividad reciente">
-          <ol className="space-y-3">
-            {recentActivity.map((a) => (
-              <li key={a.text} className="flex items-start gap-3 text-sm">
-                <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', a.dot)} />
-                <span className="text-slate-600">{a.text}</span>
-              </li>
-            ))}
-          </ol>
-        </Card>
-      </div>
+      <Alert
+        className="mt-4"
+        type="info"
+        title="Próximamente: analítica de visitas"
+        description="Las métricas de visitas, seguidores y pedidos requieren el módulo de analytics, que aún no está disponible en la API."
+      />
     </>
   );
 }

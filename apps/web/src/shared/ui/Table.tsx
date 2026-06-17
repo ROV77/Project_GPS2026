@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/shared/lib/cn';
-import { Spinner } from './feedback';
+import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export interface Column<T> {
   key: string;
@@ -49,11 +49,19 @@ export function Table<T extends { id: string }>({
         </thead>
         <tbody>
           {loading ? (
-            <tr>
-              <td colSpan={columns.length} className="px-4 py-12 text-center">
-                <Spinner className="mx-auto" />
-              </td>
-            </tr>
+            Array.from({ length: 5 }).map((_, r) => (
+              <tr key={`skeleton-${r}`} className="border-b border-slate-100 last:border-0">
+                {columns.map((c) => (
+                  <td
+                    key={c.key}
+                    style={{ width: c.width }}
+                    className={cn('px-4 py-3', alignClass[c.align ?? 'left'])}
+                  >
+                    <Skeleton className="h-4 w-full max-w-[140px]" />
+                  </td>
+                ))}
+              </tr>
+            ))
           ) : data.length === 0 ? (
             <tr>
               <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400">

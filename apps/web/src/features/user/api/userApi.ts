@@ -1,5 +1,5 @@
 import { api } from '@/shared/api/client';
-import type { Paginated, Id } from '@/shared/api/types';
+import type { Id } from '@/shared/api/types';
 import type { User } from '../types';
 
 export interface UpdateAccountData {
@@ -8,13 +8,10 @@ export interface UpdateAccountData {
 }
 
 export const userApi = {
-  // Placeholder: como la auth es simulada y aún no hay vínculo cuenta→usuario,
-  // tomamos el primer usuario como "el titular". Cuando exista /auth real, esto
-  // se reemplaza por GET /api/me (o el id del JWT).
+  // El titular es el usuario logueado: lo obtiene de /auth/me
+  // (el backend devuelve { user, store }).
   getMine: () =>
-    api
-      .get<Paginated<User>>('/users', { params: { limit: 1 } })
-      .then((r) => r.data.data[0] ?? null),
+    api.get<{ user: User }>('/auth/me').then((r) => r.data.user),
 
   update: ({ id, data }: { id: Id; data: UpdateAccountData }) =>
     api.put<User>(`/users/${id}`, data).then((r) => r.data),

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 
 /** Envoltura de campo: etiqueta + control + mensaje de error. */
 export function Field({

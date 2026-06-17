@@ -158,5 +158,7 @@ vite.config.ts.timestamp-*
 .claude/settings.json
 .claude/skills/
 .agents/
+.superpowers/
+.mcp.json
 skills-lock.json
 CLAUDE.md

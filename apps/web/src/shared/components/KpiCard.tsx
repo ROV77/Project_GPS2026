@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 import { Card } from '@/shared/ui';
 
 /**

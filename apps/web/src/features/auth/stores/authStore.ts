@@ -4,21 +4,21 @@ import { persist } from 'zustand/middleware';
 /**
  * Estado de sesión (global → vive en zustand, no en TanStack Query).
  *
- * IMPORTANTE: hoy la autenticación es SIMULADA. La API todavía no expone /auth
- * (no hay login, las contraseñas no se hashean). `login()` acepta cualquier
- * credencial y guarda un token ficticio. Cuando exista el endpoint real, solo
- * hay que cambiar el cuerpo de `login()` por una llamada a la API y guardar el
- * JWT devuelto; el resto del panel (ProtectedRoute, AdminLayout) no cambia.
+ * La sesión la abre `POST /api/auth/login` (ver features/auth/api/authApi.ts):
+ * devuelve un JWT y los datos del usuario, que se guardan con `setSession`. El
+ * cliente axios (shared/api/client.ts) adjunta ese token en cada request y, ante
+ * un 401, llama a `logout`.
  */
 export interface AuthUser {
-  name: string;
+  id: string;
+  name: string | null;
   email: string;
 }
 
 interface AuthState {
   token: string | null;
   user: AuthUser | null;
-  login: (email: string) => void;
+  setSession: (token: string, user: AuthUser) => void;
   logout: () => void;
 }
 
@@ -27,11 +27,7 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
-      login: (email) =>
-        set({
-          token: 'mock-token',
-          user: { name: email.split('@')[0] || 'Usuario', email },
-        }),
+      setSession: (token, user) => set({ token, user }),
       logout: () => set({ token: null, user: null }),
     }),
     {

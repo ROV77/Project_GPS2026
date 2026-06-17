@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 
 export interface DropdownItem {
   key: string;
@@ -30,7 +30,7 @@ export function DropdownMenu({
         transition
         className={cn(
           'z-50 w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg [--anchor-gap:0.5rem]',
-          'transition duration-100 ease-out focus:outline-none data-[closed]:opacity-0',
+          'transition duration-100 ease-out focus:outline-hidden data-[closed]:opacity-0',
         )}
       >
         {items.map((it) => (

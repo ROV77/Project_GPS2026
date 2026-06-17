@@ -7,11 +7,38 @@ export const createStoreSchema = z.object({
   category_id: z.coerce.number().int().positive().optional(),
   region_id: z.coerce.number().int().positive().optional(),
   commune_id: z.coerce.number().int().positive().optional(),
-  logo_url: z.string().url().optional(),
+  // Opcional y acepta string vacío (el form envía '' cuando no hay URL).
+  logo_url: z.union([z.string().url(), z.literal('')]).optional(),
   store_phone: z.string().max(20).optional(),
 });
 
 export const updateStoreSchema = createStoreSchema.partial();
 
+/**
+ * Schema del formulario "Mi Tienda" (perfil del comercio). A diferencia de
+ * updateStoreSchema (parcial, para el endpoint genérico), aquí los datos del
+ * perfil son OBLIGATORIOS porque el cliente los verá en la app mobile. El logo
+ * es opcional y acepta string vacío (el form envía '' cuando no hay URL).
+ */
+export const storeProfileSchema = z.object({
+  name: z.string().min(1, 'El nombre es obligatorio'),
+  description: z.string().min(1, 'La descripción es obligatoria'),
+  category_id: z.coerce
+    .number({ invalid_type_error: 'La categoría es obligatoria' })
+    .int()
+    .positive('La categoría es obligatoria'),
+  region_id: z.coerce
+    .number({ invalid_type_error: 'La región es obligatoria' })
+    .int()
+    .positive('La región es obligatoria'),
+  commune_id: z.coerce
+    .number({ invalid_type_error: 'La comuna es obligatoria' })
+    .int()
+    .positive('La comuna es obligatoria'),
+  store_phone: z.string().min(1, 'El teléfono es obligatorio').max(20),
+  logo_url: z.union([z.string().url('URL inválida'), z.literal('')]).optional(),
+});
+
 export type CreateStoreInput = z.infer<typeof createStoreSchema>;
 export type UpdateStoreInput = z.infer<typeof updateStoreSchema>;
+export type StoreProfileInput = z.infer<typeof storeProfileSchema>;

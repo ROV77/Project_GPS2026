@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
+import { env } from '../config/env';
+import { HttpError } from '../lib/httpError';
 
 export function errorHandler(
   err: unknown,
@@ -8,6 +10,11 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ error: err.message });
+    return;
+  }
+
   if (err instanceof ZodError) {
     res.status(400).json({ error: 'Datos inválidos', issues: err.flatten().fieldErrors });
     return;
@@ -28,5 +35,13 @@ export function errorHandler(
   }
 
   console.error(err);
-  res.status(500).json({ error: 'Error interno del servidor', details: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
+  // En producción no se filtran detalles internos ni el stack al cliente.
+  const isDev = env.NODE_ENV !== 'production';
+  res.status(500).json({
+    error: 'Error interno del servidor',
+    ...(isDev && {
+      details: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    }),
+  });
 }

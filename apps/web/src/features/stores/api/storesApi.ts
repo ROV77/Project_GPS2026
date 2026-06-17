@@ -1,16 +1,13 @@
 import { api } from '@/shared/api/client';
-import type { Paginated, Id } from '@/shared/api/types';
+import type { Id } from '@/shared/api/types';
 import type { UpdateStoreInput } from '@caserita/validations';
 import type { Store } from '../types';
 
 export const storesApi = {
-  // Una cuenta = una sola tienda. Como la auth es simulada y aún no hay vínculo
-  // cuenta→tienda, tomamos la primera tienda como "mi tienda" (placeholder hasta
-  // que exista /auth real).
+  // Una cuenta = una sola tienda. La obtiene del usuario logueado vía /auth/me
+  // (el backend devuelve { user, store }).
   getMine: () =>
-    api
-      .get<Paginated<Store>>('/stores', { params: { limit: 1 } })
-      .then((r) => r.data.data[0] ?? null),
+    api.get<{ store: Store | null }>('/auth/me').then((r) => r.data.store),
 
   update: ({ id, data }: { id: Id; data: UpdateStoreInput }) =>
     api.put<Store>(`/stores/${id}`, data).then((r) => r.data),
