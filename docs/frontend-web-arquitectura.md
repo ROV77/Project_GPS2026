@@ -33,16 +33,19 @@ petición. Para el detalle del diseño visual (mockups → componentes) ver
 
 ## 1. Stack tecnológico
 
-Todo el frontend se construye con **Tailwind CSS** (no se usa ninguna librería de componentes
-tipo Ant Design/Material). El comportamiento accesible de los componentes interactivos se apoya
-en **Headless UI** (primitivas sin estilo).
+Todo el frontend se construye con **Tailwind CSS v4**. El **kit de UI oficial es shadcn/ui**:
+componentes React + Radix que se **copian al repo** (en `src/components/ui/`) y se estilan con los
+tokens de marca navy definidos en `src/index.css`. Algunos primitivos accesibles todavía se apoyan
+en **Headless UI** mientras se completa la migración gradual a shadcn. Ver la guía de uso en
+[`./frontend-shadcn-guia.md`](./frontend-shadcn-guia.md).
 
 | Capa | Tecnología | Por qué |
 |---|---|---|
 | Build / dev server | **Vite 6** | Arranque y HMR rápidos; proxy a la API sin CORS. |
 | Lenguaje / UI | **React 19 + TypeScript 5.8** | Base del proyecto, tipado estricto. |
-| Estilos | **Tailwind CSS 3.4** | Toda la UI; tema de marca en `tailwind.config.js`. |
-| Primitivas accesibles | **Headless UI 2** | Comportamiento (foco, teclado, click-fuera) de Select, Drawer, Dropdown, Popover y Switch. |
+| Estilos | **Tailwind CSS 4** | Toda la UI; tokens de marca (navy) en `src/index.css` (config CSS-first, sin `tailwind.config.js`). |
+| Kit de UI | **shadcn/ui** (Radix) | Primitivos en `src/components/ui/` (Button, Card, Input, Badge…). Ver [`./frontend-shadcn-guia.md`](./frontend-shadcn-guia.md). |
+| Primitivas accesibles | **Headless UI 2** | Comportamiento (foco, teclado, click-fuera) de los primitivos aún no migrados a shadcn: Select, Drawer, Dropdown, Popover y Switch. |
 | Íconos | **lucide-react** | Set de íconos ligero y consistente. |
 | Datos del servidor | **TanStack Query 5** | Caché, estados `loading/error`, paginación e invalidación tras mutaciones. |
 | Estado global de cliente | **Zustand 5** | Sesión y preferencias de UI; ligero, sin boilerplate. |
@@ -72,15 +75,17 @@ pnpm --filter web build     # build de producción
 ```
 apps/web/
 ├── index.html                  # punto de entrada de Vite
-├── vite.config.ts              # proxy /api → :3000, alias @ → src
+├── vite.config.ts              # plugin @tailwindcss/vite, proxy /api → :3000, alias @ → src
 ├── tsconfig.json               # config TS de la app (alias @/* → src/*)
-├── tailwind.config.js          # tema de marca (brand navy + Inter)
-├── postcss.config.js           # tailwind + autoprefixer
+├── components.json             # config de shadcn (estilo, alias, iconos)
 ├── .env.example                # VITE_API_URL (opcional; en dev se usa el proxy)
 └── src/
     ├── main.tsx                # monta <AppProviders><App/></AppProviders>
     ├── App.tsx                 # <RouterProvider router={router} />
-    ├── index.css               # directivas Tailwind + base (fuente/fondo)
+    ├── index.css               # @import tailwindcss + tokens de marca (navy) + base
+    │
+    ├── components/ui/          # primitivos del design system (shadcn): button, card…
+    ├── lib/utils.ts            # cn canónico (clsx + tailwind-merge)
     │
     ├── app/                    # bootstrap transversal
     │   ├── providers/AppProviders.tsx   # QueryClientProvider + Toaster (sonner)
@@ -90,7 +95,7 @@ apps/web/
     │       └── ProtectedRoute.tsx       # guard: exige sesión
     │
     ├── shared/                 # reutilizable entre features
-    │   ├── ui/                    # kit Tailwind + Headless UI (Button, Input, Table...)
+    │   ├── ui/                    # primitivos AÚN no migrados a shadcn (Select, Drawer, Table...)
     │   ├── api/                   # client (axios) · types · errors
     │   ├── components/            # PageHeader · KpiCard · ConfirmDelete
     │   ├── hooks/                 # useTablePagination · useCatalogOptions
@@ -251,25 +256,29 @@ ProtectedRoute (exige sesión) → AdminLayout (shell con <Outlet/>) → página
 
 ---
 
-## 8. El kit de UI (Tailwind + Headless UI)
+## 8. El kit de UI (shadcn/ui + Tailwind)
 
-Todos los componentes visuales son **propios** y viven en
-[`shared/ui/`](../apps/web/src/shared/ui/) (Button, Card, Badge, Alert, Field, Input, Textarea,
-NumberInput, PasswordInput, Checkbox, Select, Switch, Drawer, DropdownMenu, ConfirmPopover, Table,
-Pagination, feedback). Se estilan **100% con Tailwind**; cambiar la marca es tocar unos tokens en
-`tailwind.config.js`.
+El **kit oficial es shadcn/ui**: los primitivos del design system viven en
+[`components/ui/`](../apps/web/src/components/ui/) (ya migrados: Button, Card, Input, Badge). Se
+estilan con los **tokens de marca** definidos en `src/index.css`; cambiar la marca es tocar el bloque
+`--brand-50..900` de ese archivo. La guía completa de uso está en
+[`./frontend-shadcn-guia.md`](./frontend-shadcn-guia.md).
 
-**Regla del kit** (importante para mantenerlo simple):
+La migración es **gradual**: los primitivos que aún no se movieron siguen en
+[`shared/ui/`](../apps/web/src/shared/ui/) (Alert, Field, Textarea, NumberInput, PasswordInput,
+Checkbox, Select, Switch, Drawer, DropdownMenu, ConfirmPopover, Table, Pagination, feedback) y
+funcionan con los mismos tokens.
 
-- Para todo lo que sea presentación → **HTML + Tailwind** (la mayoría: Button, Card, Input...).
-- **Headless UI solo** para comportamiento accesible que no existe nativo: `Select` (Combobox),
-  `Drawer` (Dialog), `DropdownMenu` (Menu), `ConfirmPopover` (Popover) y `Switch`.
-- Los controles de formulario comparten estilos base en
-  [`shared/ui/_control.ts`](../apps/web/src/shared/ui/_control.ts) para mantener consistencia.
+**Reglas del kit:**
 
-Sobre el kit hay piezas más específicas del panel en
-[`shared/components/`](../apps/web/src/shared/components/): `PageHeader`, `KpiCard`,
-`ConfirmDelete`.
+- Primitivo genérico → `components/ui/` (shadcn). Composición específica del panel →
+  `shared/components/` (`PageHeader`, `KpiCard`, `ConfirmDelete`).
+- Usar **tokens** (`bg-primary`, `border-border`…), no colores sueltos. `cn` desde `@/lib/utils`.
+- **Headless UI** solo da comportamiento accesible a los primitivos aún no migrados: `Select`
+  (Combobox), `Drawer` (Dialog), `DropdownMenu` (Menu), `ConfirmPopover` (Popover) y `Switch`. Los
+  nuevos componentes shadcn usan Radix.
+- Los controles de formulario pendientes comparten estilos base en
+  [`shared/ui/_control.ts`](../apps/web/src/shared/ui/_control.ts).
 
 ---
 

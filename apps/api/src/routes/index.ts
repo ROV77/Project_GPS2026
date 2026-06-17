@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { authRouter } from './auth.routes';
 import { regionsRouter } from './regions.routes';
 import { communesRouter } from './communes.routes';
 import { categoriesRouter } from './categories.routes';
@@ -13,6 +14,7 @@ import { courierRatingsRouter } from './delivery/courierRatings.routes';
 
 export const apiRouter = Router();
 
+apiRouter.use('/auth', authRouter);
 apiRouter.use('/regions', regionsRouter);
 apiRouter.use('/communes', communesRouter);
 apiRouter.use('/categories', categoriesRouter);

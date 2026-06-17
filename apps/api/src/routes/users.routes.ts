@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../config/prisma';
 import { makeCrud } from '../lib/crud';
 import { crudRouter } from '../lib/router';
@@ -17,8 +18,8 @@ const crud = makeCrud(prisma.users, createUserSchema, updateUserSchema, {
   transform: (data) => {
     const { password, ...rest } = data as { password?: string };
     if (password === undefined) return rest;
-    // TODO(auth): hashear con bcrypt antes de persistir
-    return { ...rest, password_hash: password };
+    // Se hashea con bcrypt antes de persistir (mismo algoritmo que el login).
+    return { ...rest, password_hash: bcrypt.hashSync(password, 10) };
   },
 });
 

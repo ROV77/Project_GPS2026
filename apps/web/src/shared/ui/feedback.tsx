@@ -4,7 +4,7 @@ import { cn } from '@/shared/lib/cn';
 
 /** Bloque "esqueleto" para estados de carga. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded bg-slate-200', className)} />;
+  return <div className={cn('animate-pulse rounded-sm bg-slate-200', className)} />;
 }
 
 /** Spinner de carga reutilizable. */

@@ -84,3 +84,31 @@ export async function findStoresWithRating(
   };
 }
 
+/**
+ * Métricas agregadas de una tienda para el dashboard:
+ * conteo de productos activos, stock total, número de reseñas y rating promedio.
+ */
+export async function findStoreStats(storeId: bigint) {
+  const [productAgg, reviewAgg] = await Promise.all([
+    prisma.products.aggregate({
+      where: { store_id: storeId, deleted_at: null },
+      _count: { _all: true },
+      _sum: { stock: true },
+    }),
+    prisma.reviews.aggregate({
+      where: { store_id: storeId },
+      _count: { _all: true },
+      _avg: { rating: true },
+    }),
+  ]);
+
+  return {
+    product_count: productAgg._count._all,
+    total_stock: productAgg._sum.stock ?? 0,
+    review_count: reviewAgg._count._all,
+    avg_rating: reviewAgg._avg.rating
+      ? Math.round(reviewAgg._avg.rating * 10) / 10
+      : 0,
+  };
+}
+

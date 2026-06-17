@@ -7,6 +7,10 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
+  // Secreto para firmar/verificar JWT. El default es solo para desarrollo
+  // local; en producción DEBE definirse uno fuerte en el entorno.
+  JWT_SECRET: z.string().min(1).default('dev-only-insecure-secret-change-me'),
+  JWT_EXPIRES_IN: z.string().default('7d'),
 });
 
 const parsed = envSchema.safeParse(process.env);

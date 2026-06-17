@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { cn } from '@/shared/lib/cn';
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 
 /**
  * Confirmación inline en popover (Headless UI Popover). El `children` es el
@@ -24,7 +24,7 @@ export function ConfirmPopover({
 }) {
   return (
     <Popover className="relative inline-flex">
-      <PopoverButton className={cn('focus:outline-none', triggerClassName)}>
+      <PopoverButton className={cn('focus:outline-hidden', triggerClassName)}>
         {children}
       </PopoverButton>
       <PopoverPanel

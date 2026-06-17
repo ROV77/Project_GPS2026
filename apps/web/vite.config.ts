@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath, URL } from 'node:url';
 
 // El front nunca habla con http://localhost:3000 directamente: pega a rutas
 // relativas '/api/...' y Vite las redirige al backend en dev (evita CORS y
 // hardcodear hosts). En producción, el reverse proxy debe mapear /api al API.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

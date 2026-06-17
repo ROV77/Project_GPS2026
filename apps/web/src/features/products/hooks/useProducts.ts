@@ -5,15 +5,16 @@ import {
   keepPreviousData,
 } from '@tanstack/react-query';
 import { productsApi } from '../api/productsApi';
-import type { PageParams } from '@/shared/api/types';
+import type { ProductListParams } from '../types';
 
 const KEY = 'products';
 
 /**
- * Lista paginada. `keepPreviousData` mantiene la página anterior visible
- * mientras llega la nueva, evitando parpadeos al cambiar de página.
+ * Lista paginada con filtros opcionales (search/featured/lowStock/sort).
+ * `keepPreviousData` mantiene la página anterior visible mientras llega la
+ * nueva, evitando parpadeos al cambiar de página o filtros.
  */
-export function useProducts(params: PageParams) {
+export function useProducts(params: ProductListParams) {
   return useQuery({
     queryKey: [KEY, params],
     queryFn: () => productsApi.list(params),

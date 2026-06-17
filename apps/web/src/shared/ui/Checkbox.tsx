@@ -19,7 +19,7 @@ export function Checkbox({
         type="checkbox"
         checked={!!checked}
         onChange={(e) => onChange?.(e.target.checked)}
-        className="size-4 rounded border-slate-300 accent-brand-700 focus:ring-brand-500"
+        className="size-4 rounded-sm border-slate-300 accent-brand-700 focus:ring-brand-500"
       />
       {children}
     </label>
