@@ -9,6 +9,7 @@ import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
+import { MapPicker } from '../components/MapPicker';
 
 /**
  * "Mi Tienda": una cuenta administra una sola tienda. Esta página carga esa
@@ -27,11 +28,16 @@ export function MyStorePage() {
     handleSubmit,
     reset,
     setError,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<UpdateStoreInput>({
     resolver: zodResolver(updateStoreSchema),
     defaultValues: {},
   });
+
+  const watchedLat = watch('latitude');
+  const watchedLng = watch('longitude');
 
   useEffect(() => {
     if (!store) return;
@@ -43,6 +49,8 @@ export function MyStorePage() {
       commune_id: store.commune_id ? Number(store.commune_id) : undefined,
       logo_url: store.logo_url ?? '',
       store_phone: store.store_phone ?? '',
+      latitude: store.latitude ? Number(store.latitude) : undefined,
+      longitude: store.longitude ? Number(store.longitude) : undefined,
     });
   }, [store, reset]);
 
@@ -172,6 +180,17 @@ export function MyStorePage() {
                 )}
               />
             </Field>
+
+            <div className="my-6">
+              <MapPicker
+                latitude={watchedLat}
+                longitude={watchedLng}
+                onChange={({ lat, lng }) => {
+                  setValue('latitude', lat, { shouldDirty: true, shouldValidate: true });
+                  setValue('longitude', lng, { shouldDirty: true, shouldValidate: true });
+                }}
+              />
+            </div>
 
             <Button variant="primary" loading={update.isPending} onClick={handleSubmit(onSubmit)}>
               Guardar cambios

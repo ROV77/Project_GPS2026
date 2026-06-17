@@ -11,5 +11,7 @@ export interface Store {
   commune_id?: Id | null;
   logo_url?: string | null;
   store_phone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   verified?: boolean;
 }
