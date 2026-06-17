@@ -19,7 +19,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/validations
       '@prisma/client':
-        specifier: ^6.8.0
+        specifier: 6.19.3
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
       bcryptjs:
         specifier: ^3.0.2
@@ -65,7 +65,7 @@ importers:
         specifier: ^22.0.0
         version: 22.19.19
       prisma:
-        specifier: ^6.8.0
+        specifier: 6.19.3
         version: 6.19.3(typescript@5.9.3)
       tsx:
         specifier: ^4.19.0
