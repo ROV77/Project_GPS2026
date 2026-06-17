@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Dialog, DialogPanel, DialogTitle, DialogBackdrop } from '@headlessui/react';
 import { X } from 'lucide-react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 
 /**
  * Panel lateral (slide-over) sobre el Dialog accesible de Headless UI.

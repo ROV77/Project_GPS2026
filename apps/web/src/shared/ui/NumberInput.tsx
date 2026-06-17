@@ -1,4 +1,4 @@
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 import { controlBase, controlBorder } from './_control';
 
 /** Input numérico controlado. Vacío → 0. */

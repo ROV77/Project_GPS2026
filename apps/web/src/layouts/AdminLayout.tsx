@@ -9,7 +9,7 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 import { DropdownMenu } from '@/shared/ui';
 import { navItems } from '@/shared/config/navigation';
 import { useAuthStore } from '@/features/auth/stores/authStore';

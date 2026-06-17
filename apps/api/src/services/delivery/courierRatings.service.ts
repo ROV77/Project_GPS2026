@@ -1,19 +1,21 @@
-import { courierRatingsRepository } from '../../repositories/delivery/courierRatings.repository';
+import { prisma } from '../../config/prisma';
 import type { CreateCourierRatingInput } from '@caserita/shared-types';
 
 export class CourierRatingsService {
   async getAllRatings() {
-    return courierRatingsRepository.findAll();
+    return prisma.courier_ratings.findMany({ orderBy: { created_at: 'desc' } });
   }
   async getRatingById(id: string) {
-    return courierRatingsRepository.findById(BigInt(id));
+    return prisma.courier_ratings.findUnique({ where: { id: BigInt(id) } });
   }
   async createRating(input: CreateCourierRatingInput) {
-    return courierRatingsRepository.create({
-      courier_id: BigInt(input.courier_id),
-      store_id: BigInt(input.store_id),
-      stars: input.stars,
-      comment: input.comment,
+    return prisma.courier_ratings.create({
+      data: {
+        courier_id: BigInt(input.courier_id),
+        store_id: BigInt(input.store_id),
+        stars: input.stars,
+        comment: input.comment,
+      },
     });
   }
   async updateRating(id: string, input: Partial<CreateCourierRatingInput>) {
@@ -22,10 +24,10 @@ export class CourierRatingsService {
     if (input.store_id !== undefined) data.store_id = BigInt(input.store_id);
     if (input.stars !== undefined) data.stars = input.stars;
     if (input.comment !== undefined) data.comment = input.comment;
-    return courierRatingsRepository.update(BigInt(id), data);
+    return prisma.courier_ratings.update({ where: { id: BigInt(id) }, data });
   }
   async deleteRating(id: string) {
-    return courierRatingsRepository.delete(BigInt(id));
+    return prisma.courier_ratings.delete({ where: { id: BigInt(id) } });
   }
 }
 export const courierRatingsService = new CourierRatingsService();

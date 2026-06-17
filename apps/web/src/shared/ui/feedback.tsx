@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Loader2, Inbox } from 'lucide-react';
-import { cn } from '@/shared/lib/cn';
+import { cn } from '@/lib/utils';
 
 /** Bloque "esqueleto" para estados de carga. */
 export function Skeleton({ className }: { className?: string }) {
