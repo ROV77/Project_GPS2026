@@ -1,9 +1,15 @@
-import { Router, type Request, type Response } from 'express';
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction,
+} from 'express';
 import { Prisma } from '@prisma/client';
 import { createProductSchema, updateProductSchema } from '@caserita/validations';
 import { prisma } from '../config/prisma';
 import { makeCrud } from '../lib/crud';
-import { getPagination } from '../lib/http';
+import { getPagination, parseBigIntId } from '../lib/http';
+import { requireAuth } from '../middlewares/requireAuth';
 
 /** Umbral de "stock bajo" para el filtro lowStock y los badges del panel. */
 export const LOW_STOCK_THRESHOLD = 5;
@@ -19,15 +25,76 @@ const crud = makeCrud(prisma.products, createProductSchema, updateProductSchema,
 });
 
 /**
- * List de productos con filtros (search/featured/lowStock/sort). Reemplaza al
- * list genérico solo para productos; el resto del CRUD se reusa de `makeCrud`.
- * Mantiene el shape { data, page, limit, total } y el soft delete.
+ * Resuelve la tienda del usuario autenticado y la deja en res.locals.storeId
+ * (BigInt o null). Todas las rutas de productos quedan acotadas a esa tienda.
+ */
+async function withStore(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const store = await prisma.stores.findFirst({
+      where: { owner_id: res.locals.userId as bigint },
+      orderBy: { id: 'asc' },
+      select: { id: true },
+    });
+    res.locals.storeId = store?.id ?? null;
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Verifica que el producto :id pertenezca a la tienda del usuario. */
+async function ownProduct(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const id = parseBigIntId(String(req.params.id));
+  const storeId = res.locals.storeId as bigint | null;
+  if (id === null) {
+    res.status(400).json({ error: 'ID inválido' });
+    return;
+  }
+  try {
+    if (!storeId) {
+      res.status(404).json({ error: 'No encontrado' });
+      return;
+    }
+    const found = await prisma.products.findFirst({
+      where: { id, store_id: storeId, deleted_at: null },
+      select: { id: true },
+    });
+    if (!found) {
+      res.status(404).json({ error: 'No encontrado' });
+      return;
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * List de productos con filtros (search/featured/lowStock/sort), SIEMPRE
+ * acotado a la tienda del usuario. Si aún no tiene tienda, devuelve vacío.
  */
 async function list(req: Request, res: Response): Promise<void> {
   const { skip, take, page, limit } = getPagination(req.query);
-  const { search, featured, lowStock, sort } = req.query;
+  const storeId = res.locals.storeId as bigint | null;
 
-  const where: Prisma.productsWhereInput = { deleted_at: null };
+  if (!storeId) {
+    res.json({ data: [], page, limit, total: 0 });
+    return;
+  }
+
+  const { search, featured, lowStock, sort } = req.query;
+  const where: Prisma.productsWhereInput = {
+    deleted_at: null,
+    store_id: storeId,
+  };
 
   if (typeof search === 'string' && search.trim()) {
     where.name = { contains: search.trim(), mode: 'insensitive' };
@@ -54,9 +121,29 @@ async function list(req: Request, res: Response): Promise<void> {
   res.json({ data, page, limit, total });
 }
 
+/** Crea un producto forzando el store_id de la tienda del usuario. */
+async function create(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const storeId = res.locals.storeId as bigint | null;
+  if (!storeId) {
+    res.status(400).json({ error: 'No tienes una tienda asociada' });
+    return;
+  }
+  req.body = { ...req.body, store_id: storeId.toString() };
+  try {
+    await crud.create(req, res);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export const productsRouter = Router();
+productsRouter.use(requireAuth, withStore);
 productsRouter.get('/', list);
-productsRouter.get('/:id', crud.getById);
-productsRouter.post('/', crud.create);
-productsRouter.put('/:id', crud.update);
-productsRouter.delete('/:id', crud.remove);
+productsRouter.get('/:id', ownProduct, crud.getById);
+productsRouter.post('/', create);
+productsRouter.put('/:id', ownProduct, crud.update);
+productsRouter.delete('/:id', ownProduct, crud.remove);

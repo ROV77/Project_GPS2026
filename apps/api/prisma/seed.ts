@@ -21,6 +21,7 @@ async function main() {
     prisma.roles.create({ data: { name: 'admin' } }),
     prisma.roles.create({ data: { name: 'seller' } }),
     prisma.roles.create({ data: { name: 'customer' } }),
+    prisma.roles.create({ data: { name: 'delivery' } }),
   ]);
 
   // ─── Regiones y comunas ───────────────────────────────────────────────────

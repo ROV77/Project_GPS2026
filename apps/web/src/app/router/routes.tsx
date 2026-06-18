@@ -4,6 +4,8 @@ import { AdminLayout } from '@/layouts/AdminLayout';
 import { LandingPage } from '@/features/landing/pages/LandingPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
+import { RegisterCourierPage } from '@/features/auth/pages/RegisterCourierPage';
+import { DeliveryDashboardPage } from '@/features/delivery/pages/DeliveryDashboardPage';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { MyStorePage } from '@/features/stores/pages/MyStorePage';
 import { ProductsListPage } from '@/features/products/pages/ProductsListPage';
@@ -21,9 +23,11 @@ export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
+  { path: '/register-repartidor', element: <RegisterCourierPage /> },
   {
     element: <ProtectedRoute />,
     children: [
+      { path: '/delivery', element: <DeliveryDashboardPage /> },
       {
         element: <AdminLayout />,
         children: [

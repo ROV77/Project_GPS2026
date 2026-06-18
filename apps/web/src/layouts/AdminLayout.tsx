@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   User,
   LogOut,
@@ -34,6 +34,11 @@ export function AdminLayout() {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+
+  // El panel de tienda no aplica a repartidores: van a su propio dashboard.
+  if (user?.roles?.includes('delivery')) {
+    return <Navigate to="/delivery" replace />;
+  }
 
   const selectedKey =
     navItems.find((i) => location.pathname.startsWith(i.key))?.key ?? '/dashboard';
