@@ -9,6 +9,7 @@ import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
+import { ScheduleEditor } from '../components/ScheduleEditor';
 
 /**
  * "Mi Tienda": una cuenta administra una sola tienda. Esta página carga esa
@@ -179,6 +180,13 @@ export function MyStorePage() {
           </div>
         )}
       </Card>
+
+      {store && (
+        <Card className="max-w-2xl mt-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Horarios de atención</h3>
+          <ScheduleEditor storeId={store.id} />
+        </Card>
+      )}
     </>
   );
 }

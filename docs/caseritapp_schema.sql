@@ -527,3 +527,22 @@ WHERE
     verified = true;
 
 CREATE INDEX idx_communes_region_name ON communes (region_id, name);
+
+-- =====================================================================
+-- 7) Store schedules — horarios por día de la semana (feat:horarios)
+-- =====================================================================
+CREATE TABLE store_schedules (
+    id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    store_id     BIGINT NOT NULL,
+    day_of_week  SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+    is_closed    BOOLEAN NOT NULL DEFAULT false,
+    opening_time TIME,
+    closing_time TIME,
+    UNIQUE (store_id, day_of_week)
+);
+
+ALTER TABLE store_schedules
+    ADD CONSTRAINT fk_schedules_store
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
+
+CREATE INDEX idx_schedules_store ON store_schedules (store_id);
