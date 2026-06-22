@@ -85,12 +85,12 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           <footer className="mt-8 border-t border-slate-200 pt-6">
             <p className="text-sm text-slate-600">
               ¿Aún no vendes con nosotros?{" "}
-              <a
-                href="#"
+              <Link
+                to="/register"
                 className="font-medium text-brand-700 hover:underline"
               >
                 Crear cuenta
-              </a>
+              </Link>
             </p>
             <nav className="mt-3 flex gap-4 text-xs text-slate-400">
               <a href="#" className="hover:text-slate-600">

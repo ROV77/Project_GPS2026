@@ -25,3 +25,11 @@ export interface CourierRating {
   comment: string | null;
   created_at: string;
 }
+
+/** Repartidor disponible (usuario con rol delivery) que la tienda visualiza. */
+export interface AvailableCourier {
+  id: Id;
+  name: string | null;
+  email: string;
+  phone: string | null;
+}

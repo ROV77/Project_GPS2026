@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { Alert, Button, Checkbox, Field, Input, PasswordInput } from '@/shared/ui';
 import { getApiErrorMessage } from '@/shared/api/errors';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore, homePathForRoles } from '../stores/authStore';
 import { authApi } from '../api/authApi';
 
 // El backend valida con `loginSchema` (@caserita/validations); aquí extendemos
@@ -40,7 +40,7 @@ export function LoginPage() {
       });
       setSession(token, user);
       toast.success('Sesión iniciada');
-      navigate('/dashboard', { replace: true });
+      navigate(homePathForRoles(user.roles), { replace: true });
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'No se pudo iniciar sesión'));
     }

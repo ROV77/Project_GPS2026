@@ -4,8 +4,22 @@ import {
   useQueryClient,
   keepPreviousData,
 } from '@tanstack/react-query';
-import { vacanciesApi, applicationsApi, courierRatingsApi } from '../api/couriersApi';
+import {
+  vacanciesApi,
+  applicationsApi,
+  courierRatingsApi,
+  couriersApi,
+} from '../api/couriersApi';
 import type { PageParams } from '@/shared/api/types';
+
+// --- Repartidores disponibles ---
+
+export function useAvailableCouriers() {
+  return useQuery({
+    queryKey: ['couriers-available'],
+    queryFn: couriersApi.listAvailable,
+  });
+}
 
 const VACANCIES_KEY = 'delivery-vacancies';
 const APPLICATIONS_KEY = 'delivery-applications';

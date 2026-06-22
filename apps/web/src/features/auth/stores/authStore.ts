@@ -13,6 +13,12 @@ export interface AuthUser {
   id: string;
   name: string | null;
   email: string;
+  roles: string[];
+}
+
+/** Ruta de inicio según el rol: los repartidores van a su propio dashboard. */
+export function homePathForRoles(roles: string[] | undefined): string {
+  return roles?.includes('delivery') ? '/delivery' : '/dashboard';
 }
 
 interface AuthState {

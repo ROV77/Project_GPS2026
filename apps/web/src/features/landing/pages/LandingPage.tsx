@@ -70,7 +70,16 @@ export function LandingPage() {
         {/* Header */}
         <header className="flex items-center justify-between px-6 py-5 md:px-12">
           <img src={logoUrl} alt="CaseritApp" className="h-12 w-auto" />
-          <nav className="flex items-center gap-3">
+          <nav className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/register-repartidor"
+              className={cn(
+                buttonVariants({ variant: 'ghost' }),
+                'hidden text-white hover:bg-white/10 sm:inline-flex',
+              )}
+            >
+              Soy repartidor
+            </Link>
             <Link
               to="/login"
               className={cn(
@@ -182,6 +191,12 @@ export function LandingPage() {
             Registra tu negocio
             <ArrowRight className="size-5" />
           </Link>
+          <p className="mt-4 text-sm text-slate-300">
+            ¿Repartes pedidos?{' '}
+            <Link to="/register-repartidor" className="font-medium text-white underline">
+              Únete como repartidor
+            </Link>
+          </p>
         </div>
       </section>
 

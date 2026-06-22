@@ -1,34 +1,89 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterInput } from '@caserita/validations';
-import { User, Mail, Store } from 'lucide-react';
+import { User, Mail, Store, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { AuthLayout } from '@/layouts/AuthLayout';
-import { Button, Field, Input, PasswordInput } from '@/shared/ui';
+import { Button, Field, Input, PasswordInput, Textarea } from '@/shared/ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useCatalogOptions } from '@/shared/hooks/useCatalogOptions';
+import { useCommunesByRegion } from '@/shared/hooks/useCommunesByRegion';
+import type { SelectOption } from '@/shared/ui/Select';
 import { getApiErrorMessage } from '@/shared/api/errors';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore, homePathForRoles } from '../stores/authStore';
 import { authApi } from '../api/authApi';
+
+/** Select de catálogo (shadcn) para usar dentro de un Controller de RHF. */
+function CatalogSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled,
+  invalid,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: SelectOption[];
+  placeholder: string;
+  disabled?: boolean;
+  invalid?: boolean;
+}) {
+  return (
+    <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger
+        aria-invalid={invalid}
+        className={cn('data-[size=default]:h-12 w-full', invalid && 'border-destructive')}
+      >
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((o) => (
+          <SelectItem key={o.value} value={o.value}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
 
+  const categories = useCatalogOptions('categories');
+  const regions = useCatalogOptions('regions');
+
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: '', email: '', password: '', storeName: '' },
   });
 
+  // Comuna en cascada: depende de la región elegida.
+  const regionId = watch('region_id');
+  const communes = useCommunesByRegion(regionId != null ? String(regionId) : null);
+
   const onSubmit = async (values: RegisterInput) => {
     try {
       const { token, user } = await authApi.register(values);
       setSession(token, user);
       toast.success('¡Cuenta creada! Bienvenido a CaseritApp');
-      navigate('/dashboard', { replace: true });
+      navigate(homePathForRoles(user.roles), { replace: true });
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'No se pudo crear la cuenta'));
     }
@@ -97,6 +152,104 @@ export function RegisterPage() {
                 prefix={<Mail className="size-5" />}
                 placeholder="contacto@donarosa.cl"
                 className="h-12 text-base"
+              />
+            )}
+          />
+        </Field>
+
+        <Field
+          label="Categoría"
+          required
+          error={errors.category_id?.message}
+          className="mb-5"
+        >
+          <Controller
+            name="category_id"
+            control={control}
+            render={({ field }) => (
+              <CatalogSelect
+                value={field.value != null ? String(field.value) : ''}
+                onChange={field.onChange}
+                options={categories.options}
+                placeholder="Selecciona una categoría"
+                invalid={!!errors.category_id}
+              />
+            )}
+          />
+        </Field>
+
+        <div className="mb-5 grid grid-cols-2 gap-4">
+          <Field label="Región" required error={errors.region_id?.message}>
+            <Controller
+              name="region_id"
+              control={control}
+              render={({ field }) => (
+                <CatalogSelect
+                  value={field.value != null ? String(field.value) : ''}
+                  onChange={(v) => {
+                    field.onChange(v);
+                    setValue('commune_id', undefined as never); // reset comuna
+                  }}
+                  options={regions.options}
+                  placeholder="Región"
+                  invalid={!!errors.region_id}
+                />
+              )}
+            />
+          </Field>
+
+          <Field label="Comuna" required error={errors.commune_id?.message}>
+            <Controller
+              name="commune_id"
+              control={control}
+              render={({ field }) => (
+                <CatalogSelect
+                  value={field.value != null ? String(field.value) : ''}
+                  onChange={field.onChange}
+                  options={communes.options}
+                  placeholder={regionId ? 'Comuna' : 'Elige región'}
+                  disabled={!regionId || communes.isLoading}
+                  invalid={!!errors.commune_id}
+                />
+              )}
+            />
+          </Field>
+        </div>
+
+        <Field
+          label="Teléfono"
+          error={errors.store_phone?.message}
+          className="mb-5"
+        >
+          <Controller
+            name="store_phone"
+            control={control}
+            render={({ field }) => (
+              <Input
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                prefix={<Phone className="size-5" />}
+                placeholder="+56 9 1234 5678"
+                className="h-12 text-base"
+              />
+            )}
+          />
+        </Field>
+
+        <Field
+          label="Descripción"
+          error={errors.description?.message}
+          className="mb-5"
+        >
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <Textarea
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                rows={2}
+                placeholder="Cuéntale a tus clientes qué ofreces"
               />
             )}
           />

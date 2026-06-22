@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import type { LoginInput, RegisterInput } from '@caserita/validations';
+import type {
+  LoginInput,
+  RegisterInput,
+  RegisterCourierInput,
+} from '@caserita/validations';
 import {
   loginService,
   registerService,
+  registerCourierService,
   getMeService,
 } from '../services/auth.service';
 
@@ -29,6 +34,22 @@ export const register = async (
 ): Promise<void> => {
   try {
     const result = await registerService(res.locals.body as RegisterInput);
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** POST /auth/register-courier — body validado por registerCourierSchema. */
+export const registerCourier = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const result = await registerCourierService(
+      res.locals.body as RegisterCourierInput,
+    );
     res.status(201).json(result);
   } catch (error) {
     next(error);
