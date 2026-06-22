@@ -4,57 +4,14 @@ import { registerSchema, type RegisterInput } from '@caserita/validations';
 import { User, Mail, Store, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { Button, Field, Input, PasswordInput, Textarea } from '@/shared/ui';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select } from '@/shared/ui/Select';
 import { useCatalogOptions } from '@/shared/hooks/useCatalogOptions';
 import { useCommunesByRegion } from '@/shared/hooks/useCommunesByRegion';
-import type { SelectOption } from '@/shared/ui/Select';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { useAuthStore, homePathForRoles } from '../stores/authStore';
 import { authApi } from '../api/authApi';
-
-/** Select de catálogo (shadcn) para usar dentro de un Controller de RHF. */
-function CatalogSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-  disabled,
-  invalid,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: SelectOption[];
-  placeholder: string;
-  disabled?: boolean;
-  invalid?: boolean;
-}) {
-  return (
-    <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger
-        aria-invalid={invalid}
-        className={cn('data-[size=default]:h-12 w-full', invalid && 'border-destructive')}
-      >
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -167,7 +124,7 @@ export function RegisterPage() {
             name="category_id"
             control={control}
             render={({ field }) => (
-              <CatalogSelect
+              <Select
                 value={field.value != null ? String(field.value) : ''}
                 onChange={field.onChange}
                 options={categories.options}
@@ -184,7 +141,7 @@ export function RegisterPage() {
               name="region_id"
               control={control}
               render={({ field }) => (
-                <CatalogSelect
+                <Select
                   value={field.value != null ? String(field.value) : ''}
                   onChange={(v) => {
                     field.onChange(v);
@@ -203,12 +160,13 @@ export function RegisterPage() {
               name="commune_id"
               control={control}
               render={({ field }) => (
-                <CatalogSelect
+                <Select
                   value={field.value != null ? String(field.value) : ''}
                   onChange={field.onChange}
                   options={communes.options}
                   placeholder={regionId ? 'Comuna' : 'Elige región'}
                   disabled={!regionId || communes.isLoading}
+                  loading={communes.isLoading}
                   invalid={!!errors.commune_id}
                 />
               )}

@@ -2,11 +2,6 @@ import type { ReactNode } from 'react';
 import { Loader2, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Bloque "esqueleto" para estados de carga. */
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-sm bg-slate-200', className)} />;
-}
-
 /** Spinner de carga reutilizable. */
 export function Spinner({ className }: { className?: string }) {
   return <Loader2 className={cn('size-5 animate-spin text-slate-400', className)} />;
