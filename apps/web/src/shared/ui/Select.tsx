@@ -23,6 +23,7 @@ interface SelectProps {
   allowClear?: boolean;
   loading?: boolean;
   invalid?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -38,6 +39,7 @@ export function Select({
   allowClear = false,
   loading = false,
   invalid = false,
+  disabled = false,
   className,
 }: SelectProps) {
   const [query, setQuery] = useState('');
@@ -51,6 +53,7 @@ export function Select({
       value={value ?? null}
       onChange={(v: string | null) => onChange(v)}
       onClose={() => setQuery('')}
+      disabled={disabled}
     >
       <div className={cn('relative', className)}>
         <ComboboxInput

@@ -9,7 +9,6 @@ import { PageHeader } from '@/shared/components/PageHeader';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
 
 /** Iniciales (1–2 letras) a partir del nombre; fallback con un icono. */
@@ -94,12 +93,13 @@ export function MyStorePage() {
           <div>
             {/* Encabezado con preview del logo */}
             <div className="mb-6 flex items-center gap-4 border-b border-border pb-5">
-              <Avatar size="lg" className="size-14">
-                {logoUrl ? <AvatarImage src={logoUrl} alt={store.name} /> : null}
-                <AvatarFallback className="bg-brand-700 text-white">
-                  {initials || <StoreIcon className="size-6" />}
-                </AvatarFallback>
-              </Avatar>
+              <div className="flex size-14 items-center justify-center overflow-hidden rounded-full bg-brand-700 font-medium text-white">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={store.name} className="size-full object-cover" />
+                ) : (
+                  initials || <StoreIcon className="size-6" />
+                )}
+              </div>
               <div>
                 <p className="font-medium text-foreground">{store.name}</p>
                 <p className="text-sm text-muted-foreground">
