@@ -65,7 +65,7 @@ export function LandingPage() {
         >
           <source src={bgVideo} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 -z-10 bg-brand-900/70 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 -z-10 bg-brand-900/70" />
 
         {/* Header */}
         <header className="flex items-center justify-between px-6 py-5 md:px-12">
