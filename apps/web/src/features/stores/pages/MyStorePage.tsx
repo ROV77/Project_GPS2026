@@ -35,7 +35,6 @@ export function MyStorePage() {
     control,
     handleSubmit,
     reset,
-    watch,
     setError,
     setValue,
     watch,

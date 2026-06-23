@@ -8,11 +8,11 @@ const prisma = new PrismaClient();
 const DEMO_PASSWORD = 'demo123';
 
 async function main() {
-  const existing = await prisma.categories.count();
-  if (existing > 0) {
-    console.log('La base ya tiene datos; se omite el seed.');
-    return;
-  }
+  //const existing = await prisma.categories.count();
+  //if (existing > 0) {
+  //console.log('La base ya tiene datos; se omite el seed.');
+  //return;
+  //}
 
   const password_hash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
