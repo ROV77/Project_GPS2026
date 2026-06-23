@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Package, LineChart, Tag } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Package, LineChart, Tag, ArrowLeft } from "lucide-react";
 import bgVideo from "@/assets/videos/15759309_960_540_60fps.mp4";
 import logoUrl from "@/assets/icons/logo_caseritapp.png";
 
@@ -20,7 +21,16 @@ const features = [
 
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <div className="relative flex min-h-screen">
+      {/* Botón volver a la landing: translúcido para verse sobre el video */}
+      <Link
+        to="/"
+        className="absolute left-4 top-4 z-20 inline-flex items-center gap-1.5 rounded-lg bg-black/25 px-3 py-2 text-sm font-medium text-white ring-1 ring-white/15 backdrop-blur-sm transition-colors hover:bg-black/40"
+      >
+        <ArrowLeft className="size-4" />
+        Volver
+      </Link>
+
       {/* Panel de marca con video de fondo */}
       <div className="relative hidden flex-1 overflow-hidden text-white md:flex">
         {/* Video */}
@@ -75,12 +85,12 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           <footer className="mt-8 border-t border-slate-200 pt-6">
             <p className="text-sm text-slate-600">
               ¿Aún no vendes con nosotros?{" "}
-              <a
-                href="#"
+              <Link
+                to="/register"
                 className="font-medium text-brand-700 hover:underline"
               >
                 Crear cuenta
-              </a>
+              </Link>
             </p>
             <nav className="mt-3 flex gap-4 text-xs text-slate-400">
               <a href="#" className="hover:text-slate-600">

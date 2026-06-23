@@ -3,6 +3,7 @@
 export * from '@/components/ui/button';
 export * from '@/components/ui/card';
 export * from '@/components/ui/badge';
+export * from '@/components/ui/skeleton';
 export * from './Alert';
 export * from './feedback';
 export * from './Field';

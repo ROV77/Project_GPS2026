@@ -1,4 +1,30 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma';
+
+/** Asigna un rol por nombre (lo crea si no existe) dentro de una transacción. */
+async function assignRole(
+  tx: Prisma.TransactionClient,
+  userId: bigint,
+  roleName: string,
+) {
+  const role = await tx.roles.upsert({
+    where: { name: roleName },
+    update: {},
+    create: { name: roleName },
+  });
+  await tx.user_roles.create({
+    data: { user_id: userId, role_id: role.id },
+  });
+}
+
+/** Nombres de los roles de un usuario (para exponerlos en login/me). */
+export async function getRoleNames(userId: bigint): Promise<string[]> {
+  const rows = await prisma.user_roles.findMany({
+    where: { user_id: userId },
+    include: { roles: true },
+  });
+  return rows.map((r) => r.roles.name);
+}
 
 /**
  * Busca un usuario activo por email (incluye el hash para verificar la
@@ -18,5 +44,67 @@ export async function findUserWithStoreById(id: bigint) {
   return prisma.users.findFirst({
     where: { id, deleted_at: null },
     include: { stores: { take: 1, orderBy: { id: 'asc' } } },
+  });
+}
+
+/**
+ * Crea la cuenta + su tienda + el rol `seller` en una sola transacción
+ * (una cuenta = una tienda). El password ya viene hasheado. Los ids de
+ * catálogo llegan como number y se persisten como BigInt.
+ */
+export async function createUserWithStore(input: {
+  name: string;
+  email: string;
+  passwordHash: string;
+  storeName: string;
+  categoryId: number;
+  regionId: number;
+  communeId: number;
+  description?: string;
+  storePhone?: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.users.create({
+      data: {
+        name: input.name,
+        email: input.email,
+        password_hash: input.passwordHash,
+      },
+    });
+    await tx.stores.create({
+      data: {
+        owner_id: user.id,
+        name: input.storeName,
+        category_id: BigInt(input.categoryId),
+        region_id: BigInt(input.regionId),
+        commune_id: BigInt(input.communeId),
+        description: input.description || null,
+        store_phone: input.storePhone || null,
+      },
+    });
+    await assignRole(tx, user.id, 'seller');
+    return user;
+  });
+}
+
+/**
+ * Crea la cuenta de un repartidor (sin tienda) y le asigna el rol `delivery`.
+ * El password ya viene hasheado. Devuelve el usuario creado.
+ */
+export async function createCourierUser(input: {
+  name: string;
+  email: string;
+  passwordHash: string;
+}) {
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.users.create({
+      data: {
+        name: input.name,
+        email: input.email,
+        password_hash: input.passwordHash,
+      },
+    });
+    await assignRole(tx, user.id, 'delivery');
+    return user;
   });
 }

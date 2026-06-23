@@ -5,7 +5,20 @@ import type {
   UpdateApplicationInput,
   CreateCourierRatingInput
 } from '@caserita/validations';
-import type { DeliveryVacancy, CourierApplication, CourierRating } from '../types';
+import type {
+  DeliveryVacancy,
+  CourierApplication,
+  CourierRating,
+  AvailableCourier,
+} from '../types';
+
+export const couriersApi = {
+  // Repartidores disponibles (rol delivery); la tienda solo los visualiza.
+  listAvailable: () =>
+    api
+      .get<{ data: AvailableCourier[] }>('/couriers/available')
+      .then((r) => r.data.data),
+};
 
 export const vacanciesApi = {
   list: (params: PageParams & { store_id?: string }) => 
