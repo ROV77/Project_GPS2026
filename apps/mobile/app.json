@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Caserita",
+    "slug": "caserita-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "caserita",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./assets/images/logo-caserita.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "cl.caserita.app"
+    },
+    "android": {
+      "package": "cl.caserita.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo-caserita.png",
+        "backgroundColor": "#0f1d2e"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/logo-caserita.png",
+          "backgroundColor": "#0f1d2e",
+          "imageWidth": 180
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
