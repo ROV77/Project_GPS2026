@@ -34,7 +34,7 @@ export const vacanciesApi = {
 };
 
 export const applicationsApi = {
-  list: (params: PageParams & { vacancy_id?: string }) =>
+  list: (params: PageParams & { vacancy_id?: string; store_id?: string }) =>
     api.get<Paginated<CourierApplication>>('/delivery-applications', { params }).then((r) => r.data),
   
   create: (data: CreateApplicationInput) =>

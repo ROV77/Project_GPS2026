@@ -2,8 +2,34 @@ import { prisma } from '../../config/prisma';
 import type { CreateApplicationInput } from '@caserita/shared-types';
 
 export class DeliveryApplicationsService {
-  async getAllApplications() {
-    return prisma.delivery_applications.findMany({ orderBy: { applied_at: 'desc' } });
+  async getAllApplications(params: { store_id?: string; vacancy_id?: string; page?: number; limit?: number } = {}) {
+    const page = params.page ? Number(params.page) : 1;
+    const limit = params.limit ? Number(params.limit) : 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (params.vacancy_id) {
+      where.vacancy_id = BigInt(params.vacancy_id);
+    } else if (params.store_id) {
+      const storeVacancies = await prisma.delivery_vacancies.findMany({
+        where: { store_id: BigInt(params.store_id) },
+        select: { id: true }
+      });
+      const vacancyIds = storeVacancies.map(v => v.id);
+      where.vacancy_id = { in: vacancyIds };
+    }
+
+    const [data, total] = await Promise.all([
+      prisma.delivery_applications.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { applied_at: 'desc' },
+      }),
+      prisma.delivery_applications.count({ where })
+    ]);
+
+    return { data, total, page, limit };
   }
   async getApplicationById(id: string) {
     return prisma.delivery_applications.findUnique({ where: { id: BigInt(id) } });

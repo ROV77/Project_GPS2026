@@ -6,9 +6,12 @@ import { useApplications, useUpdateApplication } from '../hooks/useCouriers';
 import type { CourierApplication } from '../types';
 import { formatDate } from '@/shared/lib/format';
 
+import { useMyStore } from '@/features/stores/hooks/useStores';
+
 export function ApplicationsTab() {
+  const { data: myStore } = useMyStore();
   const { page, limit, onChange } = useTablePagination();
-  const { data, isLoading } = useApplications({ page, limit });
+  const { data, isLoading } = useApplications({ page, limit, store_id: myStore?.id });
   const update = useUpdateApplication();
 
   const handleUpdateState = (id: string, newState: number) => {

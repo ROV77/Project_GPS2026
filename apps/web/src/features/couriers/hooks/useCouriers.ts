@@ -61,7 +61,7 @@ export function useDeleteVacancy() {
 
 // --- Applications ---
 
-export function useApplications(params: PageParams & { vacancy_id?: string }) {
+export function useApplications(params: PageParams & { vacancy_id?: string; store_id?: string }) {
   return useQuery({
     queryKey: [APPLICATIONS_KEY, params],
     queryFn: () => applicationsApi.list(params),
