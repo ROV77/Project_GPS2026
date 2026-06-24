@@ -2,8 +2,28 @@ import { prisma } from '../../config/prisma';
 import type { CreateVacancyInput } from '@caserita/shared-types';
 
 export class DeliveryVacanciesService {
-  async getAllVacancies() {
-    return prisma.delivery_vacancies.findMany({ orderBy: { created_at: 'desc' } });
+  async getAllVacancies(params: { store_id?: string; page?: number; limit?: number } = {}) {
+    const page = params.page ? Number(params.page) : 1;
+    const limit = params.limit ? Number(params.limit) : 10;
+    const skip = (page - 1) * limit;
+    const where = params.store_id ? { store_id: BigInt(params.store_id) } : {};
+
+    const [data, total] = await Promise.all([
+      prisma.delivery_vacancies.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' }
+      }),
+      prisma.delivery_vacancies.count({ where })
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
   async getVacancyById(id: string) {
     return prisma.delivery_vacancies.findUnique({ where: { id: BigInt(id) } });

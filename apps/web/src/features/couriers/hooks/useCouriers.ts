@@ -69,6 +69,14 @@ export function useApplications(params: PageParams & { vacancy_id?: string }) {
   });
 }
 
+export function useCreateApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: applicationsApi.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: [APPLICATIONS_KEY] }),
+  });
+}
+
 export function useUpdateApplication() {
   const qc = useQueryClient();
   return useMutation({

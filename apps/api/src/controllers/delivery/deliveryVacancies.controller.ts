@@ -1,8 +1,13 @@
 import { Request, Response } from 'express';
 import { deliveryVacanciesService } from '../../services/delivery/deliveryVacancies.service';
 
-export const getVacancies = async (_req: Request, res: Response) => {
-  const data = await deliveryVacanciesService.getAllVacancies();
+export const getVacancies = async (req: Request, res: Response) => {
+  const { store_id, page, limit } = req.query;
+  const data = await deliveryVacanciesService.getAllVacancies({
+    store_id: store_id as string | undefined,
+    page: page ? Number(page) : undefined,
+    limit: limit ? Number(limit) : undefined,
+  });
   res.json(data);
 };
 

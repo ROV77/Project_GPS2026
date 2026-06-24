@@ -37,6 +37,9 @@ export const applicationsApi = {
   list: (params: PageParams & { vacancy_id?: string }) =>
     api.get<Paginated<CourierApplication>>('/delivery-applications', { params }).then((r) => r.data),
   
+  create: (data: CreateApplicationInput) =>
+    api.post<CourierApplication>('/delivery-applications', data).then((r) => r.data),
+  
   update: ({ id, data }: { id: Id; data: UpdateApplicationInput }) =>
     api.put<CourierApplication>(`/delivery-applications/${id}`, data).then((r) => r.data),
 };
