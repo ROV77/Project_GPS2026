@@ -2,7 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Store as StoreIcon } from 'lucide-react';
 import { storeProfileSchema, type StoreProfileInput } from '@caserita/validations';
 import { useCatalogOptions } from '@/shared/hooks/useCatalogOptions';
 import { useCommunesByRegion } from '@/shared/hooks/useCommunesByRegion';
@@ -13,20 +12,14 @@ import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
+import { useMyAccount } from '@/features/user/hooks/useUser';
+import { AvatarUploader } from '@/features/user/components/AvatarUploader';
 import { MapPicker } from '../components/MapPicker';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { getStoreLocationMetadata } from '../lib/storeMetadata';
 import { resolveCommuneId, resolveRegionId } from '../lib/resolveCatalogLocation';
-import { toStoreUpdatePayload } from '../lib/toStoreUpdatePayload';
 import { geocodeCommune } from '../lib/geocoding';
 import type { StoreLocation } from '../types/location';
-/** Iniciales (1–2 letras) a partir del nombre; fallback con un icono. */
-function getInitials(name?: string | null): string {
-  if (!name?.trim()) return '';
-  const parts = name.trim().split(/\s+/);
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
-}
-
 function findOptionLabel(
   options: Array<{ value: string; label: string }>,
   id?: number | null,
@@ -42,6 +35,7 @@ function findOptionLabel(
  */
 export function MyStorePage() {
   const { data: store, isLoading } = useMyStore();
+  const { data: account } = useMyAccount();
   const update = useUpdateStore();
   const categories = useCatalogOptions('categories');
   const regions = useCatalogOptions('regions');
@@ -162,7 +156,7 @@ export function MyStorePage() {
   const onSubmit = (values: StoreProfileInput) => {
     if (!store) return;
     update.mutate(
-      { id: store.id, data: toStoreUpdatePayload(values) },
+      { id: store.id, data: values },
       {
         onSuccess: () => toast.success('Tienda actualizada'),
         onError: (error) => {
@@ -172,9 +166,6 @@ export function MyStorePage() {
       },
     );
   };
-
-  const logoUrl = watch('logo_url');
-  const initials = getInitials(store?.name);
 
   return (
     <>
@@ -195,19 +186,20 @@ export function MyStorePage() {
           <EmptyState description="Aún no hay una tienda asociada a esta cuenta" />
         ) : (
           <div>
-            {/* Encabezado con preview del logo */}
-            <div className="mb-6 flex items-center gap-4 border-b border-border pb-5">
-              <div className="flex size-14 items-center justify-center overflow-hidden rounded-full bg-brand-700 font-medium text-white">
-                {logoUrl ? (
-                  <img src={logoUrl} alt={store.name} className="size-full object-cover" />
-                ) : (
-                  initials || <StoreIcon className="size-6" />
-                )}
-              </div>
+            {/* Encabezado con editor del avatar del usuario */}
+            <div className="mb-6 flex items-center gap-5 border-b border-border pb-5">
+              {account && (
+                <AvatarUploader
+                  userId={account.id}
+                  value={account.avatar_url ?? undefined}
+                  name={account.name ?? store.name}
+                />
+              )}
               <div>
                 <p className="font-medium text-foreground">{store.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  El logo es opcional; el resto de los datos son obligatorios.
+                  Pasa el mouse sobre tu foto y haz clic para cambiarla. El resto de
+                  los datos son obligatorios.
                 </p>
               </div>
             </div>
@@ -318,23 +310,6 @@ export function MyStorePage() {
                   )}
                 />
               </Field>
-
-              <div className="md:col-span-2">
-                <Field label="Logo (URL)" error={errors.logo_url?.message}>
-                  <Controller
-                    name="logo_url"
-                    control={control}
-                    render={({ field }) => (
-                      <Input
-                        value={field.value ?? ''}
-                        onChange={field.onChange}
-                        invalid={!!errors.logo_url}
-                        placeholder="https://..."
-                      />
-                    )}
-                  />
-                </Field>
-              </div>
             </div>
 
             <div className="my-6">

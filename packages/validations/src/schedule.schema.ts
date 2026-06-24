@@ -1,16 +1,12 @@
 import { z } from 'zod';
-
-const timeField = z
-  .string()
-  .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Debe tener formato HH:mm o HH:mm:ss')
-  .nullable();
+import { timeField } from './store.schema';
 
 const dayScheduleSchema = z
   .object({
     day_of_week: z.number().int().min(0).max(6),
     is_closed: z.boolean(),
-    opening_time: timeField.optional(),
-    closing_time: timeField.optional(),
+    opening_time: timeField,
+    closing_time: timeField,
   })
   .refine(
     (data) => {
