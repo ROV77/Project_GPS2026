@@ -21,6 +21,47 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+// ─── Estado visual (semáforo) ────────────────────────────────────────────────
+
+/** Los tres estados posibles del semáforo de apertura */
+export type StoreVisualStatus = 'open' | 'closing_soon' | 'closed';
+
+/** Resultado completo del cálculo de estado visual */
+export interface StoreStatusResult {
+  status: StoreVisualStatus;
+  /** Etiqueta legible: "Abierto", "Cierra pronto", "Cerrado" */
+  label: string;
+  color: 'green' | 'yellow' | 'red';
+  /** Minutos restantes hasta el cierre. null si cerrado o sin horario */
+  minutesUntilClose: number | null;
+}
+
+// ─── Horarios por día de la semana ───────────────────────────────────────────
+
+/** Horario de un día de la semana */
+export interface DaySchedule {
+  id: string;
+  store_id: string;
+  /** 0 = domingo, 1 = lunes, ..., 6 = sábado (convención JS Date.getDay()) */
+  day_of_week: number;
+  is_closed: boolean;
+  opening_time: string | null;
+  closing_time: string | null;
+}
+
+/** Nombres de los días en español, indexados por day_of_week */
+export const DAY_NAMES: Record<number, string> = {
+  0: 'Domingo',
+  1: 'Lunes',
+  2: 'Martes',
+  3: 'Miércoles',
+  4: 'Jueves',
+  5: 'Viernes',
+  6: 'Sábado',
+};
+
+// ─── Fila del listado de tiendas ─────────────────────────────────────────────
+
 /** Fila del listado de tiendas con rating promedio (resultado del raw query) */
 export interface StoreWithRating {
   id: bigint;
@@ -38,4 +79,10 @@ export interface StoreWithRating {
   category_name: string | null;
   avg_rating: number;
   review_count: number;
+  /** Estado visual calculado (semáforo). No se persiste en la DB. */
+  status: StoreVisualStatus;
+  /** Color del semáforo: 'green' | 'yellow' | 'red' */
+  color: 'green' | 'yellow' | 'red';
+  /** Minutos restantes hasta el cierre. null si cerrado o sin horario */
+  minutesUntilClose: number | null;
 }

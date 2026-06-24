@@ -1,5 +1,15 @@
 import { z } from 'zod';
 
+/**
+ * Validador de hora en formato "HH:mm" o "HH:mm:ss".
+ * PostgreSQL almacena el campo como TIME, que acepta ambos formatos.
+ */
+const timeField = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Debe tener formato HH:mm o HH:mm:ss')
+  .nullable()
+  .optional();
+
 const storeLocationFields = {
   latitude: z.coerce
     .number({ invalid_type_error: 'Latitud inválida' })
@@ -27,6 +37,8 @@ export const createStoreSchema = z.object({
   logo_url: z.union([z.string().url(), z.literal('')]).optional(),
   store_phone: z.string().max(20).optional(),
   ...storeLocationFields,
+  opening_time: timeField,
+  closing_time: timeField,
 });
 
 export const updateStoreSchema = createStoreSchema.partial();
