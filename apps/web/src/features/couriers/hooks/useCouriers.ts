@@ -87,7 +87,7 @@ export function useUpdateApplication() {
 
 // --- Ratings ---
 
-export function useCourierRatings(params: PageParams & { store_id?: string }) {
+export function useCourierRatings(params: PageParams & { store_id?: string; courier_id?: string }) {
   return useQuery({
     queryKey: [RATINGS_KEY, params],
     queryFn: () => courierRatingsApi.list(params),

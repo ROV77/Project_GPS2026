@@ -25,6 +25,14 @@ export class DeliveryApplicationsService {
         skip,
         take: limit,
         orderBy: { applied_at: 'desc' },
+        include: {
+          users: {
+            select: { name: true, email: true }
+          },
+          delivery_vacancies: {
+            select: { description: true }
+          }
+        }
       }),
       prisma.delivery_applications.count({ where })
     ]);
