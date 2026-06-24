@@ -21,7 +21,7 @@ jobs:
       - name: Instalar pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 11.1.1
+          version: "11.1.1"
 
       - name: Instalar Node.js
         uses: actions/setup-node@v4
@@ -45,6 +45,3 @@ jobs:
     steps:
       - name: Notificar éxito
         run: echo "El pipeline de CI ha pasado con éxito."
-
-- name: Instalar dependencias
-        run: pnpm install --no-frozen-lockfile
