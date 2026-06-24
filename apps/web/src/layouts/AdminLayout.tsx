@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  User,
   LogOut,
   Bell,
   ChevronDown,
@@ -13,15 +12,9 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu } from '@/shared/ui';
 import { navItems } from '@/shared/config/navigation';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useMyAccount } from '@/features/user/hooks/useUser';
+import { getInitials } from '@/shared/lib/format';
 import logoNavy from '@/assets/icons/logo-caseritapp_navy.png';
-
-/** Iniciales (1–2 letras) a partir del nombre; fallback "U". */
-function getInitials(name?: string | null): string {
-  if (!name?.trim()) return 'U';
-  const parts = name.trim().split(/\s+/);
-  const letters = parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '');
-  return letters.toUpperCase();
-}
 
 /**
  * Shell del panel: sidebar (marca + nav + perfil) + header (título + acciones) +
@@ -34,6 +27,7 @@ export function AdminLayout() {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { data: account } = useMyAccount();
 
   // El panel de tienda no aplica a repartidores: van a su propio dashboard.
   if (user?.roles?.includes('delivery')) {
@@ -49,7 +43,7 @@ export function AdminLayout() {
     navigate('/login', { replace: true });
   };
 
-  const initials = getInitials(user?.name);
+  const initials = getInitials(user?.name) || 'U';
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -144,8 +138,16 @@ export function AdminLayout() {
               anchor="bottom end"
               trigger={
                 <div className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 hover:bg-slate-100">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-700 text-sm font-semibold text-white">
-                    {initials}
+                  <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-700 text-sm font-semibold text-white">
+                    {account?.avatar_url ? (
+                      <img
+                        src={account.avatar_url}
+                        alt={account.name ?? 'Avatar'}
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      initials
+                    )}
                   </span>
                   <span className="hidden text-sm font-medium text-slate-700 sm:inline">
                     {user?.name ?? 'Usuario'}
@@ -154,12 +156,6 @@ export function AdminLayout() {
                 </div>
               }
               items={[
-                {
-                  key: 'account',
-                  label: 'Mi cuenta',
-                  icon: <User className="size-4" />,
-                  onClick: () => navigate('/mi-cuenta'),
-                },
                 {
                   key: 'logout',
                   label: 'Cerrar sesión',

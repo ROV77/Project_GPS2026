@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Validador de hora en formato "HH:mm" o "HH:mm:ss".
  * PostgreSQL almacena el campo como TIME, que acepta ambos formatos.
  */
-const timeField = z
+export const timeField = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, 'Debe tener formato HH:mm o HH:mm:ss')
   .nullable()

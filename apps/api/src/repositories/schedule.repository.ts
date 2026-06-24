@@ -2,6 +2,16 @@ import { prisma } from '../config/prisma';
 import type { DayScheduleInput } from '@caserita/validations';
 
 /**
+ * Convierte una hora "HH:mm" o "HH:mm:ss" a Date.
+ * Prisma representa las columnas TIME como DateTime, así que espera un Date
+ * (no el string crudo). Anclamos al epoch 1970-01-01 UTC; solo importa la hora.
+ */
+function timeToDate(time: string | null | undefined): Date | null {
+  if (!time) return null;
+  return new Date(`1970-01-01T${time.length === 5 ? `${time}:00` : time}Z`);
+}
+
+/**
  * Obtiene los 7 horarios de una tienda, ordenados por día de la semana.
  * Devuelve un array vacío si la tienda no tiene horarios configurados.
  */
@@ -39,13 +49,13 @@ export async function upsertSchedules(storeId: bigint, schedules: DayScheduleInp
         store_id: storeId,
         day_of_week: s.day_of_week,
         is_closed: s.is_closed,
-        opening_time: s.is_closed ? null : s.opening_time,
-        closing_time: s.is_closed ? null : s.closing_time,
+        opening_time: s.is_closed ? null : timeToDate(s.opening_time),
+        closing_time: s.is_closed ? null : timeToDate(s.closing_time),
       },
       update: {
         is_closed: s.is_closed,
-        opening_time: s.is_closed ? null : s.opening_time,
-        closing_time: s.is_closed ? null : s.closing_time,
+        opening_time: s.is_closed ? null : timeToDate(s.opening_time),
+        closing_time: s.is_closed ? null : timeToDate(s.closing_time),
       },
     }),
   );
