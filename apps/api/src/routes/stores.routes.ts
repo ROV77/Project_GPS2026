@@ -10,10 +10,22 @@ const fkFields = ['owner_id', 'category_id', 'region_id', 'commune_id'] as const
 
 const crud = makeCrud(prisma.stores, createStoreSchema, updateStoreSchema, {
   transform: (data) => {
-    const out = { ...data };
+    const { address, address_street, address_number, ...rest } = data;
+    const out: Record<string, unknown> = { ...rest };
+
     for (const field of fkFields) {
       if (out[field] !== undefined) out[field] = BigInt(out[field] as number);
     }
+
+    const locationMeta: Record<string, unknown> = {};
+    if (address !== undefined) locationMeta.address = address || null;
+    if (address_street !== undefined) locationMeta.street = address_street || null;
+    if (address_number !== undefined) locationMeta.number = address_number || null;
+
+    if (Object.keys(locationMeta).length > 0) {
+      out.metadata = locationMeta;
+    }
+
     return out;
   },
 });
