@@ -1,5 +1,5 @@
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Bike, LogOut, Mail, CheckCircle2, Briefcase } from 'lucide-react';
+import { Bike, LogOut, Mail, CheckCircle2, Briefcase, Star, ClipboardList } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import logoUrl from '@/assets/icons/logo_caseritapp.png';
-import { useVacancies, useCreateApplication } from '@/features/couriers/hooks/useCouriers';
+import { useVacancies, useCreateApplication, useApplications, useCourierRatings } from '@/features/couriers/hooks/useCouriers';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { formatDate } from '@/shared/lib/format';
+import type { CourierApplication, DeliveryVacancy, CourierRating } from '@/features/couriers/types';
 
 /**
  * Dashboard del repartidor (rol delivery). Shell autocontenido (no usa el
@@ -20,7 +21,11 @@ export function DeliveryDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
-  const { data: vacanciesData, isLoading } = useVacancies({ page: 1, limit: 50 });
+  // Queries
+  const { data: vacanciesData, isLoading: isLoadingVacancies } = useVacancies({ page: 1, limit: 100 });
+  const { data: applicationsData, isLoading: isLoadingApps, refetch: refetchApps } = useApplications({ courier_id: user?.id, limit: 100 });
+  const { data: ratingsData } = useCourierRatings({ courier_id: user?.id, limit: 100 });
+  
   const applyMutation = useCreateApplication();
 
   // Gate por rol: si no es repartidor, al panel de tienda.
@@ -38,14 +43,28 @@ export function DeliveryDashboardPage() {
     applyMutation.mutate(
       { vacancy_id: Number(vacancyId), courier_id: Number(user.id) },
       {
-        onSuccess: () => toast.success('¡Postulación enviada exitosamente!'),
+        onSuccess: () => {
+          toast.success('¡Postulación enviada exitosamente!');
+          refetchApps();
+        },
         onError: (err) => toast.error(getApiErrorMessage(err) || 'Error al postular'),
       }
     );
   };
 
-  // Las vacantes vienen dentro de `data` si es paginado, o es un array directo dependiendo de la respuesta.
-  const vacancies = Array.isArray(vacanciesData) ? vacanciesData : (vacanciesData?.data ?? []);
+  // Safe arrays
+  const allVacancies = Array.isArray(vacanciesData) ? vacanciesData : (vacanciesData?.data ?? []);
+  const myApplications = Array.isArray(applicationsData) ? applicationsData : (applicationsData?.data ?? []);
+  const myRatings = Array.isArray(ratingsData) ? ratingsData : (ratingsData?.data ?? []);
+
+  // Filter available vacancies (exclude the ones I already applied to)
+  const appliedVacancyIds = new Set(myApplications.map((a: CourierApplication) => String(a.vacancy_id)));
+  const availableVacancies = allVacancies.filter((v: DeliveryVacancy) => !appliedVacancyIds.has(String(v.id)));
+
+  // Calculate average rating
+  const averageStars = myRatings.length > 0
+    ? myRatings.reduce((acc: number, curr: CourierRating) => acc + (curr.stars || 0), 0) / myRatings.length
+    : 0;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -56,7 +75,7 @@ export function DeliveryDashboardPage() {
         </Button>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-10">
+      <main className="mx-auto max-w-5xl px-6 py-10">
         <div className="flex items-center gap-3">
           <span className="flex size-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
             <Bike className="size-6" />
@@ -71,7 +90,7 @@ export function DeliveryDashboardPage() {
 
         <div className="mt-8 grid gap-5 lg:grid-cols-3">
           {/* Perfil en la columna izquierda */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-5">
             <Card title="Tu perfil">
               <ul className="space-y-3 text-sm text-slate-600">
                 <li className="flex items-center gap-2">
@@ -80,9 +99,41 @@ export function DeliveryDashboardPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="size-4 text-green-500" />
-                  Cuenta activa como repartidor
+                  Cuenta activa
+                </li>
+                <li className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">
+                  <Star className="size-5 text-yellow-500 fill-current" />
+                  <span className="font-medium text-slate-900">
+                    {myRatings.length > 0 ? `${averageStars.toFixed(1)} de 5 estrellas` : 'Aún no tienes calificaciones'}
+                  </span>
                 </li>
               </ul>
+            </Card>
+
+            {/* Mis Postulaciones */}
+            <Card title={<div className="flex items-center gap-2"><ClipboardList className="size-5 text-brand-600"/> Mis Postulaciones</div>}>
+              {isLoadingApps ? (
+                <Skeleton className="h-20 w-full" />
+              ) : myApplications.length === 0 ? (
+                <p className="text-sm text-slate-500">No has enviado ninguna postulación aún.</p>
+              ) : (
+                <div className="space-y-4">
+                  {myApplications.map((app: CourierApplication) => (
+                    <div key={app.id} className="border border-slate-100 rounded-lg p-3 bg-white">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-medium text-slate-500">ID Vacante: {app.vacancy_id}</span>
+                        {app.state_id === '2' || app.state_id === 2 ? <Badge tone="green">Aceptada</Badge> : 
+                         app.state_id === '3' || app.state_id === 3 ? <Badge tone="red">Rechazada</Badge> : 
+                         <Badge tone="gold">Pendiente</Badge>}
+                      </div>
+                      <p className="text-sm text-slate-700 line-clamp-2">
+                        {app.delivery_vacancies?.description || 'Sin descripción disponible'}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-2">Postulaste el {formatDate(app.applied_at)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
 
@@ -93,27 +144,27 @@ export function DeliveryDashboardPage() {
               Oportunidades de Reparto
             </h2>
 
-            {isLoading ? (
+            {isLoadingVacancies || isLoadingApps ? (
               <div className="space-y-3">
                 <Skeleton className="h-32 w-full" />
                 <Skeleton className="h-32 w-full" />
               </div>
-            ) : vacancies.length === 0 ? (
+            ) : availableVacancies.length === 0 ? (
               <Card>
                 <p className="py-8 text-center text-sm text-slate-500">
-                  Por el momento no hay vacantes publicadas por las tiendas.
+                  Por el momento no hay vacantes nuevas publicadas por las tiendas, o ya te postulaste a todas las disponibles.
                 </p>
               </Card>
             ) : (
               <div className="space-y-3">
-                {vacancies.map((vacancy: any) => (
+                {availableVacancies.map((vacancy: DeliveryVacancy) => (
                   <Card key={vacancy.id}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <h3 className="font-medium text-slate-900">
                           Vacante de entrega (Tienda ID: {vacancy.store_id})
                         </h3>
-                        <p className="mt-1 text-sm text-slate-600">
+                        <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">
                           {vacancy.description || 'Sin descripción detallada.'}
                         </p>
                         <p className="mt-2 text-xs text-slate-400">
@@ -125,6 +176,7 @@ export function DeliveryDashboardPage() {
                         onClick={() => handleApply(vacancy.id)}
                         loading={applyMutation.isPending}
                         disabled={applyMutation.isPending}
+                        className="shrink-0"
                       >
                         Postular
                       </Button>
