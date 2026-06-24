@@ -296,6 +296,7 @@ model stores {
   communes              communes?               @relation(fields: [commune_id], references: [id], onUpdate: NoAction, map: "fk_stores_commune")
   users                 users                   @relation(fields: [owner_id], references: [id], onUpdate: NoAction, map: "fk_stores_owner")
   regions               regions?                @relation(fields: [region_id], references: [id], onUpdate: NoAction, map: "fk_stores_region")
+  store_schedules       store_schedules[]
   subscriptions         subscriptions[]
 
   @@index([category_id], map: "idx_stores_category")
@@ -304,6 +305,19 @@ model stores {
   @@index([region_id], map: "idx_stores_region")
   @@index([region_id, commune_id], map: "idx_stores_region_commune")
   @@index([region_id, commune_id, category_id], map: "idx_stores_region_commune_category")
+}
+
+model store_schedules {
+  id           BigInt    @id @default(autoincrement())
+  store_id     BigInt
+  day_of_week  Int       @db.SmallInt
+  is_closed    Boolean   @default(false)
+  opening_time DateTime? @db.Time(6)
+  closing_time DateTime? @db.Time(6)
+  stores       stores    @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_schedules_store")
+
+  @@unique([store_id, day_of_week])
+  @@index([store_id], map: "idx_schedules_store")
 }
 
 model subscriptions {

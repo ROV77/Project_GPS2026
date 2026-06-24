@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma';
+import { calculateStoreStatus, getCurrentDayOfWeek } from '../services/store-status.service';
+import { findTodaySchedulesForStores } from './schedule.repository';
 import type {
   StoreFilters,
   PaginationParams,
@@ -7,10 +9,37 @@ import type {
   StoreWithRating,
 } from '@caserita/shared-types';
 
+// ─── Tipo interno para las filas del raw query (sin campos computados) ───────
+
+interface StoreRawRow {
+  id: bigint;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  verified: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  opening_time: string | null;
+  closing_time: string | null;
+  region_name: string | null;
+  commune_name: string | null;
+  commune_city: string | null;
+  category_name: string | null;
+  avg_rating: number;
+  review_count: number;
+}
+
+// ─── Función principal ───────────────────────────────────────────────────────
+
 /**
  * Listado de tiendas con filtros por ubicación, categoría y verificación.
  * Incluye rating promedio y conteo de reviews via raw SQL (Prisma no soporta
  * AVG en select estándar sin vistas).
+ *
+ * Cada tienda devuelta incluye el estado visual calculado (semáforo):
+ *   🟢 open          → dentro del horario, >30 min para cerrar
+ *   🟡 closing_soon  → dentro del horario, ≤30 min para cerrar
+ *   🔴 closed        → fuera del horario o sin horario configurado
  *
  * Los filtros se construyen dinámicamente, solo se incluyen las condiciones
  * para parámetros que realmente llegan en el request.
@@ -39,7 +68,7 @@ export async function findStoresWithRating(
       : Prisma.empty;
 
   // Query principal: datos + rating promedio en un solo viaje a la db
-  const stores = await prisma.$queryRaw<StoreWithRating[]>`
+  const rawStores = await prisma.$queryRaw<StoreRawRow[]>`
     SELECT
       s.id,
       s.name,
@@ -74,6 +103,47 @@ export async function findStoresWithRating(
     FROM   stores s
     ${whereClause}
   `;
+
+  // Enriquecer cada tienda con el estado visual (semáforo)
+  const dayOfWeek = getCurrentDayOfWeek();
+  const storeIds = rawStores.map((s) => s.id);
+  const schedules = await findTodaySchedulesForStores(storeIds, dayOfWeek);
+  
+  // Mapear por store_id para búsqueda rápida O(1)
+  const schedulesMap = new Map(
+    schedules.map((s) => [s.store_id.toString(), s])
+  );
+
+  const stores: StoreWithRating[] = rawStores.map((store) => {
+    const schedule = schedulesMap.get(store.id.toString());
+    
+    let openingStr: string | null = null;
+    let closingStr: string | null = null;
+    let isClosed = false;
+
+    if (schedule) {
+      isClosed = schedule.is_closed;
+      openingStr = schedule.opening_time
+        ? schedule.opening_time.toISOString().substring(11, 19)
+        : null;
+      closingStr = schedule.closing_time
+        ? schedule.closing_time.toISOString().substring(11, 19)
+        : null;
+    } else {
+      // Fallback a los campos de la tabla stores
+      openingStr = store.opening_time;
+      closingStr = store.closing_time;
+      isClosed = false;
+    }
+
+    const statusResult = calculateStoreStatus(openingStr, closingStr, { isClosed });
+    return {
+      ...store,
+      status: statusResult.status,
+      color: statusResult.color,
+      minutesUntilClose: statusResult.minutesUntilClose,
+    };
+  });
 
   return {
     data: stores,

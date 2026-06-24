@@ -1,6 +1,5 @@
 import type { Id } from '@/shared/api/types';
 
-/** Tienda tal como la devuelve la API (GET /api/stores). */
 export interface Store {
   id: Id;
   owner_id: Id;
@@ -16,3 +15,23 @@ export interface Store {
   metadata?: { address?: string | null } | null;
   verified?: boolean;
 }
+
+export interface DaySchedule {
+  id: string;
+  store_id: string;
+  day_of_week: number;
+  is_closed: boolean;
+  opening_time: string | null;
+  closing_time: string | null;
+}
+
+export const DAY_NAMES: Record<number, string> = {
+  0: 'Domingo',
+  1: 'Lunes',
+  2: 'Martes',
+  3: 'Miércoles',
+  4: 'Jueves',
+  5: 'Viernes',
+  6: 'Sábado',
+};
+

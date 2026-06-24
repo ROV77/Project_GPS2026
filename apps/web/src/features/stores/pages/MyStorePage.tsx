@@ -14,6 +14,7 @@ import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
 import { MapPicker } from '../components/MapPicker';
+import { ScheduleEditor } from '../components/ScheduleEditor';
 import { getStoreLocationMetadata } from '../lib/storeMetadata';
 import { resolveCommuneId, resolveRegionId } from '../lib/resolveCatalogLocation';
 import { toStoreUpdatePayload } from '../lib/toStoreUpdatePayload';
@@ -57,8 +58,11 @@ export function MyStorePage() {
   } = useForm<StoreProfileInput>({
     resolver: zodResolver(storeProfileSchema),
     defaultValues: {
-      location_confirmed: false,
-    },
+      name: '',
+      description: '',
+      store_phone: '',
+      logo_url: '',
+    } as StoreProfileInput,
   });
 
   const watchedRegionId = watch('region_id');
@@ -278,7 +282,7 @@ export function MyStorePage() {
                         const next = v ? Number(v) : undefined;
                         field.onChange(next);
                         // Al cambiar la región se reinicia la comuna (cascada).
-                        setValue('commune_id', undefined, { shouldDirty: true });
+                        setValue('commune_id', undefined as unknown as number, { shouldDirty: true });
                         clearErrors(['region_id', 'commune_id']);
                       }}
                       options={regions.options}
@@ -361,6 +365,13 @@ export function MyStorePage() {
           </div>
         )}
       </Card>
+
+      {store && (
+        <Card className="max-w-2xl mt-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Horarios de atención</h3>
+          <ScheduleEditor storeId={store.id} />
+        </Card>
+      )}
     </>
   );
 }
