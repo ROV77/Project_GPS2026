@@ -181,6 +181,7 @@ export function MapPicker({
             context: parsed.context,
             regionName: parsed.regionName,
             communeName: parsed.communeName,
+            confirmed: true,
           });
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -190,6 +191,7 @@ export function MapPicker({
             street: streetQuery,
             number: '',
             context: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+            confirmed: false,
           });
         } finally {
           setIsReverseGeocoding(false);
@@ -344,6 +346,7 @@ export function MapPicker({
         context: suggestion.context,
         regionName: suggestion.regionName,
         communeName: suggestion.communeName,
+        confirmed: true,
       },
       { preserveNumber: true },
     );

@@ -282,7 +282,7 @@ export function MyStorePage() {
                         const next = v ? Number(v) : undefined;
                         field.onChange(next);
                         // Al cambiar la región se reinicia la comuna (cascada).
-                        setValue('commune_id', undefined, { shouldDirty: true });
+                        setValue('commune_id', undefined as unknown as number, { shouldDirty: true });
                         clearErrors(['region_id', 'commune_id']);
                       }}
                       options={regions.options}
