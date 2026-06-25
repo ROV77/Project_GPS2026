@@ -5,6 +5,7 @@ import type { User } from '../types';
 export interface UpdateAccountData {
   name?: string;
   phone?: string;
+  avatar_url?: string;
 }
 
 export const userApi = {

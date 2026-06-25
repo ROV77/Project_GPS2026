@@ -8,6 +8,19 @@ import { fileURLToPath, URL } from 'node:url';
 // hardcodear hosts). En producción, el reverse proxy debe mapear /api al API.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@tanstack/react-query',
+      'recharts',
+      'lucide-react',
+      'axios',
+      'zustand',
+      'zod',
+    ],
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

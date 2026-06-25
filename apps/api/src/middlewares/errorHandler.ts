@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
+import { MulterError } from 'multer';
 import { ZodError } from 'zod';
 import { env } from '../config/env';
 import { HttpError } from '../lib/httpError';
@@ -12,6 +13,12 @@ export function errorHandler(
 ): void {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.message });
+    return;
+  }
+
+  if (err instanceof MulterError) {
+    const msg = err.code === 'LIMIT_FILE_SIZE' ? 'La imagen supera el límite de 5MB' : err.message;
+    res.status(400).json({ error: msg });
     return;
   }
 

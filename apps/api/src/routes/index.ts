@@ -8,6 +8,7 @@ import { usersRouter } from './users.routes';
 import { storesRouter } from './stores.routes';
 import { productsRouter } from './products.routes';
 import { couriersRouter } from './couriers.routes';
+import { uploadsRouter } from './uploads.routes';
 
 import { deliveryVacanciesRouter } from './delivery/deliveryVacancies.routes';
 import { deliveryApplicationsRouter } from './delivery/deliveryApplications.routes';
@@ -24,6 +25,7 @@ apiRouter.use('/users', usersRouter);
 apiRouter.use('/stores', storesRouter);
 apiRouter.use('/products', productsRouter);
 apiRouter.use('/couriers', couriersRouter);
+apiRouter.use('/uploads', uploadsRouter);
 
 apiRouter.use('/delivery-vacancies', deliveryVacanciesRouter);
 apiRouter.use('/delivery-applications', deliveryApplicationsRouter);
