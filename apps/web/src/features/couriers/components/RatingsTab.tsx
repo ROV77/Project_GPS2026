@@ -24,12 +24,12 @@ export function RatingsTab() {
 
   // Fetch all applications to extract accepted couriers for this store
   // Only applications that are accepted (state_id === '2' or 2)
-  const { data: applicationsData } = useApplications({ store_id: myStore?.id, limit: 100 });
+  const { data: applicationsData } = useApplications({ page: 1, store_id: myStore?.id, limit: 100 });
   
   const courierOptions = useMemo(() => {
     const apps = Array.isArray(applicationsData) ? applicationsData : (applicationsData?.data ?? []);
     // Filtrar solo las aceptadas
-    const acceptedApps = apps.filter((a: CourierApplication) => a.state_id === '2' || a.state_id === 2);
+    const acceptedApps = apps.filter((a: CourierApplication) => a.state_id === '2');
     
     // Extraer repartidores únicos
     const uniqueCouriers = new Map<string, string>();

@@ -23,8 +23,8 @@ export function DeliveryDashboardPage() {
 
   // Queries
   const { data: vacanciesData, isLoading: isLoadingVacancies } = useVacancies({ page: 1, limit: 100 });
-  const { data: applicationsData, isLoading: isLoadingApps, refetch: refetchApps } = useApplications({ courier_id: user?.id, limit: 100 });
-  const { data: ratingsData } = useCourierRatings({ courier_id: user?.id, limit: 100 });
+  const { data: applicationsData, isLoading: isLoadingApps, refetch: refetchApps } = useApplications({ page: 1, courier_id: user?.id, limit: 100 });
+  const { data: ratingsData } = useCourierRatings({ page: 1, courier_id: user?.id, limit: 100 });
   
   const applyMutation = useCreateApplication();
 
@@ -131,8 +131,8 @@ export function DeliveryDashboardPage() {
                     <div key={app.id} className="border border-slate-100 rounded-lg p-3 bg-white">
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-xs font-medium text-slate-500">ID Vacante: {app.vacancy_id}</span>
-                        {app.state_id === '2' || app.state_id === 2 ? <Badge tone="green">Aceptada</Badge> : 
-                         app.state_id === '3' || app.state_id === 3 ? <Badge tone="red">Rechazada</Badge> : 
+                        {app.state_id === '2' ? <Badge tone="green">Aceptada</Badge> : 
+                         app.state_id === '3' ? <Badge tone="red">Rechazada</Badge> : 
                          <Badge tone="gold">Pendiente</Badge>}
                       </div>
                       <p className="text-sm text-slate-700 line-clamp-2">

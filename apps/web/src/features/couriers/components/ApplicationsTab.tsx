@@ -36,8 +36,8 @@ export function ApplicationsTab() {
       key: 'state_id', 
       header: 'Estado', 
       render: (a) => {
-        if (a.state_id === '2' || a.state_id === 2) return <Badge tone="green">Aceptada</Badge>;
-        if (a.state_id === '3' || a.state_id === 3) return <Badge tone="red">Rechazada</Badge>;
+        if (a.state_id === '2') return <Badge tone="green">Aceptada</Badge>;
+        if (a.state_id === '3') return <Badge tone="red">Rechazada</Badge>;
         return <Badge tone="gold">Pendiente</Badge>;
       } 
     },
@@ -46,7 +46,7 @@ export function ApplicationsTab() {
       header: 'Acciones',
       width: 120,
       render: (a) => (
-        <Button size="sm" variant="outline" onClick={() => setSelectedApp(a)}>
+        <Button size="sm" variant="default" onClick={() => setSelectedApp(a)}>
           Ver detalle
         </Button>
       ),
@@ -98,8 +98,8 @@ export function ApplicationsTab() {
               </div>
               <div>
                 <h4 className="text-sm font-medium text-slate-500 mb-1">Estado</h4>
-                {selectedApp.state_id === '2' || selectedApp.state_id === 2 ? <Badge tone="green">Aceptada</Badge> : 
-                 selectedApp.state_id === '3' || selectedApp.state_id === 3 ? <Badge tone="red">Rechazada</Badge> : 
+                {selectedApp.state_id === '2' ? <Badge tone="green">Aceptada</Badge> : 
+                 selectedApp.state_id === '3' ? <Badge tone="red">Rechazada</Badge> : 
                  <Badge tone="gold">Pendiente</Badge>}
               </div>
             </div>
@@ -109,15 +109,15 @@ export function ApplicationsTab() {
                 variant="primary" 
                 className="w-full"
                 onClick={() => handleUpdateState(selectedApp.id, 2)} 
-                disabled={selectedApp.state_id === '2' || selectedApp.state_id === 2 || update.isPending}
+                disabled={selectedApp.state_id === '2' || update.isPending}
               >
                 Aceptar Repartidor
               </Button>
               <Button 
-                variant="outline" 
+                variant="default" 
                 className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                 onClick={() => handleUpdateState(selectedApp.id, 3)} 
-                disabled={selectedApp.state_id === '3' || selectedApp.state_id === 3 || update.isPending}
+                disabled={selectedApp.state_id === '3' || update.isPending}
               >
                 Rechazar Repartidor
               </Button>
