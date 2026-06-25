@@ -2,7 +2,7 @@ import { api } from '@/shared/api/client';
 import type { Paginated, Id, PageParams } from '@/shared/api/types';
 import type { 
   CreateVacancyInput, UpdateVacancyInput, 
-  UpdateApplicationInput,
+  CreateApplicationInput, UpdateApplicationInput,
   CreateCourierRatingInput
 } from '@caserita/validations';
 import type {

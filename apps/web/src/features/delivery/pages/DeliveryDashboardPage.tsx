@@ -1,5 +1,5 @@
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Bike, LogOut, Mail, CheckCircle2, Briefcase, Star, ClipboardList } from 'lucide-react';
+import { Bike, LogOut, Mail, CheckCircle2, Briefcase, Star, ClipboardList, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +76,15 @@ export function DeliveryDashboardPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-10">
+        <div className="mb-6 rounded-md bg-blue-50 p-4 border border-blue-200">
+          <div className="flex items-start gap-3">
+            <Info className="size-5 text-blue-500 mt-0.5 shrink-0" />
+            <p className="text-sm text-blue-700 leading-relaxed">
+              <strong>Aviso temporal:</strong> Esta página de dashboard es provisoria. Próximamente el panel de repartidor se unificará como un apartado dentro del perfil de usuario normal, para mayor comodidad.
+            </p>
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
           <span className="flex size-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
             <Bike className="size-6" />
