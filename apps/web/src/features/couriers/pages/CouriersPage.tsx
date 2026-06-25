@@ -1,65 +1,52 @@
-import { Bike, Mail, Phone } from 'lucide-react';
+import { useState } from 'react';
 import { PageHeader } from '@/shared/components/PageHeader';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAvailableCouriers } from '../hooks/useCouriers';
+import { VacanciesTab } from '../components/VacanciesTab';
+import { ApplicationsTab } from '../components/ApplicationsTab';
+import { RatingsTab } from '../components/RatingsTab';
+import { cn } from '@/lib/utils';
 
-/**
- * "Repartidores": vista de solo lectura. La tienda NO publica vacantes; aquí
- * visualiza los repartidores disponibles (usuarios con rol delivery).
- */
+type TabId = 'vacancies' | 'applications' | 'ratings';
+
 export function CouriersPage() {
-  const { data: couriers, isLoading } = useAvailableCouriers();
+  const [activeTab, setActiveTab] = useState<TabId>('vacancies');
+
+  const tabs = [
+    { id: 'vacancies', label: 'Bolsa de Trabajo' },
+    { id: 'applications', label: 'Postulaciones' },
+    { id: 'ratings', label: 'Calificaciones' },
+  ] as const;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Repartidores"
-        subtitle="Repartidores disponibles para tus entregas. Contáctalos directamente."
+        subtitle="Administra tus vacantes de entrega, revisa postulaciones y califica a tus repartidores."
       />
 
-      {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full" />
+      <div className="border-b border-border">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors',
+                activeTab === tab.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
+              )}
+            >
+              {tab.label}
+            </button>
           ))}
-        </div>
-      ) : !couriers || couriers.length === 0 ? (
-        <Card>
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            Aún no hay repartidores disponibles.
-          </p>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {couriers.map((c) => (
-            <Card key={c.id}>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
-                    <Bike className="size-5" />
-                  </span>
-                  <p className="font-medium text-foreground">
-                    {c.name ?? 'Repartidor'}
-                  </p>
-                </div>
-                <Badge tone="green">Disponible</Badge>
-              </div>
-              <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Mail className="size-4 text-slate-400" />
-                  {c.email}
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="size-4 text-slate-400" />
-                  {c.phone || 'Sin teléfono'}
-                </li>
-              </ul>
-            </Card>
-          ))}
-        </div>
-      )}
+        </nav>
+      </div>
+
+      <div className="pt-2">
+        {activeTab === 'vacancies' && <VacanciesTab />}
+        {activeTab === 'applications' && <ApplicationsTab />}
+        {activeTab === 'ratings' && <RatingsTab />}
+      </div>
     </div>
   );
 }

@@ -2,8 +2,31 @@ import { prisma } from '../../config/prisma';
 import type { CreateCourierRatingInput } from '@caserita/shared-types';
 
 export class CourierRatingsService {
-  async getAllRatings() {
-    return prisma.courier_ratings.findMany({ orderBy: { created_at: 'desc' } });
+  async getAllRatings(params: { store_id?: string; courier_id?: string; page?: number; limit?: number } = {}) {
+    const page = params.page ? Number(params.page) : 1;
+    const limit = params.limit ? Number(params.limit) : 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (params.store_id) where.store_id = BigInt(params.store_id);
+    if (params.courier_id) where.courier_id = BigInt(params.courier_id);
+
+    const [data, total] = await Promise.all([
+      prisma.courier_ratings.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          users: {
+            select: { name: true }
+          }
+        }
+      }),
+      prisma.courier_ratings.count({ where })
+    ]);
+
+    return { data, total, page, limit };
   }
   async getRatingById(id: string) {
     return prisma.courier_ratings.findUnique({ where: { id: BigInt(id) } });

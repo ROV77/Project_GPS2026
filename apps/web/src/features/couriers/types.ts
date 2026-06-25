@@ -14,7 +14,13 @@ export interface CourierApplication {
   courier_id: Id;
   state_id: Id | null;
   applied_at: string;
-  // TODO: Agregar datos anidados si el backend los devuelve (ej. nombre del repartidor)
+  users?: {
+    name: string | null;
+    email: string;
+  };
+  delivery_vacancies?: {
+    description: string | null;
+  };
 }
 
 export interface CourierRating {
@@ -24,6 +30,9 @@ export interface CourierRating {
   stars: number;
   comment: string | null;
   created_at: string;
+  users?: {
+    name: string | null;
+  };
 }
 
 /** Repartidor disponible (usuario con rol delivery) que la tienda visualiza. */

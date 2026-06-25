@@ -12,6 +12,13 @@ export interface CourierApplication {
   courier_id: string;
   state_id: string | null;
   applied_at: Date;
+  users?: {
+    name: string | null;
+    email: string;
+  };
+  delivery_vacancies?: {
+    description: string | null;
+  };
 }
 
 export interface CourierRating {
@@ -21,6 +28,9 @@ export interface CourierRating {
   stars: number | null;
   comment: string | null;
   created_at: Date;
+  users?: {
+    name: string | null;
+  };
 }
 
 export interface CreateVacancyInput {

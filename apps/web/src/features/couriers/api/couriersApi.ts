@@ -2,7 +2,7 @@ import { api } from '@/shared/api/client';
 import type { Paginated, Id, PageParams } from '@/shared/api/types';
 import type { 
   CreateVacancyInput, UpdateVacancyInput, 
-  UpdateApplicationInput,
+  CreateApplicationInput, UpdateApplicationInput,
   CreateCourierRatingInput
 } from '@caserita/validations';
 import type {
@@ -34,15 +34,18 @@ export const vacanciesApi = {
 };
 
 export const applicationsApi = {
-  list: (params: PageParams & { vacancy_id?: string }) =>
+  list: (params: PageParams & { vacancy_id?: string; store_id?: string; courier_id?: string }) =>
     api.get<Paginated<CourierApplication>>('/delivery-applications', { params }).then((r) => r.data),
+  
+  create: (data: CreateApplicationInput) =>
+    api.post<CourierApplication>('/delivery-applications', data).then((r) => r.data),
   
   update: ({ id, data }: { id: Id; data: UpdateApplicationInput }) =>
     api.put<CourierApplication>(`/delivery-applications/${id}`, data).then((r) => r.data),
 };
 
 export const courierRatingsApi = {
-  list: (params: PageParams & { store_id?: string }) =>
+  list: (params: PageParams & { store_id?: string; courier_id?: string }) =>
     api.get<Paginated<CourierRating>>('/courier-ratings', { params }).then((r) => r.data),
   
   create: (data: CreateCourierRatingInput) =>
