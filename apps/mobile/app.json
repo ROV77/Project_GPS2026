@@ -30,7 +30,13 @@
           "imageWidth": 180
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Caserita usa tus fotos para que elijas tu foto de perfil."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

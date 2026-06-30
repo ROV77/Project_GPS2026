@@ -16,7 +16,7 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-config.watchFolders = [workspaceRoot];
+config.watchFolders = [...(config.watchFolders ?? []), workspaceRoot];
 
 const nativewindDir = path.dirname(
   require.resolve('nativewind/package.json', { paths: [projectRoot] }),

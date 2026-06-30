@@ -27,7 +27,16 @@ export function uploadImage(buffer: Buffer): Promise<string> {
 
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: 'avatars', resource_type: 'image' },
+      {
+        folder: 'avatars',
+        resource_type: 'image',
+        // Compresión no destructiva: limita el lado mayor a 1024px (solo reduce
+        // si es más grande, conserva proporción) y deja que Cloudinary elija
+        // calidad y formato óptimos. Baja mucho el peso sin recortar la imagen.
+        transformation: [{ width: 1024, height: 1024, crop: 'limit' }],
+        quality: 'auto',
+        fetch_format: 'auto',
+      },
       (error, result) => {
         if (error || !result) {
           reject(error ?? new Error('Cloudinary no devolvió resultado'));

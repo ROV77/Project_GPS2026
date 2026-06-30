@@ -1,11 +1,10 @@
 /**
- * Pantalla de inicio de sesión (visual). Sigue el layout de la referencia: marca
- * arriba, campos de correo/contraseña y botón principal. La conexión real con
- * `POST /api/auth/login` + la sesión segura es el siguiente paso (Fase 2): por
- * ahora el envío muestra un aviso.
+ * Pantalla de inicio de sesión. Llama a POST /api/auth/login, guarda el token en
+ * secure-store e hidrata la sesión (features/auth/session.store), luego lleva a
+ * la pestaña Cuenta.
  */
 import { useState } from 'react';
-import { View, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Mail, Lock } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
@@ -14,15 +13,35 @@ import { Input } from '@/ui/Input';
 import { Button } from '@/ui/Button';
 import { BrandMark } from '@/ui/BrandMark';
 import { colors, fonts } from '@/ui/theme';
+import { login as loginRequest } from '@/features/auth/api';
+import { useSession } from '@/features/auth/session.store';
+import { getApiErrorMessage } from '@/shared/api/errors';
 
 export default function Login() {
   const router = useRouter();
+  const signIn = useSession((s) => s.signIn);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = () => {
-    // TODO(Fase 2): loginService → guardar token (SecureStore) → router.replace('/(public)').
-    Alert.alert('Próximamente', 'El inicio de sesión estará disponible en la siguiente fase.');
+  const onSubmit = async () => {
+    const mail = email.trim();
+    if (!mail.includes('@') || password.length < 6) {
+      setError('Ingresa un correo válido y una contraseña de al menos 6 caracteres.');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const { token } = await loginRequest(mail, password);
+      await signIn(token);
+      router.replace('/(public)/account');
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'Credenciales inválidas'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,8 +84,14 @@ export default function Login() {
             icon={<Lock size={20} color={colors.mutedForeground} strokeWidth={2} />}
           />
 
+          {error && (
+            <Text variant="caption" style={{ color: colors.destructive }}>
+              {error}
+            </Text>
+          )}
+
           <View className="mt-2">
-            <Button label="Iniciar sesión" onPress={onSubmit} />
+            <Button label="Iniciar sesión" onPress={onSubmit} loading={loading} />
           </View>
         </View>
 

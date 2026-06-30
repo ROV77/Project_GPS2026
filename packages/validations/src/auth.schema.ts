@@ -41,3 +41,13 @@ export const registerCourierSchema = z.object({
 });
 
 export type RegisterCourierInput = z.infer<typeof registerCourierSchema>;
+
+// Actualización del propio perfil (PATCH /auth/me): todos los campos opcionales.
+// avatar_url llega como URL absoluta de Cloudinary tras subir la foto.
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, 'Ingresa tu nombre').optional(),
+  phone: z.string().max(20).optional(),
+  avatar_url: z.string().url('URL de imagen inválida').optional(),
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
