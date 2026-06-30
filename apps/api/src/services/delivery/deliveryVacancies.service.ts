@@ -1,7 +1,7 @@
 import { prisma } from '../../config/prisma';
-import type { CreateVacancyInput } from '@caserita/shared-types';
+import type { CreateVacancyInput } from '@caserita/validations';
 
-export class DeliveryVacanciesService {
+export const deliveryVacanciesService = {
   async getAllVacancies(params: { store_id?: string; page?: number; limit?: number } = {}) {
     const page = params.page ? Number(params.page) : 1;
     const limit = params.limit ? Number(params.limit) : 10;
@@ -24,10 +24,10 @@ export class DeliveryVacanciesService {
       page,
       limit,
     };
-  }
+  },
   async getVacancyById(id: string) {
     return prisma.delivery_vacancies.findUnique({ where: { id: BigInt(id) } });
-  }
+  },
   async createVacancy(input: CreateVacancyInput) {
     return prisma.delivery_vacancies.create({
       data: {
@@ -36,16 +36,15 @@ export class DeliveryVacanciesService {
         state_id: input.state_id ? BigInt(input.state_id) : null,
       },
     });
-  }
+  },
   async updateVacancy(id: string, input: Partial<CreateVacancyInput>) {
     const data: any = {};
     if (input.store_id !== undefined) data.store_id = BigInt(input.store_id);
     if (input.description !== undefined) data.description = input.description;
     if (input.state_id !== undefined) data.state_id = input.state_id ? BigInt(input.state_id) : null;
     return prisma.delivery_vacancies.update({ where: { id: BigInt(id) }, data });
-  }
+  },
   async deleteVacancy(id: string) {
     return prisma.delivery_vacancies.delete({ where: { id: BigInt(id) } });
-  }
-}
-export const deliveryVacanciesService = new DeliveryVacanciesService();
+  },
+};

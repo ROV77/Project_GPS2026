@@ -1,10 +1,10 @@
 /**
- * Pantalla de registro (visual). Sirve para cliente y, con `?role=courier`, para
- * repartidor (ajusta el título). La conexión real con `POST /api/auth/register-courier`
- * + sesión segura es Fase 2: por ahora el envío muestra un aviso.
+ * Pantalla de registro. Sin `?role` crea un usuario normal (POST
+ * /api/auth/register-customer); con `?role=courier` crea un repartidor
+ * (/register-courier). En ambos casos guarda el token e hidrata la sesión.
  */
 import { useState } from 'react';
-import { View, Pressable, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, User, Mail, Lock } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
@@ -13,19 +13,42 @@ import { Input } from '@/ui/Input';
 import { Button } from '@/ui/Button';
 import { BrandMark } from '@/ui/BrandMark';
 import { colors, fonts } from '@/ui/theme';
+import { registerCustomer, registerCourier } from '@/features/auth/api';
+import { useSession } from '@/features/auth/session.store';
+import { getApiErrorMessage } from '@/shared/api/errors';
 
 export default function Register() {
   const router = useRouter();
   const { role } = useLocalSearchParams<{ role?: string }>();
   const isCourier = role === 'courier';
+  const signIn = useSession((s) => s.signIn);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = () => {
-    // TODO(Fase 2): registerService/registerCourierService → token → router.replace('/(public)').
-    Alert.alert('Próximamente', 'El registro estará disponible en la siguiente fase.');
+  const onSubmit = async () => {
+    const mail = email.trim();
+    if (name.trim().length < 2 || !mail.includes('@') || password.length < 6) {
+      setError('Completa tu nombre, un correo válido y una contraseña de al menos 6 caracteres.');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      const payload = { name: name.trim(), email: mail, password };
+      const { token } = isCourier
+        ? await registerCourier(payload)
+        : await registerCustomer(payload);
+      await signIn(token);
+      router.replace('/(public)/account');
+    } catch (e) {
+      setError(getApiErrorMessage(e, 'No se pudo crear la cuenta.'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -75,8 +98,18 @@ export default function Register() {
             icon={<Lock size={20} color={colors.mutedForeground} strokeWidth={2} />}
           />
 
+          {error && (
+            <Text variant="caption" style={{ color: colors.destructive }}>
+              {error}
+            </Text>
+          )}
+
           <View className="mt-2">
-            <Button label={isCourier ? 'Crear cuenta de repartidor' : 'Crear cuenta'} onPress={onSubmit} />
+            <Button
+              label={isCourier ? 'Crear cuenta de repartidor' : 'Crear cuenta'}
+              onPress={onSubmit}
+              loading={loading}
+            />
           </View>
         </View>
 

@@ -37,6 +37,17 @@ export async function findUserByEmail(email: string) {
 }
 
 /**
+ * Actualiza el perfil propio del usuario (name/phone/avatar_url). Solo los
+ * campos presentes; usado por PATCH /auth/me (scopeado al usuario logueado).
+ */
+export async function updateUserProfile(
+  userId: bigint,
+  data: { name?: string; phone?: string; avatar_url?: string },
+) {
+  return prisma.users.update({ where: { id: userId }, data });
+}
+
+/**
  * Usuario por id junto a su tienda (modelo de negocio: una cuenta = una tienda).
  * Se usa en GET /auth/me para hidratar la sesión del panel.
  */
@@ -88,14 +99,13 @@ export async function createUserWithStore(input: {
 }
 
 /**
- * Crea la cuenta de un repartidor (sin tienda) y le asigna el rol `delivery`.
- * El password ya viene hasheado. Devuelve el usuario creado.
+ * Crea una cuenta simple (sin tienda) con un rol dado, en una transacción.
+ * Base de los registros de repartidor (`delivery`) y cliente (`customer`).
  */
-export async function createCourierUser(input: {
-  name: string;
-  email: string;
-  passwordHash: string;
-}) {
+async function createUserWithRole(
+  input: { name: string; email: string; passwordHash: string },
+  roleName: string,
+) {
   return prisma.$transaction(async (tx) => {
     const user = await tx.users.create({
       data: {
@@ -104,7 +114,47 @@ export async function createCourierUser(input: {
         password_hash: input.passwordHash,
       },
     });
-    await assignRole(tx, user.id, 'delivery');
+    await assignRole(tx, user.id, roleName);
     return user;
+  });
+}
+
+/** Crea un repartidor (rol `delivery`). El password ya viene hasheado. */
+export function createCourierUser(input: {
+  name: string;
+  email: string;
+  passwordHash: string;
+}) {
+  return createUserWithRole(input, 'delivery');
+}
+
+/** Crea un cliente/usuario normal (rol `customer`). El password ya viene hasheado. */
+export function createCustomerUser(input: {
+  name: string;
+  email: string;
+  passwordHash: string;
+}) {
+  return createUserWithRole(input, 'customer');
+}
+
+/**
+ * Agrega un rol al usuario si aún no lo tiene (idempotente). Permite que un
+ * mismo correo acumule roles (p.ej. un cliente que además se vuelve repartidor).
+ */
+export async function addRoleIfMissing(userId: bigint, roleName: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const role = await tx.roles.upsert({
+      where: { name: roleName },
+      update: {},
+      create: { name: roleName },
+    });
+    const existing = await tx.user_roles.findFirst({
+      where: { user_id: userId, role_id: role.id },
+    });
+    if (!existing) {
+      await tx.user_roles.create({
+        data: { user_id: userId, role_id: role.id },
+      });
+    }
   });
 }

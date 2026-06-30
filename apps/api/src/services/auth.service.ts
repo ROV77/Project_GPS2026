@@ -2,10 +2,17 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { HttpError } from '../lib/httpError';
-import type { RegisterInput, RegisterCourierInput } from '@caserita/validations';
+import type {
+  RegisterInput,
+  RegisterCourierInput,
+  UpdateProfileInput,
+} from '@caserita/validations';
 import {
   createUserWithStore,
   createCourierUser,
+  createCustomerUser,
+  addRoleIfMissing,
+  updateUserProfile,
   findUserByEmail,
   findUserWithStoreById,
   getRoleNames,
@@ -104,6 +111,53 @@ export async function registerCourierService(input: RegisterCourierInput) {
       roles: ['delivery'],
     },
   };
+}
+
+/**
+ * Registra un usuario/cliente normal: crea su cuenta con rol `customer` y
+ * devuelve el mismo shape que el login ({ token, user }). Lanza 409 si el
+ * email ya existe.
+ */
+export async function registerCustomerService(input: RegisterCourierInput) {
+  const existing = await findUserByEmail(input.email);
+  if (existing) {
+    throw new HttpError(409, 'El correo ya está registrado');
+  }
+
+  const user = await createCustomerUser({
+    name: input.name,
+    email: input.email,
+    passwordHash: bcrypt.hashSync(input.password, 10),
+  });
+
+  return {
+    token: signToken(user.id),
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      roles: ['customer'],
+    },
+  };
+}
+
+/**
+ * Convierte al usuario logueado en repartidor: le suma el rol `delivery` a su
+ * cuenta existente (idempotente). Así un mismo correo puede ser cliente y
+ * repartidor. Devuelve su perfil + roles actualizados.
+ */
+export async function becomeCourierService(userId: bigint) {
+  await addRoleIfMissing(userId, 'delivery');
+  return getMeService(userId);
+}
+
+/**
+ * Actualiza el perfil propio del usuario logueado y devuelve el mismo shape que
+ * getMe ({ user, store }) para refrescar la sesión en el cliente.
+ */
+export async function updateMeService(userId: bigint, input: UpdateProfileInput) {
+  await updateUserProfile(userId, input);
+  return getMeService(userId);
 }
 
 /** Devuelve el usuario logueado, su tienda y sus roles (para hidratar el panel). */

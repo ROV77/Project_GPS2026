@@ -35,13 +35,14 @@ export default function Splash() {
       }),
     ]).start();
 
-    // Decidir el destino en paralelo a la animación: si el onboarding ya se vio,
-    // saltarlo y entrar directo al acceso. Garantizamos el mínimo de splash.
+    // Decidir el destino en paralelo a la animación: la primera vez mostramos el
+    // onboarding; luego se entra directo a explorar (zona pública, sin login).
+    // Garantizamos el mínimo de splash.
     let cancelled = false;
     (async () => {
       const seen = await hasSeenOnboarding();
       await new Promise((resolve) => setTimeout(resolve, SPLASH_MS));
-      if (!cancelled) router.replace(seen ? '/welcome' : '/onboarding');
+      if (!cancelled) router.replace(seen ? '/(public)' : '/onboarding');
     })();
     return () => {
       cancelled = true;

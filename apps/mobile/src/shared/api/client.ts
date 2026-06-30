@@ -30,13 +30,17 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Ante 401 (token vencido/ inválido) se borra el token. La navegación a la
-// pantalla de login la decide la capa de sesión cuando exista el flujo auth.
+// Ante 401 (token vencido/inválido) se borra el token y se limpia el perfil en
+// memoria. El store se carga con import dinámico para romper el ciclo de imports
+// (client → features/auth/api → session.store → client). La navegación a login
+// la deciden las pantallas que leen el estado de sesión.
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
       await deleteToken();
+      const { useSession } = await import('@/features/auth/session.store');
+      await useSession.getState().logout();
     }
     return Promise.reject(error);
   },
