@@ -153,6 +153,9 @@ vite.config.ts.timestamp-*
 .Spotlight-V100
 .Trashes
 
+# Carpeta de notas personales (no versionar)
+cosita/
+
 # Claude Code (configuración personal local)
 .claude/settings.local.json
 .claude/settings.json
