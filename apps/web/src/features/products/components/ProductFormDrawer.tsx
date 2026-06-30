@@ -5,8 +5,10 @@ import { toast } from 'sonner';
 import { createProductSchema, type CreateProductInput } from '@caserita/validations';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
-import { Button, Drawer, Field, Input, NumberInput, Switch, Textarea } from '@/shared/ui';
+import { Button, CurrencyInput, Drawer, Field, Input, Switch, Textarea } from '@/shared/ui';
 import { useCreateProduct, useUpdateProduct } from '../hooks/useProducts';
+import { ProductImageUploader } from './ProductImageUploader';
+import { StockSelect } from './StockSelect';
 import type { Product } from '../types';
 
 const emptyDefaults: Partial<CreateProductInput> = {
@@ -14,7 +16,6 @@ const emptyDefaults: Partial<CreateProductInput> = {
   description: '',
   price: 0,
   stock: 0,
-  image_url: '',
   featured: false,
 };
 
@@ -66,7 +67,7 @@ export function ProductFormDrawer({
         description: product.description ?? '',
         price: Number(product.price),
         stock: product.stock,
-        image_url: product.image_url ?? '',
+        image_url: product.image_url ?? undefined,
         featured: product.featured,
       });
     } else {
@@ -141,7 +142,7 @@ export function ProductFormDrawer({
           name="price"
           control={control}
           render={({ field }) => (
-            <NumberInput min={0} value={field.value} onChange={field.onChange} invalid={!!errors.price} />
+            <CurrencyInput value={field.value} onChange={field.onChange} invalid={!!errors.price} />
           )}
         />
       </Field>
@@ -151,22 +152,17 @@ export function ProductFormDrawer({
           name="stock"
           control={control}
           render={({ field }) => (
-            <NumberInput min={0} value={field.value} onChange={field.onChange} invalid={!!errors.stock} />
+            <StockSelect value={field.value} onChange={field.onChange} invalid={!!errors.stock} />
           )}
         />
       </Field>
 
-      <Field label="URL de imagen" error={errors.image_url?.message}>
+      <Field label="Imagen" error={errors.image_url?.message}>
         <Controller
           name="image_url"
           control={control}
           render={({ field }) => (
-            <Input
-              value={field.value ?? ''}
-              onChange={field.onChange}
-              invalid={!!errors.image_url}
-              placeholder="https://..."
-            />
+            <ProductImageUploader value={field.value} onChange={field.onChange} />
           )}
         />
       </Field>
