@@ -3,6 +3,7 @@ import {
   loginSchema,
   registerSchema,
   registerCourierSchema,
+  updateProfileSchema,
 } from '@caserita/validations';
 import { validateBody } from '../middlewares/validate';
 import { requireAuth } from '../middlewares/requireAuth';
@@ -10,6 +11,9 @@ import {
   login,
   register,
   registerCourier,
+  registerCustomer,
+  becomeCourier,
+  updateMe,
   me,
 } from '../controllers/auth.controller';
 
@@ -28,5 +32,19 @@ authRouter.post(
   registerCourier,
 );
 
+// POST /api/auth/register-customer → { token, user } (cuenta + rol customer)
+// Mismo body que courier (name/email/password): reutiliza su schema.
+authRouter.post(
+  '/register-customer',
+  validateBody(registerCourierSchema),
+  registerCustomer,
+);
+
+// POST /api/auth/become-courier → { user, store } (suma rol delivery al usuario logueado)
+authRouter.post('/become-courier', requireAuth, becomeCourier);
+
 // GET /api/auth/me → { user, store } (requiere Bearer token)
 authRouter.get('/me', requireAuth, me);
+
+// PATCH /api/auth/me → { user, store } (actualiza el perfil propio: name/phone/avatar_url)
+authRouter.patch('/me', requireAuth, validateBody(updateProfileSchema), updateMe);

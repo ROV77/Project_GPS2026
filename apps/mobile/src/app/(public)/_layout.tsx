@@ -1,10 +1,15 @@
 import { Tabs } from 'expo-router';
 import { Compass, Map as MapIcon, User } from 'lucide-react-native';
 import { colors, fonts } from '@/ui/theme';
+import { useSession } from '@/features/auth/session.store';
 
 // Navegación principal del cliente: 3 pestañas. Activo en navy de marca,
 // inactivo en muted. Fondo blanco con borde superior fino (look limpio y plano).
 export default function PublicLayout() {
+  // Sin sesión, la pestaña Cuenta muestra un aviso "!" para invitar a entrar.
+  const status = useSession((s) => s.status);
+  const showAccountBadge = status === 'anonymous';
+
   return (
     <Tabs
       screenOptions={{
@@ -37,6 +42,13 @@ export default function PublicLayout() {
         options={{
           title: 'Cuenta',
           tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          tabBarBadge: showAccountBadge ? '!' : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.amber,
+            color: colors.white,
+            fontSize: 10,
+            fontFamily: fonts.bold,
+          },
         }}
       />
       {/* Detalle de tienda: navegable desde las tarjetas, oculto de la TabBar. */}

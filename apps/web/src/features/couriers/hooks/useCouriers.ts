@@ -61,11 +61,19 @@ export function useDeleteVacancy() {
 
 // --- Applications ---
 
-export function useApplications(params: PageParams & { vacancy_id?: string }) {
+export function useApplications(params: PageParams & { vacancy_id?: string; store_id?: string; courier_id?: string }) {
   return useQuery({
     queryKey: [APPLICATIONS_KEY, params],
     queryFn: () => applicationsApi.list(params),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useCreateApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: applicationsApi.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: [APPLICATIONS_KEY] }),
   });
 }
 
@@ -79,7 +87,7 @@ export function useUpdateApplication() {
 
 // --- Ratings ---
 
-export function useCourierRatings(params: PageParams & { store_id?: string }) {
+export function useCourierRatings(params: PageParams & { store_id?: string; courier_id?: string }) {
   return useQuery({
     queryKey: [RATINGS_KEY, params],
     queryFn: () => courierRatingsApi.list(params),

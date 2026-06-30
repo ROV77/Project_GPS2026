@@ -12,6 +12,13 @@ export interface CourierApplication {
   courier_id: string;
   state_id: string | null;
   applied_at: Date;
+  users?: {
+    name: string | null;
+    email: string;
+  };
+  delivery_vacancies?: {
+    description: string | null;
+  };
 }
 
 export interface CourierRating {
@@ -21,23 +28,11 @@ export interface CourierRating {
   stars: number | null;
   comment: string | null;
   created_at: Date;
+  users?: {
+    name: string | null;
+  };
 }
 
-export interface CreateVacancyInput {
-  store_id: number;
-  description?: string;
-  state_id?: number;
-}
-
-export interface CreateApplicationInput {
-  vacancy_id: number;
-  courier_id: number;
-  state_id?: number;
-}
-
-export interface CreateCourierRatingInput {
-  courier_id: number;
-  store_id: number;
-  stars: number;
-  comment?: string;
-}
+// Los tipos de entrada (CreateVacancyInput, CreateApplicationInput,
+// CreateCourierRatingInput) viven en @caserita/validations, inferidos de sus
+// schemas Zod (z.infer). No se duplican aquí: una sola fuente de verdad.

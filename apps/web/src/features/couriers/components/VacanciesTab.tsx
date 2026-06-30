@@ -42,7 +42,7 @@ export function VacanciesTab() {
     { 
       key: 'description', 
       header: 'Descripción', 
-      render: (v) => <div className="max-w-md truncate">{v.description || 'Sin descripción'}</div> 
+      render: (v) => <div className="max-w-md whitespace-pre-wrap">{v.description || 'Sin descripción'}</div> 
     },
     { 
       key: 'created_at', 

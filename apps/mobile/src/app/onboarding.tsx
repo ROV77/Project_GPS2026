@@ -52,15 +52,16 @@ export default function Onboarding() {
   const isLast = index === SLIDES.length - 1;
 
   // Marcar como visto (tanto al terminar como al "Saltar") para no repetir el
-  // onboarding en próximas aperturas. La navegación no espera al guardado.
-  const goWelcome = () => {
+  // onboarding en próximas aperturas. Entra directo a explorar (sin login). La
+  // navegación no espera al guardado.
+  const finish = () => {
     void markOnboardingSeen();
-    router.replace('/welcome');
+    router.replace('/(public)');
   };
 
   const next = () => {
     if (isLast) {
-      goWelcome();
+      finish();
       return;
     }
     scrollRef.current?.scrollTo({ x: width * (index + 1), animated: true });
@@ -74,7 +75,7 @@ export default function Onboarding() {
     <Screen edges={{ top: true, bottom: true }}>
       {/* Saltar */}
       <View className="flex-row justify-end px-5 pt-2">
-        <Pressable onPress={goWelcome} hitSlop={8}>
+        <Pressable onPress={finish} hitSlop={8}>
           <Text variant="label">Saltar</Text>
         </Pressable>
       </View>

@@ -23,3 +23,30 @@ El módulo se construyó respetando la arquitectura de capas estándar del proye
 
 ## Validaciones Compartidas
 Se importan los *schemas* de Zod desde el paquete centralizado `@caserita/validations` (específicamente `delivery.schema.ts`). Estos se inyectan en `react-hook-form` usando `zodResolver`, asegurando que el frontend rechace errores de formato exactamente con las mismas reglas que el backend.
+
+## Usuario de Prueba (Repartidor)
+Para probar el panel del repartidor y sus funciones, se ha creado el siguiente usuario de prueba:
+- **Email:** `delivery@caserita.cl`
+- **Contraseña:** `demo123`
+
+## Secuencia de Pruebas (Flujo Completo)
+
+Para probar la integración completa entre una tienda y un repartidor, sigue estos pasos:
+
+1. **Creación de Vacante (Tienda):**
+   - Inicia sesión con un usuario que sea dueño de tienda (por ejemplo, `dueño1@caserita.cl` o el que estés usando).
+   - Dirígete al panel de administración de la tienda, sección Repartidores (`/dashboard/couriers`).
+   - En la pestaña "Bolsa de trabajo", haz clic en "Publicar Vacante", completa los datos (título, descripción, etc.) y guárdala.
+   
+2. **Postulación (Repartidor):**
+   - Cierra sesión y vuelve a entrar, esta vez con las credenciales del repartidor (`delivery@caserita.cl`).
+   - El sistema te redirigirá automáticamente al Panel de Repartidor (`/delivery-dashboard`).
+   - En la columna de "Oportunidades de Reparto", verás la vacante recién creada. Haz clic en el botón **"Postular"**.
+   - Notarás que la vacante desaparece de la lista de oportunidades y aparece en tu recuadro de "Mis Postulaciones" con el estado **Pendiente**.
+
+3. **Resolución de la Solicitud (Tienda):**
+   - Cierra sesión y vuelve a iniciar sesión como el dueño de la tienda.
+   - Navega nuevamente a `/dashboard/couriers` y abre la pestaña **"Postulaciones"**.
+   - Verás al usuario repartidor solicitando el puesto. 
+   - Utiliza los botones de acción para **Aceptar** o **Rechazar** al candidato.
+   - Si el repartidor vuelve a entrar a su panel, verá que el estado de su postulación cambió de "Pendiente" a "Aceptada" o "Rechazada".

@@ -1,8 +1,14 @@
 import { Request, Response } from 'express';
 import { courierRatingsService } from '../../services/delivery/courierRatings.service';
 
-export const getRatings = async (_req: Request, res: Response) => {
-  const data = await courierRatingsService.getAllRatings();
+export const getRatings = async (req: Request, res: Response) => {
+  const { store_id, courier_id, page, limit } = req.query;
+  const data = await courierRatingsService.getAllRatings({
+    store_id: store_id as string | undefined,
+    courier_id: courier_id as string | undefined,
+    page: page ? Number(page) : undefined,
+    limit: limit ? Number(limit) : undefined,
+  });
   res.json(data);
 };
 
