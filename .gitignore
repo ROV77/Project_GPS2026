@@ -155,6 +155,8 @@ vite.config.ts.timestamp-*
 
 # Graphify (análisis de codebase personal)
 graphify-out/
+# Carpeta de notas personales (no versionar)
+cosita/
 
 # Claude Code (configuración personal local)
 .claude/settings.local.json

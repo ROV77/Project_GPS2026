@@ -10,6 +10,7 @@ export * from './Field';
 export * from '@/components/ui/input';
 export * from './Textarea';
 export * from './NumberInput';
+export * from './CurrencyInput';
 export * from './PasswordInput';
 export * from './Checkbox';
 export * from './Select';

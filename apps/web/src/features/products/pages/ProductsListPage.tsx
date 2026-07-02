@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Search, Star, PackageX } from 'lucide-react';
+import { Dialog, DialogPanel } from '@headlessui/react';
+import { Plus, Pencil, Search, Star, PackageX, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { ConfirmDelete } from '@/shared/components/ConfirmDelete';
@@ -61,6 +62,7 @@ export function ProductsListPage() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [preview, setPreview] = useState<{ src: string; alt: string } | null>(null);
 
   const openCreate = () => {
     setEditing(null);
@@ -83,7 +85,19 @@ export function ProductsListPage() {
       key: 'thumb',
       header: '',
       width: 56,
-      render: (p) => <ProductThumb src={p.image_url} alt={p.name} />,
+      render: (p) =>
+        p.image_url ? (
+          <button
+            type="button"
+            onClick={() => setPreview({ src: p.image_url!, alt: p.name })}
+            className="block rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+            aria-label={`Ver imagen de ${p.name}`}
+          >
+            <ProductThumb src={p.image_url} alt={p.name} />
+          </button>
+        ) : (
+          <ProductThumb src={p.image_url} alt={p.name} />
+        ),
     },
     { key: 'name', header: 'Nombre', dataIndex: 'name' },
     { key: 'price', header: 'Precio', align: 'right', render: (p) => formatCLP(p.price) },
@@ -188,6 +202,30 @@ export function ProductsListPage() {
         storeId={myStore?.id}
         onClose={() => setDrawerOpen(false)}
       />
+
+      {/* Vista ampliada de la imagen del producto (clic en la miniatura de la tabla) */}
+      <Dialog open={!!preview} onClose={() => setPreview(null)} className="relative z-50">
+        <div className="fixed inset-0 bg-black/70" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="relative max-h-[85vh] max-w-lg">
+            {preview && (
+              <img
+                src={preview.src}
+                alt={preview.alt}
+                className="max-h-[85vh] w-full rounded-lg object-contain shadow-xl"
+              />
+            )}
+            <button
+              type="button"
+              onClick={() => setPreview(null)}
+              className="absolute -top-3 -right-3 flex size-8 items-center justify-center rounded-full bg-white text-slate-600 shadow-md hover:text-slate-900"
+              aria-label="Cerrar"
+            >
+              <X className="size-4" />
+            </button>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </>
   );
 }
