@@ -33,7 +33,7 @@ export const StoreFiltersSchema = z.object({
     .string()
     .regex(/^\d+$/)
     .transform(Number)
-    .pipe(z.number().min(1).max(100))
+    .pipe(z.number().min(1).max(200))
     .optional()
     .default('20'),
 });

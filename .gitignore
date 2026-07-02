@@ -153,6 +153,9 @@ vite.config.ts.timestamp-*
 .Spotlight-V100
 .Trashes
 
+# Graphify (análisis de codebase personal)
+graphify-out/
+
 # Claude Code (configuración personal local)
 .claude/settings.local.json
 .claude/settings.json

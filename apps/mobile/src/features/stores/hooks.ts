@@ -36,7 +36,8 @@ export function useStores(params: StoreSearchParams = {}): UseStoresState {
       try {
         const result = await searchStores(JSON.parse(key) as StoreSearchParams);
         setStores(result.data);
-      } catch {
+      } catch (err) {
+        console.error('[useStores] Error al cargar tiendas:', err);
         setError(true);
       } finally {
         setLoading(false);

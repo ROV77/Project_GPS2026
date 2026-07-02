@@ -36,6 +36,13 @@
         {
           "photosPermission": "Caserita usa tus fotos para que elijas tu foto de perfil."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Caserita usa tu ubicación para mostrarte las tiendas cercanas en el mapa.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
       ]
     ],
     "experiments": {

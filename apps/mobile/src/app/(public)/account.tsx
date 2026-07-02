@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { View, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike, User, Mail, Phone, Store as StoreIcon } from 'lucide-react-native';
+import { Bike, User, Phone, Store as StoreIcon } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
@@ -95,13 +95,38 @@ export default function AccountScreen() {
 
   return (
     <Screen>
-      {/* Header: título + avatar editable arriba a la derecha (solo con sesión). */}
-      <View className="flex-row items-center justify-between px-5 pb-4 pt-4">
-        <Text variant="title">Tu cuenta</Text>
+      {/* Header: nombre (autenticado) o "Cuenta" (anónimo) + avatar editable
+          a la derecha. El avatar ahora es más grande y con borde/sombra. */}
+      <View className="flex-row items-center justify-between px-5 pb-5 pt-4">
+        <View className="flex-1 pr-3">
+          {isAuth ? (
+            <>
+              <Text variant="title">{user.name ?? 'Usuario'}</Text>
+              <Text
+                variant="caption"
+                className="mt-1"
+                style={{ color: colors.mutedForeground }}
+              >
+                {user.email}
+              </Text>
+              {user.roles.length > 0 && (
+                <Text
+                  variant="caption"
+                  className="mt-0.5"
+                  style={{ color: colors.mutedForeground }}
+                >
+                  {user.roles.map((r) => ROLE_LABELS[r] ?? r).join(' · ')}
+                </Text>
+              )}
+            </>
+          ) : (
+            <Text variant="title">Cuenta</Text>
+          )}
+        </View>
         {isAuth && (
           <Avatar
             uri={user.avatar_url}
-            size={56}
+            size={72}
             onPress={onChangeAvatar}
             loading={avatarLoading}
           />
@@ -111,35 +136,16 @@ export default function AccountScreen() {
       <View className="gap-3 px-5">
         {isAuth ? (
           <Card>
-            <Text variant="subtitle">{user.name ?? 'Usuario'}</Text>
             {memberSince(user.created_at) && (
-              <Text variant="caption" className="mt-0.5">
+              <Text variant="caption">
                 Miembro desde {memberSince(user.created_at)}
               </Text>
             )}
 
-            <View className="mt-4 gap-2">
-              <View className="flex-row items-center gap-2">
-                <Mail size={16} color={colors.mutedForeground} strokeWidth={2} />
-                <Text variant="body">{user.email}</Text>
-              </View>
-              {user.phone && (
-                <View className="flex-row items-center gap-2">
-                  <Phone size={16} color={colors.mutedForeground} strokeWidth={2} />
-                  <Text variant="body">{user.phone}</Text>
-                </View>
-              )}
-            </View>
-
-            {user.roles.length > 0 && (
-              <View className="mt-4 flex-row flex-wrap gap-2">
-                {user.roles.map((r) => (
-                  <View key={r} className="rounded-lg bg-brand-50 px-2.5 py-1">
-                    <Text variant="caption" style={{ color: colors.brand[700] }}>
-                      {ROLE_LABELS[r] ?? r}
-                    </Text>
-                  </View>
-                ))}
+            {user.phone && (
+              <View className="mt-3 flex-row items-center gap-2">
+                <Phone size={16} color={colors.mutedForeground} strokeWidth={2} />
+                <Text variant="body">{user.phone}</Text>
               </View>
             )}
 
