@@ -22,8 +22,21 @@ export function Avatar({
 }) {
   const radius = size / 2;
 
+  // Borde blanco + sombra suave (elevation para Android, shadow* para iOS).
+  const shadowStyle = {
+    borderRadius: radius,
+    borderWidth: 2,
+    borderColor: colors.white,
+    backgroundColor: colors.white,
+    elevation: 4,
+    shadowColor: '#0f1d2e',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+  } as const;
+
   const inner = (
-    <View style={{ width: size, height: size }}>
+    <View style={{ width: size, height: size, ...shadowStyle }}>
       {uri ? (
         <Image
           source={uri}

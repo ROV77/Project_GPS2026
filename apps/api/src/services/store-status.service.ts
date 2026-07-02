@@ -1,4 +1,4 @@
-import type { StoreVisualStatus, StoreStatusResult } from '@caserita/shared-types';
+import type { StoreVisualStatus, StoreStatusResult } from '../types/store.types';
 
 // ─── Constantes configurables ────────────────────────────────────────────────
 

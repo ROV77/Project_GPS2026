@@ -13,6 +13,10 @@ export interface Store {
   description: string | null;
   logo_url: string | null;
   verified: boolean;
+  /** La API devuelve Decimal como string (Prisma $queryRaw), pero puede llegar como number. */
+  latitude: string | number | null;
+  /** La API devuelve Decimal como string (Prisma $queryRaw), pero puede llegar como number. */
+  longitude: string | number | null;
   region_name: string | null;
   commune_name: string | null;
   commune_city: string | null;

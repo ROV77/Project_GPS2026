@@ -1,18 +1,14 @@
-import { Router } from 'express';
-import { validateBody } from '../../middlewares/validate';
+import { prisma } from '../../config/prisma';
+import { makeCrud } from '../../lib/crud';
+import { crudRouter } from '../../lib/router';
 import { CreateCourierRatingSchema, UpdateCourierRatingSchema } from '@caserita/validations';
-import {
-  getRatings,
-  getRatingById,
-  createRating,
-  updateRating,
-  deleteRating,
-} from '../../controllers/delivery/courierRatings.controller';
 
-export const courierRatingsRouter = Router();
+const crud = makeCrud(prisma.courier_ratings, CreateCourierRatingSchema, UpdateCourierRatingSchema, {
+  transform: (data) => ({
+    ...data,
+    ...(data.courier_id !== undefined ? { courier_id: BigInt(data.courier_id as number) } : {}),
+    ...(data.store_id !== undefined ? { store_id: BigInt(data.store_id as number) } : {}),
+  }),
+});
 
-courierRatingsRouter.get('/', getRatings);
-courierRatingsRouter.get('/:id', getRatingById);
-courierRatingsRouter.post('/', validateBody(CreateCourierRatingSchema), createRating);
-courierRatingsRouter.put('/:id', validateBody(UpdateCourierRatingSchema), updateRating);
-courierRatingsRouter.delete('/:id', deleteRating);
+export const courierRatingsRouter = crudRouter(crud);

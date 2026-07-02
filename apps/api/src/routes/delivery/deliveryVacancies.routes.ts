@@ -1,18 +1,16 @@
-import { Router } from 'express';
-import { validateBody } from '../../middlewares/validate';
+import { prisma } from '../../config/prisma';
+import { makeCrud } from '../../lib/crud';
+import { crudRouter } from '../../lib/router';
 import { CreateVacancySchema, UpdateVacancySchema } from '@caserita/validations';
-import {
-  getVacancies,
-  getVacancyById,
-  createVacancy,
-  updateVacancy,
-  deleteVacancy,
-} from '../../controllers/delivery/deliveryVacancies.controller';
 
-export const deliveryVacanciesRouter = Router();
+const crud = makeCrud(prisma.delivery_vacancies, CreateVacancySchema, UpdateVacancySchema, {
+  transform: (data) => ({
+    ...data,
+    ...(data.store_id !== undefined ? { store_id: BigInt(data.store_id as number) } : {}),
+    ...(data.state_id !== undefined
+      ? { state_id: data.state_id ? BigInt(data.state_id as number) : null }
+      : {}),
+  }),
+});
 
-deliveryVacanciesRouter.get('/', getVacancies);
-deliveryVacanciesRouter.get('/:id', getVacancyById);
-deliveryVacanciesRouter.post('/', validateBody(CreateVacancySchema), createVacancy);
-deliveryVacanciesRouter.put('/:id', validateBody(UpdateVacancySchema), updateVacancy);
-deliveryVacanciesRouter.delete('/:id', deleteVacancy);
+export const deliveryVacanciesRouter = crudRouter(crud);

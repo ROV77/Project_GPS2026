@@ -36,30 +36,6 @@ export interface StoreStatusResult {
   minutesUntilClose: number | null;
 }
 
-// ─── Horarios por día de la semana ───────────────────────────────────────────
-
-/** Horario de un día de la semana */
-export interface DaySchedule {
-  id: string;
-  store_id: string;
-  /** 0 = domingo, 1 = lunes, ..., 6 = sábado (convención JS Date.getDay()) */
-  day_of_week: number;
-  is_closed: boolean;
-  opening_time: string | null;
-  closing_time: string | null;
-}
-
-/** Nombres de los días en español, indexados por day_of_week */
-export const DAY_NAMES: Record<number, string> = {
-  0: 'Domingo',
-  1: 'Lunes',
-  2: 'Martes',
-  3: 'Miércoles',
-  4: 'Jueves',
-  5: 'Viernes',
-  6: 'Sábado',
-};
-
 // ─── Fila del listado de tiendas ─────────────────────────────────────────────
 
 /** Fila del listado de tiendas con rating promedio (resultado del raw query) */

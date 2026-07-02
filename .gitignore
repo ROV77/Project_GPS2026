@@ -153,6 +153,8 @@ vite.config.ts.timestamp-*
 .Spotlight-V100
 .Trashes
 
+# Graphify (análisis de codebase personal)
+graphify-out/
 # Carpeta de notas personales (no versionar)
 cosita/
 

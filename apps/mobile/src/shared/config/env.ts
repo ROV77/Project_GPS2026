@@ -6,5 +6,5 @@
  * LAN del PC (no `localhost`). Ver apps/mobile/.env.example.
  */
 export const env = {
-  apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000',
+  apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000",
 } as const;
