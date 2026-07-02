@@ -1,11 +1,6 @@
 import type { ReactNode } from 'react';
-import { Loader2, Inbox } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-/** Spinner de carga reutilizable. */
-export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cn('size-5 animate-spin text-slate-400', className)} />;
-}
 
 /** Estado vacío para listas o paneles sin datos. */
 export function EmptyState({

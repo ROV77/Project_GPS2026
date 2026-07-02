@@ -22,8 +22,3 @@ export function getStoreLocationMetadata(metadata: unknown): StoreAddressMetadat
   // Compatibilidad con registros antiguos que solo guardaban `address`.
   return { address, street: address.split(',')[0]?.trim() ?? '', number: '' };
 }
-
-/** @deprecated Usa getStoreLocationMetadata */
-export function getStoreAddress(metadata: unknown): string {
-  return getStoreLocationMetadata(metadata).address;
-}

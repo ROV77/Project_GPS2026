@@ -1,27 +1,43 @@
 /**
  * Pestaña Mapa. Muestra los comercios geolocalizados sobre un mapa interactivo
- * (react-native-maps). Pide permiso de ubicación con expo-location y, si se
- * concede, centra el mapa en el usuario; si no, cae a un punto por defecto
- * (Santiago) y muestra un aviso. El mapa es libre: scroll, zoom y arrastre.
+ * con clustering (react-native-map-clustering sobre react-native-maps + tiles
+ * CARTO). Pide permiso de ubicación con expo-location y, si se concede, centra
+ * el mapa en el usuario; si no, cae a un punto por defecto (Santiago).
  *
- * Las tiendas llegan con `latitude`/`longitude` (pueden ser null si el dueño
- * aún no las geolocaliza); aquí solo se marcan las que sí tienen coordenadas.
- * Al pulsar un marcador se abre el detalle de tienda (/store/[id]).
+ * Los markers renderizan SIEMPRE todas las tiendas geolocalizadas que pasan el
+ * filtro de búsqueda/categoría (el clustering absorbe el costo), así nunca
+ * "desaparecen" al mover el mapa.
+ *
+ * Tocar un marker selecciona la tienda y abre StoreDetailSheet con su info —
+ * es la ÚNICA forma de ver el detalle (sin carrusel: se quitó porque su
+ * sincronía con el mapa —scrollToIndex → onViewableItemsChanged →
+ * animateToRegion— causaba que, al tocar una tienda cerca de otra, el mapa
+ * "rebotara" entre ambas antes de asentarse). Tocar el mapa vacío deselecciona
+ * y cierra el sheet.
+ *
+ * El buscador + chips de categoría se colapsan (altura animada) mientras el
+ * usuario arrastra el mapa (onPanDrag), y vuelven ~400ms después de soltar
+ * (onRegionChangeComplete) — más espacio real para explorar sin estorbos.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ActivityIndicator, Linking, Platform, LayoutAnimation, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, ActivityIndicator, Linking, Platform } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import * as Location from 'expo-location';
-import MapView, { UrlTile } from 'react-native-maps';
-import { AlertTriangle, Star, BadgeCheck, MapPin } from 'lucide-react-native';
+import ClusteredMapView from 'react-native-map-clustering';
+import { UrlTile } from 'react-native-maps';
+import type BottomSheet from '@gorhom/bottom-sheet';
+import { AlertTriangle } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
-import { RemoteImage } from '@/ui/RemoteImage';
 import { colors } from '@/ui/theme';
 import { useStores } from '@/features/stores/hooks';
 import { StoreMarker } from '@/components/StoreMarker';
+import { ClusterMarker } from '@/components/ClusterMarker';
+import { StoreDetailSheet } from '@/components/StoreDetailSheet';
+import { SearchBar } from '@/components/SearchBar';
+import { CategoryChips, type Category } from '@/components/CategoryChips';
 import type { Store } from '@/features/stores/types';
 
 // Punto por defecto si el usuario no otorga permiso o la geolocalización falla.
@@ -32,51 +48,65 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.25,
 };
 
+// Altura del bloque SearchBar + CategoryChips (fija por diseño, ver componentes).
+const FILTERS_HEIGHT = 108;
+
 type PermState = 'undetermined' | 'granted' | 'denied';
 
 export default function MapScreen() {
-  const router = useRouter();
-  const { stores, loading, error, reload } = useStores({ limit: 200 });
+  // ponytail: carga total de tiendas de una vez; si algún día superan ~500,
+  // crear endpoint nearby con bounding box en la API.
+  const { stores, loading, error, reload } = useStores({ limit: 500 });
 
   const [perm, setPerm] = useState<PermState>('undetermined');
   const [region, setRegion] = useState(DEFAULT_REGION);
-  const [filterRegion, setFilterRegion] = useState(DEFAULT_REGION);
   const [locating, setLocating] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<string | null>(null);
 
-  // Debounce: cuando el usuario termina de mover/hacer zoom (350ms), copia
-  // `region` a `filterRegion`. Así el costoso useMemo de filtrado por viewport
-  // solo corre al detener el gesto, no en cada frame intermedio.
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleRegionChangeComplete = useCallback((r: typeof DEFAULT_REGION) => {
-    setRegion(r);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setFilterRegion(r), 350);
-  }, []);
+  const sheetRef = useRef<BottomSheet>(null);
+  // react-native-map-clustering fija sus valores por defecto (mapRef,
+  // clusteringEnabled, onMarkersChange, onClusterPress, superClusterRef) vía
+  // `Component.defaultProps`, mecanismo que React 19 ya no soporta en
+  // componentes de función/forwardRef. Sin pasarlos explícitos, quedan
+  // `undefined`: `mapRef` revienta al montar/desmontar y `clusteringEnabled`
+  // (falsy) desactiva el clustering en silencio. Se pasan todos a mano.
+  const superClusterRef = useRef(null);
+  const filtersHeight = useSharedValue(FILTERS_HEIGHT);
 
-  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
+  const filtersStyle = useAnimatedStyle(() => ({
+    height: filtersHeight.value,
+    overflow: 'hidden',
+  }));
 
+  // Arrastrar el mapa colapsa el buscador/chips para dar más espacio.
+  const handlePanDrag = useCallback(() => {
+    filtersHeight.value = withTiming(0, { duration: 180 });
+  }, [filtersHeight]);
+
+  // Al soltar el gesto, el buscador/chips reaparecen tras una pausa breve.
+  const handleRegionChangeComplete = useCallback(() => {
+    filtersHeight.value = withDelay(400, withTiming(FILTERS_HEIGHT, { duration: 220 }));
+  }, [filtersHeight]);
+
+  // Tocar un marker selecciona la tienda y abre el sheet — sin mover el mapa
+  // ni depender de ningún otro componente (evita el rebote del carrusel).
   const handleMarkerPress = useCallback((id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSelectedId(id);
+    sheetRef.current?.snapToIndex(1);
   }, []);
 
-  // Tap en zona vacía del mapa → vuelve a pantalla completa.
+  // Tap en zona vacía del mapa → deselecciona y cierra el sheet.
   const handleMapPress = useCallback(() => {
-    if (selectedId !== null) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setSelectedId(null);
-    }
-  }, [selectedId]);
-
-  const handleGoToStore = useCallback(() => {
-    if (selectedId) router.push(`/store/${selectedId}`);
-  }, [router, selectedId]);
+    setSelectedId(null);
+    sheetRef.current?.close();
+  }, []);
 
   // Al montar, pedir permiso y obtener la ubicación del usuario.
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    
+
     (async () => {
       try {
         // Timeout de 10 segundos para no quedarse atascado
@@ -85,7 +115,7 @@ export default function MapScreen() {
           setPerm('denied');
           setLocating(false);
         }, 10000);
-        
+
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           setPerm('denied');
@@ -97,14 +127,12 @@ export default function MapScreen() {
         const pos = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
-        const userRegion = {
+        setRegion({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
           latitudeDelta: 0.08,
           longitudeDelta: 0.08,
-        };
-        setRegion(userRegion);
-        setFilterRegion(userRegion);
+        });
         if (timeoutId) clearTimeout(timeoutId);
       } catch (err) {
         console.log('[MAP] Error de ubicación:', err);
@@ -114,7 +142,7 @@ export default function MapScreen() {
         setLocating(false);
       }
     })();
-    
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
@@ -133,31 +161,28 @@ export default function MapScreen() {
     [stores],
   );
 
-  // Filtra las tiendas geolocalizadas al bounding box del viewport actual.
-  // Usa `filterRegion` (con debounce) para no recalcular en cada frame intermedio
-  // del gesto. Solo recalcula ~350ms tras terminar de mover/zoom.
-  const visibleStores: Store[] = useMemo(() => {
-    const minLat = filterRegion.latitude - filterRegion.latitudeDelta / 2;
-    const maxLat = filterRegion.latitude + filterRegion.latitudeDelta / 2;
-    const minLng = filterRegion.longitude - filterRegion.longitudeDelta / 2;
-    const maxLng = filterRegion.longitude + filterRegion.longitudeDelta / 2;
-    return geoStores.filter((s) => {
-      const lat = Number(s.latitude);
-      const lng = Number(s.longitude);
-      return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
-    });
-  }, [geoStores, filterRegion]);
+  // Categorías derivadas de las tiendas geolocalizadas (+ "Todos"), igual que Explorar.
+  const categories = useMemo<Category[]>(() => {
+    const names = Array.from(
+      new Set(geoStores.map((s) => s.category_name).filter((n): n is string => !!n)),
+    ).sort();
+    return [{ id: null, name: 'Todos' }, ...names.map((n) => ({ id: n, name: n }))];
+  }, [geoStores]);
 
-  // Tienda seleccionada (se muestra en panel inferior). Anima el cambio de tamaño.
+  // Tiendas filtradas por búsqueda + categoría. Alimenta los markers.
+  const filteredStores: Store[] = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return geoStores.filter((s) => {
+      const byCat = !category || s.category_name === category;
+      const byText = !q || s.name.toLowerCase().includes(q);
+      return byCat && byText;
+    });
+  }, [geoStores, search, category]);
+
   const selectedStore = useMemo(
     () => geoStores.find((s) => s.id === selectedId) ?? null,
     [geoStores, selectedId],
   );
-
-  const rating = selectedStore ? Number(selectedStore.avg_rating) || 0 : 0;
-  const meta = selectedStore
-    ? [selectedStore.category_name, selectedStore.commune_city].filter(Boolean).join(' \u00b7 ')
-    : '';
 
   // Abrir ajustes del sistema cuando se negó el permiso y el usuario quiere
   // habilitarlo manualmente.
@@ -167,29 +192,30 @@ export default function MapScreen() {
 
   return (
     <Screen>
-      {/* Título + subtítulo */}
-      <View className="px-5 pb-3 pt-3">
+      {/* Título + estado de carga/error (siempre visible, no colapsa) */}
+      <View className="px-5 pb-2 pt-3">
         <Text variant="title">Mapa de tiendas</Text>
-        <Text variant="caption" className="mt-1">
-          Mueve y haz zoom sobre el mapa para explorar los comercios cercanos.
-        </Text>
-        <Text variant="caption" className="mt-1" style={{ color: colors.mutedForeground }}>
-          {error
-            ? 'Error al cargar tiendas'
-            : loading
-              ? 'Cargando tiendas...'
-              : `${visibleStores.length} tiendas visibles de ${geoStores.length} con ubicación`}
-        </Text>
         {error && (
-          <View className="mt-2">
-            <Button
-              label="Reintentar"
-              variant="secondary"
-              onPress={reload}
-            />
-          </View>
+          <>
+            <Text variant="caption" className="mt-1" style={{ color: colors.destructive }}>
+              Error al cargar tiendas
+            </Text>
+            <View className="mt-2">
+              <Button label="Reintentar" variant="secondary" onPress={reload} />
+            </View>
+          </>
         )}
       </View>
+
+      {/* Buscador + chips de categoría: se colapsan mientras se arrastra el mapa */}
+      <Animated.View style={filtersStyle}>
+        <View className="px-5 pb-3">
+          <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar tiendas en el mapa" />
+        </View>
+        <View className="pb-3">
+          <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
+        </View>
+      </Animated.View>
 
       <View className="mx-5 flex-1 overflow-hidden rounded-2xl border bg-card" style={{ borderColor: colors.border }}>
         {locating ? (
@@ -199,9 +225,27 @@ export default function MapScreen() {
           </View>
         ) : (
           <View style={{ flex: 1 }}>
-            <MapView
+            <ClusteredMapView
+              mapRef={() => {}}
+              superClusterRef={superClusterRef}
+              clusteringEnabled
+              onMarkersChange={() => {}}
+              onClusterPress={() => {}}
+              // Burbuja de cluster propia (ver ClusterMarker.tsx): la del
+              // ClusterMarker interno de la librería anida un halo
+              // position:absolute que en Android (Fabric) a veces se
+              // snapshotea a medio layout y sale recortado/glitcheado.
+              renderCluster={(cluster) => (
+                <ClusterMarker
+                  key={`cluster-${cluster.id}`}
+                  onPress={cluster.onPress}
+                  geometry={cluster.geometry}
+                  properties={cluster.properties}
+                />
+              )}
               initialRegion={region}
               onPress={handleMapPress}
+              onPanDrag={handlePanDrag}
               onRegionChangeComplete={handleRegionChangeComplete}
               showsUserLocation={perm === 'granted'}
               showsMyLocationButton={perm === 'granted'}
@@ -209,7 +253,17 @@ export default function MapScreen() {
               showsBuildings={false}
               showsTraffic={false}
               mapType={Platform.OS === 'android' ? 'none' : 'standard'}
-              style={{ flex: selectedStore ? 0.58 : 1 }}
+              style={{ flex: 1 }}
+              radius={60}
+              minPoints={3}
+              maxZoom={20}
+              minZoom={1}
+              extent={512}
+              nodeSize={64}
+              spiralEnabled={false}
+              clusterColor={colors.brand[700]}
+              clusterTextColor={colors.white}
+              edgePadding={{ top: 50, left: 50, right: 50, bottom: 50 }}
             >
               <UrlTile
                 urlTemplate="https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
@@ -217,19 +271,35 @@ export default function MapScreen() {
                 flipY={false}
                 tileSize={256}
               />
-              {visibleStores.map((s) => (
+              {filteredStores.map((s) => (
                 <StoreMarker
                   key={s.id}
                   store={s}
+                  coordinate={{ latitude: Number(s.latitude), longitude: Number(s.longitude) }}
                   selected={s.id === selectedId}
                   onPress={handleMarkerPress}
                 />
               ))}
-            </MapView>
+            </ClusteredMapView>
             <View
               style={{
                 position: 'absolute',
-                bottom: 4,
+                top: 6,
+                left: 8,
+                backgroundColor: 'rgba(255,255,255,0.85)',
+                borderRadius: 4,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+              }}
+            >
+              <Text variant="caption" style={{ fontSize: 10, color: colors.mutedForeground }}>
+                {loading ? 'Cargando…' : `${filteredStores.length} tiendas`}
+              </Text>
+            </View>
+            <View
+              style={{
+                position: 'absolute',
+                top: 6,
                 right: 8,
                 backgroundColor: 'rgba(255,255,255,0.75)',
                 borderRadius: 4,
@@ -245,46 +315,6 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Panel inferior: info de la tienda seleccionada + botón Ver tienda */}
-      {selectedStore && (
-        <View className="mx-5 mt-3">
-          <Card>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <RemoteImage uri={selectedStore.logo_url} size={48} rounded={12} />
-              <View style={{ flexShrink: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <Text variant="subtitle" numberOfLines={1} style={{ flexShrink: 1 }}>
-                    {selectedStore.name}
-                  </Text>
-                  {selectedStore.verified ? (
-                    <BadgeCheck size={15} color={colors.brand[500]} strokeWidth={2} />
-                  ) : null}
-                </View>
-                {meta ? (
-                  <Text variant="caption" numberOfLines={1} style={{ marginTop: 2 }}>
-                    <MapPin size={11} color={colors.mutedForeground} /> {meta}
-                  </Text>
-                ) : null}
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                  <Star size={13} color={colors.amber} fill={colors.amber} strokeWidth={0} />
-                  <Text variant="caption" style={{ color: colors.foreground }}>
-                    {rating > 0 ? rating.toFixed(1) : 'Nuevo'}
-                  </Text>
-                  {selectedStore.review_count > 0 ? (
-                    <Text variant="caption">· {selectedStore.review_count} reseñas</Text>
-                  ) : null}
-                </View>
-              </View>
-            </View>
-            <View className="pt-3">
-              <Button
-                label="Ver tienda"
-                onPress={handleGoToStore}
-              />
-            </View>
-          </Card>
-        </View>
-      )}
       {perm === 'denied' && !locating && (
         <View className="mx-5 mt-3">
           <Card>
@@ -309,12 +339,7 @@ export default function MapScreen() {
         </View>
       )}
 
-      {loading && (
-        <View className="mt-3 flex-row items-center justify-center gap-2 pb-3">
-          <ActivityIndicator size="small" color={colors.brand[700]} />
-          <Text variant="caption">Cargando tiendas…</Text>
-        </View>
-      )}
+      <StoreDetailSheet ref={sheetRef} store={selectedStore} onClose={() => setSelectedId(null)} />
     </Screen>
   );
 }

@@ -34,8 +34,3 @@ export function getValidationIssues(
   }
   return null;
 }
-
-/** True si el error es un 409 (valor duplicado o referencia FK inválida). */
-export function isConflictError(error: unknown): boolean {
-  return isAxiosError(error) && error.response?.status === 409;
-}

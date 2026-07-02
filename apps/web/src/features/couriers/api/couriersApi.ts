@@ -1,24 +1,14 @@
 import { api } from '@/shared/api/client';
 import type { Paginated, Id, PageParams } from '@/shared/api/types';
-import type { 
-  CreateVacancyInput, UpdateVacancyInput, 
+import type {
+  CreateVacancyInput, UpdateVacancyInput,
   CreateApplicationInput, UpdateApplicationInput,
-  CreateCourierRatingInput
 } from '@caserita/validations';
 import type {
   DeliveryVacancy,
   CourierApplication,
   CourierRating,
-  AvailableCourier,
 } from '../types';
-
-export const couriersApi = {
-  // Repartidores disponibles (rol delivery); la tienda solo los visualiza.
-  listAvailable: () =>
-    api
-      .get<{ data: AvailableCourier[] }>('/couriers/available')
-      .then((r) => r.data.data),
-};
 
 export const vacanciesApi = {
   list: (params: PageParams & { store_id?: string }) => 
@@ -47,7 +37,4 @@ export const applicationsApi = {
 export const courierRatingsApi = {
   list: (params: PageParams & { store_id?: string; courier_id?: string }) =>
     api.get<Paginated<CourierRating>>('/courier-ratings', { params }).then((r) => r.data),
-  
-  create: (data: CreateCourierRatingInput) =>
-    api.post<CourierRating>('/courier-ratings', data).then((r) => r.data),
 };

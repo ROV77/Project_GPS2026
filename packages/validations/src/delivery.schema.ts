@@ -32,4 +32,3 @@ export type CreateApplicationInput = z.infer<typeof CreateApplicationSchema>;
 export type UpdateApplicationInput = z.infer<typeof UpdateApplicationSchema>;
 
 export type CreateCourierRatingInput = z.infer<typeof CreateCourierRatingSchema>;
-export type UpdateCourierRatingInput = z.infer<typeof UpdateCourierRatingSchema>;

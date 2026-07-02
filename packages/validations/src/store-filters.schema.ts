@@ -33,10 +33,9 @@ export const StoreFiltersSchema = z.object({
     .string()
     .regex(/^\d+$/)
     .transform(Number)
-    .pipe(z.number().min(1).max(200))
+    .pipe(z.number().min(1).max(500))
     .optional()
     .default('20'),
 });
 
 export type StoreFiltersInput = z.input<typeof StoreFiltersSchema>;
-export type StoreFiltersOutput = z.output<typeof StoreFiltersSchema>;

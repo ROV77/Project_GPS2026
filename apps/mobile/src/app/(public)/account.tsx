@@ -172,8 +172,9 @@ export default function AccountScreen() {
                 </Text>
               </View>
             </View>
-            <View className="pt-4">
+            <View className="gap-2 pt-4">
               <Button label="Iniciar sesión" onPress={() => router.push('/login')} />
+              <Button label="Crear cuenta" variant="secondary" onPress={() => router.push('/register')} />
             </View>
           </Card>
         )}

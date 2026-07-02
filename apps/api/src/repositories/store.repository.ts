@@ -7,7 +7,7 @@ import type {
   PaginationParams,
   PaginatedResponse,
   StoreWithRating,
-} from '@caserita/shared-types';
+} from '../types/store.types';
 
 // ─── Tipo interno para las filas del raw query (sin campos computados) ───────
 

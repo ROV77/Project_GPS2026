@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { Compass, Map as MapIcon, User } from 'lucide-react-native';
 import { colors, fonts } from '@/ui/theme';
 import { useSession } from '@/features/auth/session.store';
+import { AnimatedTabIcon } from '@/components/AnimatedTabIcon';
 
 // Navegación principal del cliente: 3 pestañas. Activo en navy de marca,
 // inactivo en muted. Fondo blanco con borde superior fino (look limpio y plano).
@@ -27,21 +28,27 @@ export default function PublicLayout() {
         name="index"
         options={{
           title: 'Explorar',
-          tabBarIcon: ({ color, size }) => <Compass color={color} size={size} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <AnimatedTabIcon Icon={Compass} color={color} size={size} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="map"
         options={{
           title: 'Mapa',
-          tabBarIcon: ({ color, size }) => <MapIcon color={color} size={size} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <AnimatedTabIcon Icon={MapIcon} color={color} size={size} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
           title: 'Cuenta',
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <AnimatedTabIcon Icon={User} color={color} size={size} focused={focused} />
+          ),
           tabBarBadge: showAccountBadge ? '!' : undefined,
           tabBarBadgeStyle: {
             backgroundColor: colors.amber,

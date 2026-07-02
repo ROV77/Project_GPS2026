@@ -8,18 +8,8 @@ import {
   vacanciesApi,
   applicationsApi,
   courierRatingsApi,
-  couriersApi,
 } from '../api/couriersApi';
 import type { PageParams } from '@/shared/api/types';
-
-// --- Repartidores disponibles ---
-
-export function useAvailableCouriers() {
-  return useQuery({
-    queryKey: ['couriers-available'],
-    queryFn: couriersApi.listAvailable,
-  });
-}
 
 const VACANCIES_KEY = 'delivery-vacancies';
 const APPLICATIONS_KEY = 'delivery-applications';
@@ -92,13 +82,5 @@ export function useCourierRatings(params: PageParams & { store_id?: string; cour
     queryKey: [RATINGS_KEY, params],
     queryFn: () => courierRatingsApi.list(params),
     placeholderData: keepPreviousData,
-  });
-}
-
-export function useCreateCourierRating() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: courierRatingsApi.create,
-    onSuccess: () => qc.invalidateQueries({ queryKey: [RATINGS_KEY] }),
   });
 }
