@@ -16,6 +16,17 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
+  // MercadoPago (pago de suscripciones). Opcional: la API arranca sin ella y
+  // solo /api/subscriptions/checkout exige que esté configurada (responde 503
+  // si falta). Usa un access token de PRUEBA (sandbox) en desarrollo.
+  MP_ACCESS_TOKEN: z.string().optional(),
+  // URL pública del panel web, para las back_urls del Checkout Pro (a dónde
+  // vuelve el navegador tras pagar).
+  WEB_PUBLIC_URL: z.string().url().default('http://localhost:5173'),
+  // URL pública de ESTA API, para el notification_url del webhook de
+  // MercadoPago. En local debe ser un túnel (ngrok, etc.) porque MercadoPago
+  // necesita alcanzarla desde internet — localhost no sirve.
+  API_PUBLIC_URL: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
