@@ -211,7 +211,6 @@ async function main() {
         description: 'Hasta 20 productos y perfil básico.',
         max_products: 20,
         is_active: true,
-        features: ['Hasta 20 productos', 'Perfil básico de tienda'],
       },
     }),
     prisma.plans.create({
@@ -222,11 +221,6 @@ async function main() {
         description: 'Productos ilimitados, promociones y estadísticas.',
         max_products: null,
         is_active: true,
-        features: [
-          'Productos ilimitados',
-          'Ver estadísticas (dashboard)',
-          'Promociones',
-        ],
       },
     }),
     prisma.plans.create({
@@ -237,24 +231,8 @@ async function main() {
         description: 'Todo lo de Pro + verificación destacada y soporte prioritario.',
         max_products: null,
         is_active: true,
-        features: [
-          'Todo lo de Pro',
-          'Verificación destacada',
-          'Soporte prioritario',
-        ],
       },
     }),
-  ]);
-
-  // ─── Estados de suscripción y de pago ──────────────────────────────────────
-  await Promise.all([
-    prisma.subscriptions_states.create({ data: { name: 'pending' } }),
-    prisma.subscriptions_states.create({ data: { name: 'active' } }),
-    prisma.subscriptions_states.create({ data: { name: 'expired' } }),
-    prisma.subscriptions_states.create({ data: { name: 'canceled' } }),
-    prisma.payments_states.create({ data: { name: 'pending' } }),
-    prisma.payments_states.create({ data: { name: 'approved' } }),
-    prisma.payments_states.create({ data: { name: 'rejected' } }),
   ]);
 
   // ─── Usuarios ─────────────────────────────────────────────────────────────

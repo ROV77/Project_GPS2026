@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
  */
 export function ConfirmPopover({
   children,
-  className,
   triggerClassName,
   title = '¿Confirmar esta acción?',
   confirmText = 'Eliminar',
@@ -17,7 +16,6 @@ export function ConfirmPopover({
   loading,
 }: {
   children: ReactNode;
-  className?: string;
   triggerClassName?: string;
   title?: string;
   confirmText?: string;
@@ -25,7 +23,7 @@ export function ConfirmPopover({
   loading?: boolean;
 }) {
   return (
-    <Popover className={className ?? 'relative inline-flex'}>
+    <Popover className="relative inline-flex">
       <PopoverButton className={cn('focus:outline-hidden', triggerClassName)}>
         {children}
       </PopoverButton>

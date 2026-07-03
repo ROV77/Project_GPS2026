@@ -10,7 +10,6 @@ import { prisma } from '../config/prisma';
 import { makeCrud } from '../lib/crud';
 import { getPagination, parseBigIntId } from '../lib/http';
 import { requireAuth } from '../middlewares/requireAuth';
-import { withStore } from '../middlewares/withStore';
 
 /** Umbral de "stock bajo" para el filtro lowStock y los badges del panel. */
 export const LOW_STOCK_THRESHOLD = 5;
@@ -24,6 +23,28 @@ const crud = makeCrud(prisma.products, createProductSchema, updateProductSchema,
       : {}),
   }),
 });
+
+/**
+ * Resuelve la tienda del usuario autenticado y la deja en res.locals.storeId
+ * (BigInt o null). Todas las rutas de productos quedan acotadas a esa tienda.
+ */
+async function withStore(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const store = await prisma.stores.findFirst({
+      where: { owner_id: res.locals.userId as bigint },
+      orderBy: { id: 'asc' },
+      select: { id: true },
+    });
+    res.locals.storeId = store?.id ?? null;
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
 
 /** Verifica que el producto :id pertenezca a la tienda del usuario. */
 async function ownProduct(
