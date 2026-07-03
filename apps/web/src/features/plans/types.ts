@@ -8,5 +8,6 @@ export interface Plan {
   billing_period: string;
   description?: string | null;
   max_products?: number | null;
+  features?: string[] | null;
   is_active?: boolean;
 }
