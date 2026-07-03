@@ -11,4 +11,6 @@ export const subscriptionsApi = {
 
   checkout: (data: CheckoutInput) =>
     api.post<CheckoutResult>('/subscriptions/checkout', data).then((r) => r.data),
+
+  cancel: () => api.post<Subscription>('/subscriptions/cancel').then((r) => r.data),
 };

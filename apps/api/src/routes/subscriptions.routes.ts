@@ -3,7 +3,12 @@ import { checkoutSchema } from '@caserita/validations';
 import { validateBody } from '../middlewares/validate';
 import { requireAuth } from '../middlewares/requireAuth';
 import { withStore } from '../middlewares/withStore';
-import { getMySubscription, checkout, webhook } from '../controllers/subscriptions.controller';
+import {
+  getMySubscription,
+  checkout,
+  cancelSubscription,
+  webhook,
+} from '../controllers/subscriptions.controller';
 
 export const subscriptionsRouter = Router();
 
@@ -14,3 +19,4 @@ subscriptionsRouter.post('/webhook', webhook);
 subscriptionsRouter.use(requireAuth, withStore);
 subscriptionsRouter.get('/me', getMySubscription);
 subscriptionsRouter.post('/checkout', validateBody(checkoutSchema), checkout);
+subscriptionsRouter.post('/cancel', cancelSubscription);

@@ -48,7 +48,9 @@ export async function createCheckoutPreference(params: {
         pending: `${env.WEB_PUBLIC_URL}/planes?status=pending`,
         failure: `${env.WEB_PUBLIC_URL}/planes?status=failure`,
       },
-      auto_return: 'approved',
+      // auto_return exige que back_urls.success sea una URL pública (rechaza
+      // localhost) — desactivado para poder probar en local sin tunelear el web.
+      // auto_return: 'approved',
       notification_url: `${env.API_PUBLIC_URL}/api/subscriptions/webhook`,
     },
   });

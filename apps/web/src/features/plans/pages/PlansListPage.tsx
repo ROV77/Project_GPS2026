@@ -2,11 +2,15 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { PageHeader } from '@/shared/components/PageHeader';
-import { Badge, Button } from '@/shared/ui';
+import { Badge, Button, ConfirmPopover } from '@/shared/ui';
 import { formatCLP } from '@/shared/lib/format';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { usePlans } from '../hooks/usePlans';
-import { useMySubscription, useCheckout } from '@/features/subscriptions/hooks/useSubscription';
+import {
+  useMySubscription,
+  useCheckout,
+  useCancelSubscription,
+} from '@/features/subscriptions/hooks/useSubscription';
 import type { Plan } from '../types';
 
 /** Mensajes para el ?status= con el que MercadoPago devuelve al usuario a esta página. */
@@ -27,6 +31,7 @@ export function PlansListPage() {
   const { data, isLoading } = usePlans({ page: 1, limit: 100 });
   const { data: subscription, refetch: refetchSubscription } = useMySubscription();
   const checkout = useCheckout();
+  const cancel = useCancelSubscription();
 
   useEffect(() => {
     const status = searchParams.get('status');
@@ -47,6 +52,13 @@ export function PlansListPage() {
 
   const plans = (data?.data ?? []).filter((plan) => plan.is_active !== false);
   const currentPlanId = subscription?.plan?.id;
+  const currentPlan = subscription?.plan;
+  // ¿La tienda ya tiene un plan PAGO vigente? Entonces contratar otro es un
+  // cambio de plan que le hace perder los días restantes: avisamos antes.
+  const hasActivePaidPlan = currentPlan ? Number(currentPlan.price) > 0 : false;
+  const currentExpiresText = subscription?.expires_at
+    ? ` (vigente hasta ${new Date(subscription.expires_at).toLocaleDateString('es-CL')})`
+    : '';
 
   const handleContratar = (plan: Plan) => {
     checkout.mutate(
@@ -62,6 +74,13 @@ export function PlansListPage() {
         onError: (error) => toast.error(getApiErrorMessage(error)),
       },
     );
+  };
+
+  const handleCancel = () => {
+    cancel.mutate(undefined, {
+      onSuccess: () => toast.success('Cancelaste tu plan. Volviste al plan Gratis.'),
+      onError: (error) => toast.error(getApiErrorMessage(error)),
+    });
   };
 
   return (
@@ -86,6 +105,7 @@ export function PlansListPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {plans.map((plan) => {
           const isCurrent = plan.id === currentPlanId;
+          const isFree = Number(plan.price) === 0;
           return (
             <div
               key={plan.id}
@@ -113,14 +133,53 @@ export function PlansListPage() {
                 </ul>
               )}
 
-              <Button
-                variant={isCurrent ? 'default' : 'primary'}
-                disabled={isCurrent}
-                loading={checkout.isPending}
-                onClick={() => handleContratar(plan)}
-              >
-                {isCurrent ? 'Plan actual' : 'Contratar'}
-              </Button>
+              {isCurrent && isFree && (
+                <Button variant="default" disabled>
+                  Plan actual
+                </Button>
+              )}
+
+              {isCurrent && !isFree && (
+                <ConfirmPopover
+                  className="relative flex w-full"
+                  title="¿Cancelar tu plan? Volverás al plan Gratis de inmediato y perderás los días que te queden."
+                  confirmText="Cancelar plan"
+                  onConfirm={handleCancel}
+                  loading={cancel.isPending}
+                  triggerClassName="flex h-10 w-full items-center justify-center rounded-lg bg-destructive px-4 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-70"
+                >
+                  Cancelar suscripción
+                </ConfirmPopover>
+              )}
+
+              {!isCurrent && isFree && (
+                <Button variant="default" disabled>
+                  Plan por defecto
+                </Button>
+              )}
+
+              {!isCurrent && !isFree && hasActivePaidPlan && (
+                <ConfirmPopover
+                  className="relative flex w-full"
+                  title={`Ya tienes ${currentPlan?.name}${currentExpiresText}. Al contratar ${plan.name} perderás los días restantes, sin reembolso. ¿Continuar al pago?`}
+                  confirmText="Ir a pagar"
+                  onConfirm={() => handleContratar(plan)}
+                  loading={checkout.isPending}
+                  triggerClassName="flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand-800"
+                >
+                  Contratar
+                </ConfirmPopover>
+              )}
+
+              {!isCurrent && !isFree && !hasActivePaidPlan && (
+                <Button
+                  variant="primary"
+                  loading={checkout.isPending}
+                  onClick={() => handleContratar(plan)}
+                >
+                  Contratar
+                </Button>
+              )}
             </div>
           );
         })}

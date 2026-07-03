@@ -19,3 +19,12 @@ export function useCheckout() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   });
 }
+
+/** Cancela el plan pagado vigente: la tienda vuelve al plan Gratis. */
+export function useCancelSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: subscriptionsApi.cancel,
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}

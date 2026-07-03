@@ -42,23 +42,23 @@ function toResponse(row: SubscriptionRow, freePlan: Awaited<ReturnType<typeof ge
   };
 }
 
-/** Crea una suscripción activa al plan gratuito para la tienda (alta o downgrade por vencimiento). */
-async function activateFreePlan(storeId: bigint) {
-  const [freePlan, activeStateId] = await Promise.all([
-    getFreePlan(),
+/**
+ * Termina TODAS las suscripciones activas de la tienda, marcándolas como
+ * `expired` (vencimiento natural) o `canceled` (baja voluntaria). No crea
+ * ninguna fila nueva: al no quedar suscripción activa, el plan Gratis queda
+ * implícito (ver getCurrentSubscription). Es la misma filosofía de
+ * "compute, don't store" del plan gratuito — así nunca conviven dos filas
+ * activas a la vez.
+ */
+async function endActiveSubscriptions(storeId: bigint, stateName: 'expired' | 'canceled') {
+  const [activeStateId, terminalStateId] = await Promise.all([
     getSubscriptionStateId('active'),
+    getSubscriptionStateId(stateName),
   ]);
-  const created = await prisma.subscriptions.create({
-    data: {
-      store_id: storeId,
-      plan_id: freePlan.id,
-      state_id: activeStateId,
-      starts_at: new Date(),
-      expires_at: null,
-    },
-    include: { plans: true, subscriptions_states: true },
+  await prisma.subscriptions.updateMany({
+    where: { store_id: storeId, state_id: activeStateId },
+    data: { state_id: terminalStateId },
   });
-  return toResponse(created, freePlan);
 }
 
 export const subscriptionsService = {
@@ -75,17 +75,18 @@ export const subscriptionsService = {
       orderBy: { starts_at: 'desc' },
       include: { plans: true, subscriptions_states: true },
     });
+    const freePlan = await getFreePlan();
 
     if (!latest) {
-      const freePlan = await getFreePlan();
       return toResponse(null, freePlan);
     }
 
     if (latest.expires_at && latest.expires_at < new Date()) {
-      return activateFreePlan(storeId);
+      // Venció: la damos de baja y devolvemos el plan Gratis implícito.
+      await endActiveSubscriptions(storeId, 'expired');
+      return toResponse(null, freePlan);
     }
 
-    const freePlan = await getFreePlan();
     return toResponse(latest, freePlan);
   },
 
@@ -99,8 +100,12 @@ export const subscriptionsService = {
     if (!plan) throw new HttpError(404, 'Plan no encontrado o no disponible');
 
     if (Number(plan.price) === 0) {
-      const activated = await activateFreePlan(storeId);
-      return { requiresPayment: false as const, subscription: activated };
+      // El plan Gratis no se "contrata": basta con dar de baja lo pagado y
+      // dejarlo implícito. (La UI ya no ofrece contratar Gratis; esto solo
+      // mantiene el endpoint coherente si se llama con el plan gratuito.)
+      await endActiveSubscriptions(storeId, 'canceled');
+      const freePlan = await getFreePlan();
+      return { requiresPayment: false as const, subscription: toResponse(null, freePlan) };
     }
 
     const pendingStateId = await getSubscriptionStateId('pending');
@@ -146,8 +151,9 @@ export const subscriptionsService = {
     if (subscription.state_id === activeStateId) return; // ya procesado (idempotencia)
 
     if (payment.status === 'approved') {
-      const [approvedStateId, expiresAt] = await Promise.all([
+      const [approvedStateId, canceledStateId, expiresAt] = await Promise.all([
         getPaymentStateId('approved'),
+        getSubscriptionStateId('canceled'),
         Promise.resolve(addBillingPeriod(new Date(), subscription.plans.billing_period)),
       ]);
       await prisma.$transaction([
@@ -159,6 +165,16 @@ export const subscriptionsService = {
             state_id: approvedStateId,
             paid_at: new Date(),
           },
+        }),
+        // Cambio de plan: cierra cualquier OTRA suscripción activa de la tienda
+        // (ej. el Pro vigente al contratar Premium), para no dejar dos activas.
+        prisma.subscriptions.updateMany({
+          where: {
+            store_id: subscription.store_id,
+            state_id: activeStateId,
+            id: { not: subscription.id },
+          },
+          data: { state_id: canceledStateId },
         }),
         prisma.subscriptions.update({
           where: { id: subscription.id },
@@ -181,5 +197,28 @@ export const subscriptionsService = {
       });
     }
     // pending / in_process: sin acción, MercadoPago reenviará otra notificación.
+  },
+
+  /**
+   * Baja voluntaria del plan pagado vigente. Lo marca como `canceled` y la
+   * tienda vuelve al plan Gratis (implícito) de inmediato. Es un MVP: no hay
+   * reembolso ni prorrateo por los días no usados. El plan Gratis no se puede
+   * "cancelar" (ya es el estado por defecto).
+   */
+  async cancelSubscription(storeId: bigint) {
+    const activeStateId = await getSubscriptionStateId('active');
+    const latest = await prisma.subscriptions.findFirst({
+      where: { store_id: storeId, state_id: activeStateId },
+      orderBy: { starts_at: 'desc' },
+      include: { plans: true },
+    });
+
+    if (!latest || !latest.plans || Number(latest.plans.price) === 0) {
+      throw new HttpError(400, 'No tienes un plan pagado activo para cancelar');
+    }
+
+    await endActiveSubscriptions(storeId, 'canceled');
+    const freePlan = await getFreePlan();
+    return toResponse(null, freePlan);
   },
 };

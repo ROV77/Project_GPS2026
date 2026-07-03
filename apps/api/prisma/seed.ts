@@ -241,6 +241,7 @@ async function main() {
     prisma.subscriptions_states.create({ data: { name: 'pending' } }),
     prisma.subscriptions_states.create({ data: { name: 'active' } }),
     prisma.subscriptions_states.create({ data: { name: 'expired' } }),
+    prisma.subscriptions_states.create({ data: { name: 'canceled' } }),
     prisma.payments_states.create({ data: { name: 'pending' } }),
     prisma.payments_states.create({ data: { name: 'approved' } }),
     prisma.payments_states.create({ data: { name: 'rejected' } }),

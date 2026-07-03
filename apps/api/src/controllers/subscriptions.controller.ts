@@ -29,6 +29,16 @@ export const checkout = async (_req: Request, res: Response) => {
   res.status(201).json(data);
 };
 
+export const cancelSubscription = async (_req: Request, res: Response) => {
+  const storeId = res.locals.storeId as bigint | null;
+  if (!storeId) {
+    res.status(400).json({ error: 'No tienes una tienda asociada' });
+    return;
+  }
+  const data = await subscriptionsService.cancelSubscription(storeId);
+  res.json(data);
+};
+
 /**
  * Extrae el id de pago de una notificación de MercadoPago. Soporta el
  * formato de webhook actual (JSON body { type, data: { id } }) y el legacy
