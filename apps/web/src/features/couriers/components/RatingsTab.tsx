@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Table, type Column, Modal, Button, Input } from '@/shared/ui';
+import { Table, type Column, Drawer, Button, Input } from '@/shared/ui';
 import { useApplications, useCreateCourierRating } from '../hooks/useCouriers';
 import { useMyStore } from '@/features/stores/hooks/useStores';
 import type { CourierApplication } from '../types';
@@ -112,8 +112,8 @@ export function RatingsTab() {
         emptyText="No hay repartidores trabajando contigo actualmente"
       />
 
-      <Modal
-        isOpen={ratingModalOpen}
+      <Drawer
+        open={ratingModalOpen}
         onClose={() => setRatingModalOpen(false)}
         title={`Calificar a ${selectedCourierName}`}
       >
@@ -149,7 +149,7 @@ export function RatingsTab() {
             </Button>
           </div>
         </div>
-      </Modal>
+      </Drawer>
     </div>
   );
 }
