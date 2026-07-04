@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Compass, Map as MapIcon, User } from 'lucide-react-native';
+import { Compass, Map as MapIcon, User, Bike, ClipboardList } from 'lucide-react-native';
 import { colors, fonts } from '@/ui/theme';
 import { useSession } from '@/features/auth/session.store';
 import { AnimatedTabIcon } from '@/components/AnimatedTabIcon';
@@ -9,7 +9,9 @@ import { AnimatedTabIcon } from '@/components/AnimatedTabIcon';
 export default function PublicLayout() {
   // Sin sesión, la pestaña Cuenta muestra un aviso "!" para invitar a entrar.
   const status = useSession((s) => s.status);
+  const user = useSession((s) => s.user);
   const showAccountBadge = status === 'anonymous';
+  const isCourier = !!user?.roles.includes('delivery');
 
   return (
     <Tabs
@@ -39,6 +41,26 @@ export default function PublicLayout() {
           title: 'Mapa',
           tabBarIcon: ({ color, size, focused }) => (
             <AnimatedTabIcon Icon={MapIcon} color={color} size={size} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="vacancies"
+        options={{
+          title: 'Ofertas',
+          href: isCourier ? '/vacancies' : null,
+          tabBarIcon: ({ color, size, focused }) => (
+            <AnimatedTabIcon Icon={Bike} color={color} size={size} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="applications"
+        options={{
+          title: 'Postulaciones',
+          href: isCourier ? '/applications' : null,
+          tabBarIcon: ({ color, size, focused }) => (
+            <AnimatedTabIcon Icon={ClipboardList} color={color} size={size} focused={focused} />
           ),
         }}
       />
