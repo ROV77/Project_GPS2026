@@ -36,7 +36,12 @@ export async function getAllApplications(
           select: { name: true, email: true },
         },
         delivery_vacancies: {
-          select: { description: true },
+          select: { 
+            description: true,
+            stores: {
+              select: { name: true, store_phone: true }
+            }
+          },
         },
       },
     }),

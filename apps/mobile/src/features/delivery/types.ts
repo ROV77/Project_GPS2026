@@ -17,6 +17,8 @@ export interface DeliveryVacancy {
     name: string;
     store_phone: string | null;
     logo_url: string | null;
+    communes?: { name: string } | null;
+    regions?: { name: string } | null;
   };
 }
 

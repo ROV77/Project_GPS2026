@@ -21,7 +21,17 @@ crud.list = async (req, res) => {
       skip,
       take,
       orderBy: { id: 'asc' },
-      include: { stores: { select: { name: true, store_phone: true, logo_url: true } } }
+      include: {
+        stores: {
+          select: {
+            name: true,
+            store_phone: true,
+            logo_url: true,
+            communes: { select: { name: true } },
+            regions: { select: { name: true } },
+          },
+        },
+      },
     }),
     prisma.delivery_vacancies.count(),
   ]);
