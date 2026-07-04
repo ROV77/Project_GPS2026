@@ -17,8 +17,6 @@ export default function VacanciesScreen() {
   
   const { data: myApps, refetch: refetchMyApps } = useMyApplications(user?.id);
 
-  const [tab, setTab] = useState<'area' | 'all'>('all');
-
   const handleApply = (vacancyId: string) => {
     if (!user) return;
     Alert.alert(
@@ -95,42 +93,10 @@ export default function VacanciesScreen() {
     );
   }
 
-  // Determine user's commune from address or defaults
-  const userCommune = user?.addresses?.[0]?.commune_id;
-
-  const filteredData = vacancies
-    .filter(v => v.state_id !== '3') // Exclude closed vacancies
-    .filter(v => {
-      if (tab === 'all') return true;
-      // If "En tu área", try to match commune, but since addresses might not populate commune_id
-      // strictly, if user has no address, we show none or show all? 
-      // For now we filter strictly. If no userCommune, it will be empty.
-      return v.stores?.communes?.name && user?.addresses?.[0]?.city === v.stores?.communes?.name; 
-      // Note: city in user addresses might match commune name, or we just rely on standard filtering.
-      // Wait, user addresses have city (string). Let's just match city with commune name.
-    });
+  const filteredData = vacancies.filter(v => v.state_id !== '3');
 
   return (
     <Screen>
-      <View className="flex-row bg-gray-100 p-1 m-4 rounded-lg">
-        <TouchableOpacity 
-          className={`flex-1 py-2 rounded-md items-center ${tab === 'area' ? 'bg-white shadow-sm' : ''}`}
-          onPress={() => setTab('area')}
-        >
-          <Text variant="body" className={`font-medium ${tab === 'area' ? 'text-brand-700' : 'text-gray-500'}`}>
-            En tu área
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          className={`flex-1 py-2 rounded-md items-center ${tab === 'all' ? 'bg-white shadow-sm' : ''}`}
-          onPress={() => setTab('all')}
-        >
-          <Text variant="body" className={`font-medium ${tab === 'all' ? 'text-brand-700' : 'text-gray-500'}`}>
-            Todas
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       <FlatList
         data={filteredData}
         keyExtractor={(item) => item.id}
@@ -141,9 +107,7 @@ export default function VacanciesScreen() {
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-10">
             <Text variant="body" className="text-gray-500 text-center px-6">
-              {tab === 'area' 
-                ? 'No hay ofertas en tu área o no tienes una dirección guardada en tu perfil.' 
-                : 'No hay ofertas disponibles en este momento.'}
+              No hay ofertas disponibles en este momento.
             </Text>
           </View>
         }
