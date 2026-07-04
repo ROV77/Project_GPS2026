@@ -7,6 +7,7 @@ import { useApplications, useUpdateApplication } from '../hooks/useCouriers';
 import type { CourierApplication } from '../types';
 import { formatDate } from '@/shared/lib/format';
 import { useMyStore } from '@/features/stores/hooks/useStores';
+import { Star } from 'lucide-react';
 
 export function ApplicationsTab() {
   const { data: myStore } = useMyStore();
@@ -81,6 +82,19 @@ export function ApplicationsTab() {
               <p className="text-slate-900 font-medium">{selectedApp.users?.name || `ID: ${selectedApp.courier_id}`}</p>
               {selectedApp.users?.email && (
                 <p className="text-sm text-slate-600">{selectedApp.users.email}</p>
+              )}
+              {selectedApp.users?.courier_ratings && (
+                <div className="mt-2 inline-flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-md border border-yellow-100">
+                  <span className="font-medium text-yellow-700 text-sm">
+                    {selectedApp.users.courier_ratings.length > 0
+                      ? (selectedApp.users.courier_ratings.reduce((acc, r) => acc + (r.stars ?? 0), 0) / selectedApp.users.courier_ratings.length).toFixed(1)
+                      : 'Sin calificar'}
+                  </span>
+                  <Star className="size-4 text-yellow-500 fill-current" />
+                  <span className="text-xs text-yellow-600 ml-1">
+                    ({selectedApp.users.courier_ratings.length} evaluaciones)
+                  </span>
+                </div>
               )}
             </div>
             

@@ -84,3 +84,11 @@ export function useCourierRatings(params: PageParams & { store_id?: string; cour
     placeholderData: keepPreviousData,
   });
 }
+
+export function useCreateCourierRating() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: courierRatingsApi.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: [RATINGS_KEY] }),
+  });
+}

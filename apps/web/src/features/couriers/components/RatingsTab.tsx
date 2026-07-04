@@ -1,96 +1,155 @@
 import { useState, useMemo } from 'react';
-import { Pagination, Table, type Column, Select } from '@/shared/ui';
-import { useTablePagination } from '@/shared/hooks/useTablePagination';
-import { useCourierRatings, useApplications } from '../hooks/useCouriers';
+import { Table, type Column, Modal, Button, Input } from '@/shared/ui';
+import { useApplications, useCreateCourierRating } from '../hooks/useCouriers';
 import { useMyStore } from '@/features/stores/hooks/useStores';
-import type { CourierRating, CourierApplication } from '../types';
-import { formatDate } from '@/shared/lib/format';
+import type { CourierApplication } from '../types';
 import { Star } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function RatingsTab() {
   const { data: myStore } = useMyStore();
-  const { page, limit, onChange } = useTablePagination();
   
-  // Filter state
+  // Modal state
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [selectedCourierId, setSelectedCourierId] = useState<string | null>(null);
+  const [selectedCourierName, setSelectedCourierName] = useState<string>('');
+  const [stars, setStars] = useState<number>(5);
+  const [comment, setComment] = useState<string>('');
 
-  // Ratings query (filtered by courier if selected)
-  const { data, isLoading } = useCourierRatings({ 
-    page, 
-    limit, 
-    store_id: myStore?.id,
-    courier_id: selectedCourierId || undefined 
-  });
+  const { mutate: createRating, isPending: submitting } = useCreateCourierRating();
 
-  // Fetch all applications to extract accepted couriers for this store
-  // Only applications that are accepted (state_id === '2' or 2)
-  const { data: applicationsData } = useApplications({ page: 1, store_id: myStore?.id, limit: 100 });
+  const { data: applicationsData, isLoading } = useApplications({ page: 1, store_id: myStore?.id, limit: 100 });
   
-  const courierOptions = useMemo(() => {
+  const couriersList = useMemo(() => {
     const apps = Array.isArray(applicationsData) ? applicationsData : (applicationsData?.data ?? []);
     // Filtrar solo las aceptadas
-    const acceptedApps = apps.filter((a: CourierApplication) => a.state_id === '2');
+    const acceptedApps = apps.filter((a: CourierApplication) => String(a.state_id) === '2');
     
-    // Extraer repartidores únicos
-    const uniqueCouriers = new Map<string, string>();
+    // Extraer repartidores únicos y calcular su promedio de estrellas general
+    const uniqueCouriers = new Map<string, { id: string, name: string, email: string, averageRating: number }>();
     acceptedApps.forEach((a: CourierApplication) => {
       const courierIdStr = String(a.courier_id);
       if (!uniqueCouriers.has(courierIdStr)) {
-        uniqueCouriers.set(courierIdStr, a.users?.name || `Repartidor ID: ${courierIdStr}`);
+        // Calcular promedio de estrellas si existe
+        let avg = 0;
+        const ratings = a.users?.courier_ratings ?? [];
+        if (ratings.length > 0) {
+          const sum = ratings.reduce((acc, r) => acc + (r.stars ?? 0), 0);
+          avg = sum / ratings.length;
+        }
+
+        uniqueCouriers.set(courierIdStr, {
+          id: courierIdStr,
+          name: a.users?.name || `ID: ${courierIdStr}`,
+          email: a.users?.email || 'Sin correo',
+          averageRating: avg
+        });
       }
     });
 
-    return Array.from(uniqueCouriers.entries()).map(([id, name]) => ({
-      value: id,
-      label: name,
-    }));
+    return Array.from(uniqueCouriers.values());
   }, [applicationsData]);
 
-  const columns: Column<CourierRating>[] = [
-    { key: 'id', header: 'ID Calificación', dataIndex: 'id' },
-    { key: 'courier_id', header: 'Repartidor', render: (r) => r.users?.name || `ID: ${r.courier_id}` },
+  const openRatingModal = (courierId: string, name: string) => {
+    setSelectedCourierId(courierId);
+    setSelectedCourierName(name);
+    setStars(5);
+    setComment('');
+    setRatingModalOpen(true);
+  };
+
+  const handleRate = () => {
+    if (!myStore?.id || !selectedCourierId) return;
+    createRating(
+      { store_id: Number(myStore.id), courier_id: Number(selectedCourierId), stars, comment },
+      {
+        onSuccess: () => {
+          toast.success('Calificación guardada exitosamente');
+          setRatingModalOpen(false);
+        },
+        onError: () => toast.error('Error al guardar calificación')
+      }
+    );
+  };
+
+  const columns: Column<typeof couriersList[0]>[] = [
+    { key: 'name', header: 'Repartidor', dataIndex: 'name' },
+    { key: 'email', header: 'Correo', dataIndex: 'email' },
     { 
-      key: 'stars', 
-      header: 'Calificación', 
+      key: 'averageRating', 
+      header: 'Promedio General', 
       render: (r) => (
         <div className="flex items-center gap-1 font-medium">
-          {r.stars} <Star className="size-4 text-yellow-500 fill-current" />
+          {r.averageRating > 0 ? r.averageRating.toFixed(1) : 'S/N'} <Star className="size-4 text-yellow-500 fill-current" />
         </div>
       )
     },
-    { key: 'comment', header: 'Comentario', render: (r) => r.comment || '-' },
-    { key: 'created_at', header: 'Fecha', render: (r) => formatDate(r.created_at) },
+    { 
+      key: 'actions', 
+      header: 'Acciones', 
+      render: (r) => (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => openRatingModal(r.id, r.name)}
+        >
+          Calificar
+        </Button>
+      )
+    },
   ];
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h3 className="text-lg font-medium text-brand-900">Historial de Calificaciones</h3>
-        
-        {/* Filtro Dinámico por Repartidor Aceptado */}
-        <div className="w-full sm:w-64">
-          <Select
-            value={selectedCourierId}
-            onChange={setSelectedCourierId}
-            options={courierOptions}
-            placeholder="Filtrar por repartidor..."
-            allowClear
-          />
-        </div>
+        <h3 className="text-lg font-medium text-brand-900">Repartidores Actuales</h3>
       </div>
 
-      <Table<CourierRating>
+      <Table<typeof couriersList[0]>
         columns={columns}
-        data={data?.data ?? []}
+        data={couriersList}
         loading={isLoading}
-        emptyText="No has registrado calificaciones para ningún repartidor"
+        emptyText="No hay repartidores trabajando contigo actualmente"
       />
-      <Pagination
-        page={data?.page ?? page}
-        pageSize={data?.limit ?? limit}
-        total={data?.total ?? 0}
-        onChange={onChange}
-      />
+
+      <Modal
+        isOpen={ratingModalOpen}
+        onClose={() => setRatingModalOpen(false)}
+        title={`Calificar a ${selectedCourierName}`}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Estrellas
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStars(s)}
+                  className={`p-2 rounded-full ${s <= stars ? 'text-yellow-500' : 'text-gray-300'}`}
+                >
+                  <Star className={`size-8 ${s <= stars ? 'fill-current' : ''}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+          <Input
+            label="Comentario (opcional)"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Ej. Excelente disposición..."
+          />
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setRatingModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRate} disabled={submitting}>
+              {submitting ? 'Guardando...' : 'Guardar Calificación'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

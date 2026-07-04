@@ -17,6 +17,8 @@ export interface CourierApplication {
   users?: {
     name: string | null;
     email: string;
+    avatar_url: string | null;
+    courier_ratings?: { stars: number | null }[];
   };
   delivery_vacancies?: {
     description: string | null;

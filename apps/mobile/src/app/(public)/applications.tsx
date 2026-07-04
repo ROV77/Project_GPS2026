@@ -27,8 +27,8 @@ export default function ApplicationsScreen() {
     });
   };
 
-  const getStatusText = (stateId: string | null) => {
-    switch (stateId) {
+  const getStatusText = (stateId: string | number | null) => {
+    switch (String(stateId)) {
       case '1': return { text: 'Pendiente', color: colors.amber };
       case '2': return { text: 'Aceptada', color: colors.success };
       case '3': return { text: 'Rechazada', color: colors.destructive };
@@ -59,7 +59,7 @@ export default function ApplicationsScreen() {
           </View>
         </View>
 
-        {item.state_id === '2' && store?.store_phone && (
+        {String(item.state_id) === '2' && store?.store_phone && (
           <View className="mt-2 pt-3 border-t border-gray-100">
             <Button
               label="Coordinar con el dueño"

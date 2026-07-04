@@ -13,7 +13,7 @@ export function CouriersPage() {
   const tabs = [
     { id: 'vacancies', label: 'Bolsa de Trabajo' },
     { id: 'applications', label: 'Postulaciones' },
-    { id: 'ratings', label: 'Calificaciones' },
+    { id: 'ratings', label: 'Repartidores Actuales' },
   ] as const;
 
   return (
