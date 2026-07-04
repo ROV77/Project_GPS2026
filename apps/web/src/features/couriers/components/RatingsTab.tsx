@@ -4,7 +4,7 @@ import { useApplications, useCreateCourierRating } from '../hooks/useCouriers';
 import { useMyStore } from '@/features/stores/hooks/useStores';
 import type { CourierApplication } from '../types';
 import { Star } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export function RatingsTab() {
   const { data: myStore } = useMyStore();
