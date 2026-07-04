@@ -37,4 +37,7 @@ export const applicationsApi = {
 export const courierRatingsApi = {
   list: (params: PageParams & { store_id?: string; courier_id?: string }) =>
     api.get<Paginated<CourierRating>>('/courier-ratings', { params }).then((r) => r.data),
+  
+  create: (data: { store_id: number; courier_id: number; stars: number; comment?: string }) =>
+    api.post<CourierRating>('/courier-ratings', data).then((r) => r.data),
 };
