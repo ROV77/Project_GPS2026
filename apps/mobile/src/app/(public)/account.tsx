@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { View, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike, User, Phone, Store as StoreIcon } from 'lucide-react-native';
+import { Bike, User, Phone, Store as StoreIcon, Star } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
@@ -19,9 +19,9 @@ import { Card } from '@/ui/Card';
 import { Avatar } from '@/ui/Avatar';
 import { colors } from '@/ui/theme';
 import { useSession } from '@/features/auth/session.store';
-import { becomeCourier } from '@/features/auth/api';
 import { pickAndUploadAvatar } from '@/features/auth/avatar';
 import { getApiErrorMessage } from '@/shared/api/errors';
+import { useCourierRatings } from '@/features/delivery/hooks';
 
 const WEB_URL = 'https://caseritapp.cl';
 
@@ -49,13 +49,15 @@ export default function AccountScreen() {
   const router = useRouter();
   const status = useSession((s) => s.status);
   const user = useSession((s) => s.user);
-  const setSession = useSession((s) => s.setSession);
+  const becomeCourier = useSession((s) => s.becomeCourier);
   const logout = useSession((s) => s.logout);
   const [becoming, setBecoming] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
   const isAuth = status === 'authenticated' && !!user;
   const isCourier = !!user?.roles.includes('delivery');
+
+  const { average, loading: ratingsLoading } = useCourierRatings(isCourier ? user?.id : undefined);
 
   const onChangeAvatar = async () => {
     setAvatarLoading(true);
@@ -74,8 +76,7 @@ export default function AccountScreen() {
   const onBecomeCourier = async () => {
     setBecoming(true);
     try {
-      const { user: updated, store } = await becomeCourier();
-      setSession(updated, store);
+      await becomeCourier();
     } catch (e) {
       Alert.alert('No se pudo completar', getApiErrorMessage(e));
     } finally {
@@ -186,15 +187,27 @@ export default function AccountScreen() {
               <Bike size={22} color={colors.brand[700]} strokeWidth={2} />
             </View>
             <View className="flex-1">
-              <Text variant="subtitle">¿Quieres ser repartidor?</Text>
+              <Text variant="subtitle">
+                {isCourier ? 'Perfil de Repartidor' : '¿Quieres ser repartidor?'}
+              </Text>
               <Text variant="caption" className="mt-0.5">
                 {isCourier
-                  ? 'Ya tienes el rol de repartidor en tu cuenta.'
+                  ? 'Gestiona tus ofertas desde la pestaña dedicada.'
                   : 'Postula a las tiendas y reparte en tu zona.'}
               </Text>
             </View>
           </View>
-          {!isCourier && (
+          {isCourier ? (
+            <View className="pt-4 flex-row items-center justify-between border-t border-gray-100 mt-4">
+              <Text variant="body" className="font-medium text-gray-700">Mi Calificación</Text>
+              <View className="flex-row items-center gap-1">
+                <Star size={20} color={colors.warning} fill={average > 0 ? colors.warning : 'transparent'} />
+                <Text variant="subtitle">
+                  {ratingsLoading ? '...' : (average > 0 ? average.toFixed(1) : 'S/N')}
+                </Text>
+              </View>
+            </View>
+          ) : (
             <View className="pt-4">
               <Button
                 label="Soy repartidor"
