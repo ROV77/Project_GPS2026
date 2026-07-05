@@ -1,11 +1,15 @@
 import React from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text as RNText, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSession } from '@/features/auth/session.store';
 import { useCourierRatings } from '@/features/delivery/hooks';
-import { Star } from 'lucide-react-native';
+import { Star, ChevronLeft } from 'lucide-react-native';
+import { Screen } from '@/ui/Screen';
+import { Text } from '@/ui/Text';
+import { useRouter } from 'expo-router';
 
 export default function CourierReviewsScreen() {
   const { user } = useSession();
+  const router = useRouter();
 
   const { data: reviews, loading: isLoading, error: isError } = useCourierRatings(String(user?.id));
 
@@ -24,32 +28,54 @@ export default function CourierReviewsScreen() {
     );
   };
 
+  const header = (
+    <View className="px-5 pb-4 pt-2 border-b border-gray-100 bg-white flex-row items-center gap-3 mb-2">
+      <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2 rounded-full active:bg-gray-100">
+        <ChevronLeft size={24} color="#111827" />
+      </TouchableOpacity>
+      <View>
+        <Text variant="title" className="text-brand-900">Mis Reseñas</Text>
+        <Text variant="caption" className="text-gray-500 mt-1">Lo que opinan las tiendas de ti</Text>
+      </View>
+    </View>
+  );
+
   if (isLoading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#FF3B30" />
-      </View>
+      <Screen>
+        {header}
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#FF3B30" />
+        </View>
+      </Screen>
     );
   }
 
   if (isError) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Error al cargar las reseñas.</Text>
-      </View>
+      <Screen>
+        {header}
+        <View style={styles.centerContainer}>
+          <RNText style={styles.errorText}>Error al cargar las reseñas.</RNText>
+        </View>
+      </Screen>
     );
   }
 
   if (!reviews || reviews.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>Aún no tienes ninguna reseña.</Text>
-      </View>
+      <Screen>
+        {header}
+        <View style={styles.centerContainer}>
+          <RNText style={styles.emptyText}>Aún no tienes ninguna reseña.</RNText>
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <Screen>
+      {header}
       <FlatList
         data={reviews}
         keyExtractor={(item) => String(item.id)}
@@ -57,22 +83,22 @@ export default function CourierReviewsScreen() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.header}>
-              <Text style={styles.storeName}>
+              <RNText style={styles.storeName}>
                 {/* @ts-ignore */}
                 {item.stores?.name || 'Tienda anónima'}
               </Text>
               {renderStars(item.stars || 0)}
             </View>
-            <Text style={styles.comment}>
+            <RNText style={styles.comment}>
               {item.comment ? `"${item.comment}"` : 'Sin comentario'}
-            </Text>
-            <Text style={styles.date}>
+            </RNText>
+            <RNText style={styles.date}>
               {new Date(item.created_at).toLocaleDateString()}
-            </Text>
+            </RNText>
           </View>
         )}
       />
-    </View>
+    </Screen>
   );
 }
 

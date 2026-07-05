@@ -30,7 +30,7 @@ export default function ApplicationsScreen() {
   const getStatusText = (stateId: string | number | null) => {
     switch (String(stateId)) {
       case '1': return { text: 'Pendiente', color: colors.amber };
-      case '2': return { text: 'Aceptada', color: colors.success };
+      case '2': return { text: 'Aceptada', color: '#10b981' };
       case '3': return { text: 'Rechazada', color: colors.destructive };
       default: return { text: 'Desconocido', color: colors.mutedForeground };
     }
@@ -65,8 +65,6 @@ export default function ApplicationsScreen() {
               label="Coordinar con el dueño"
               variant="secondary"
               onPress={() => openWhatsApp(store.store_phone)}
-              // eslint-disable-next-line react/no-unstable-nested-components
-              icon={() => <MessageCircle size={18} color={colors.brand[700]} />}
             />
           </View>
         )}
@@ -86,6 +84,10 @@ export default function ApplicationsScreen() {
 
   return (
     <Screen>
+      <View className="px-5 pb-4 pt-2 border-b border-gray-100 bg-white mb-2">
+        <Text variant="title" className="text-brand-900">Mis Postulaciones</Text>
+        <Text variant="caption" className="text-gray-500 mt-1">Revisa el estado de tus solicitudes enviadas</Text>
+      </View>
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}

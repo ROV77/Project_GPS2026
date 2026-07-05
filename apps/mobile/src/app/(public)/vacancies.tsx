@@ -74,7 +74,7 @@ export default function VacanciesScreen() {
         </Text>
         <Button
           label={hasApplied ? 'Postulado' : 'Postular'}
-          variant={hasApplied ? 'outline' : 'primary'}
+          variant={hasApplied ? 'secondary' : 'primary'}
           loading={applying}
           disabled={hasApplied}
           onPress={() => handleApply(item.id)}
@@ -97,6 +97,10 @@ export default function VacanciesScreen() {
 
   return (
     <Screen>
+      <View className="px-5 pb-4 pt-2 border-b border-gray-100 bg-white mb-2">
+        <Text variant="title" className="text-brand-900">Ofertas de Trabajo</Text>
+        <Text variant="caption" className="text-gray-500 mt-1">Encuentra y postula a nuevas oportunidades</Text>
+      </View>
       <FlatList
         data={filteredData}
         keyExtractor={(item) => item.id}
