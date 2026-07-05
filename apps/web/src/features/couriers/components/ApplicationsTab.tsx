@@ -21,8 +21,8 @@ import type { CourierApplication } from '../types';
 import { useMyStore } from '@/features/stores/hooks/useStores';
 
 function applicationState(stateId: Id | null) {
-  if (stateId === '2' || stateId === 2) return { label: 'Aceptada', tone: 'green' as const };
-  if (stateId === '3' || stateId === 3) return { label: 'Rechazada', tone: 'red' as const };
+  if (String(stateId) === '2') return { label: 'Aceptada', tone: 'green' as const };
+  if (String(stateId) === '3') return { label: 'Rechazada', tone: 'red' as const };
   return { label: 'Pendiente', tone: 'gold' as const };
 }
 
@@ -102,8 +102,8 @@ export function ApplicationsTab() {
   ];
 
   const selectedState = selectedApp ? applicationState(selectedApp.state_id) : null;
-  const isAccepted = selectedApp?.state_id === '2' || selectedApp?.state_id === 2;
-  const isRejected = selectedApp?.state_id === '3' || selectedApp?.state_id === 3;
+  const isAccepted = String(selectedApp?.state_id) === '2';
+  const isRejected = String(selectedApp?.state_id) === '3';
 
   return (
     <div className="space-y-4">

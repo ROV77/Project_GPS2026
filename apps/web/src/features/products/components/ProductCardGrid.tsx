@@ -1,5 +1,4 @@
 import { Pencil, Star } from 'lucide-react';
-import { ProductThumb } from '@/shared/components/ProductThumb';
 import { ConfirmDelete } from '@/shared/components/ConfirmDelete';
 import { Badge, Button } from '@/shared/ui';
 import { formatCLP, getInitials } from '@/shared/lib/format';

@@ -197,8 +197,8 @@ function GhostStoreCard() {
 
 function TabBarMock() {
   const tabs = [
-    { label: 'Explorar', Icon: Compass, active: true },
-    { label: 'Mapa', Icon: MapIcon, active: false },
+    { label: 'Explorar', Icon: Compass, active: true, badge: false },
+    { label: 'Mapa', Icon: MapIcon, active: false, badge: false },
     { label: 'Cuenta', Icon: User, active: false, badge: true },
   ] as const;
 
