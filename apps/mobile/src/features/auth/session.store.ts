@@ -9,7 +9,7 @@
  */
 import { create } from 'zustand';
 import { getToken, setToken, deleteToken } from '@/shared/lib/secureToken';
-import { getMe, becomeCourier } from './api';
+import { getMe, becomeCourier, quitCourier } from './api';
 import type { Profile, SessionStoreInfo } from './types';
 
 type Status = 'loading' | 'authenticated' | 'anonymous';
@@ -28,7 +28,7 @@ interface SessionState {
   logout: () => Promise<void>;
 }
 
-export const useSession = create<SessionState & { becomeCourier: () => Promise<void> }>((set, get) => ({
+export const useSession = create<SessionState & { becomeCourier: () => Promise<void>, quitCourier: () => Promise<void> }>((set, get) => ({
   user: null,
   store: null,
   status: 'loading',
@@ -66,6 +66,16 @@ export const useSession = create<SessionState & { becomeCourier: () => Promise<v
       set({ user, store, status: 'authenticated' });
     } catch (e) {
       console.error('Failed to become courier', e);
+      throw e;
+    }
+  },
+
+  quitCourier: async () => {
+    try {
+      const { user, store } = await quitCourier();
+      set({ user, store, status: 'authenticated' });
+    } catch (e) {
+      console.error('Failed to quit courier', e);
       throw e;
     }
   },

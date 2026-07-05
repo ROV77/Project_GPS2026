@@ -15,6 +15,7 @@ export function ConfirmPopover({
   confirmText = 'Eliminar',
   onConfirm,
   loading,
+  disabled,
 }: {
   children: ReactNode;
   className?: string;
@@ -23,10 +24,11 @@ export function ConfirmPopover({
   confirmText?: string;
   onConfirm: () => void;
   loading?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <Popover className={className ?? 'relative inline-flex'}>
-      <PopoverButton className={cn('focus:outline-hidden', triggerClassName)}>
+      <PopoverButton disabled={disabled} className={cn('focus:outline-hidden', triggerClassName, disabled && 'opacity-50 pointer-events-none')}>
         {children}
       </PopoverButton>
       <PopoverPanel

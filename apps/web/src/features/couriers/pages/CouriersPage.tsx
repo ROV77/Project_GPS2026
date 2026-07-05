@@ -11,7 +11,7 @@ export function CouriersPage() {
   const [activeTab, setActiveTab] = useState<TabId>('vacancies');
 
   const tabs = [
-    { id: 'vacancies', label: 'Bolsa de Trabajo' },
+    { id: 'vacancies', label: 'Publicaciones' },
     { id: 'applications', label: 'Postulaciones' },
     { id: 'ratings', label: 'Repartidores Actuales' },
   ] as const;

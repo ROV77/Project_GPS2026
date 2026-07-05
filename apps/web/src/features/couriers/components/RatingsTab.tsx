@@ -14,6 +14,7 @@ export function RatingsTab() {
   const [selectedCourierId, setSelectedCourierId] = useState<string | null>(null);
   const [selectedCourierName, setSelectedCourierName] = useState<string>('');
   const [stars, setStars] = useState<number>(5);
+  const [hoverStars, setHoverStars] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
 
   const { mutate: createRating, isPending: submitting } = useCreateCourierRating();
@@ -54,6 +55,7 @@ export function RatingsTab() {
     setSelectedCourierId(courierId);
     setSelectedCourierName(name);
     setStars(5);
+    setHoverStars(0);
     setComment('');
     setRatingModalOpen(true);
   };
@@ -89,7 +91,7 @@ export function RatingsTab() {
       header: 'Acciones', 
       render: (r) => (
         <Button 
-          variant="outline" 
+          variant="default" 
           size="sm"
           onClick={() => openRatingModal(r.id, r.name)}
         >
@@ -123,25 +125,34 @@ export function RatingsTab() {
               Estrellas
             </label>
             <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStars(s)}
-                  className={`p-2 rounded-full ${s <= stars ? 'text-yellow-500' : 'text-gray-300'}`}
-                >
-                  <Star className={`size-8 ${s <= stars ? 'fill-current' : ''}`} />
-                </button>
-              ))}
+              {[1, 2, 3, 4, 5].map((s) => {
+                const isActive = hoverStars > 0 ? s <= hoverStars : s <= stars;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setStars(s)}
+                    onMouseEnter={() => setHoverStars(s)}
+                    onMouseLeave={() => setHoverStars(0)}
+                    className={`p-2 rounded-full transition-colors ${isActive ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}
+                  >
+                    <Star className={`size-8 transition-colors ${isActive ? 'fill-current' : ''}`} />
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <Input
-            label="Comentario (opcional)"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Ej. Excelente disposición..."
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Comentario (opcional)
+            </label>
+            <Input
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Ej. Excelente disposición..."
+            />
+          </div>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setRatingModalOpen(false)}>
+            <Button variant="default" onClick={() => setRatingModalOpen(false)}>
               Cancelar
             </Button>
             <Button onClick={handleRate} disabled={submitting}>

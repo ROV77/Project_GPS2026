@@ -86,7 +86,7 @@ export default function CourierReviewsScreen() {
               <RNText style={styles.storeName}>
                 {/* @ts-ignore */}
                 {item.stores?.name || 'Tienda anónima'}
-              </Text>
+              </RNText>
               {renderStars(item.stars || 0)}
             </View>
             <RNText style={styles.comment}>

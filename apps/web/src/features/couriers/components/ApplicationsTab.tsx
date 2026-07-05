@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Button, Pagination, Table, type Column, Badge, Drawer } from '@/shared/ui';
+import { Button, Pagination, Table, type Column, Badge, Drawer, ConfirmPopover } from '@/shared/ui';
 import { useTablePagination } from '@/shared/hooks/useTablePagination';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { useApplications, useUpdateApplication } from '../hooks/useCouriers';
@@ -86,23 +86,33 @@ export function ApplicationsTab() {
                 <p className="text-sm text-slate-600">{selectedApp.users.email}</p>
               )}
               {selectedApp.users?.courier_ratings && (
-                <div className="mt-2 inline-flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-md border border-yellow-100">
-                  <span 
-                    className="font-medium text-yellow-700 text-sm cursor-pointer hover:underline"
-                    onClick={() => {
-                      setSelectedReviewsCourierId(String(selectedApp.courier_id));
-                      setSelectedReviewsCourierName(selectedApp.users?.name || 'Repartidor');
-                      setReviewsModalOpen(true);
-                    }}
-                  >
-                    {selectedApp.users.courier_ratings.length > 0
-                      ? (selectedApp.users.courier_ratings.reduce((acc, r) => acc + (r.stars ?? 0), 0) / selectedApp.users.courier_ratings.length).toFixed(1)
-                      : 'Sin calificar'}
-                  </span>
-                  <Star className="size-4 text-yellow-500 fill-current" />
-                  <span className="text-xs text-yellow-600 ml-1">
-                    ({selectedApp.users.courier_ratings.length} evaluaciones)
-                  </span>
+                <div 
+                  className="mt-4 flex items-center justify-between bg-yellow-50 p-3 rounded-lg border border-yellow-200 cursor-pointer hover:bg-yellow-100 transition-colors"
+                  onClick={() => {
+                    setSelectedReviewsCourierId(String(selectedApp.courier_id));
+                    setSelectedReviewsCourierName(selectedApp.users?.name || 'Repartidor');
+                    setReviewsModalOpen(true);
+                  }}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-xs text-yellow-700 uppercase tracking-wide font-semibold mb-1">
+                      Calificación
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-yellow-800 text-lg">
+                        {selectedApp.users.courier_ratings.length > 0
+                          ? (selectedApp.users.courier_ratings.reduce((acc, r) => acc + (r.stars ?? 0), 0) / selectedApp.users.courier_ratings.length).toFixed(1)
+                          : 'S/N'}
+                      </span>
+                      <Star className="size-5 text-yellow-500 fill-current" />
+                      <span className="text-sm text-yellow-700 ml-1">
+                        ({selectedApp.users.courier_ratings.length} opiniones)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-brand-600 font-medium text-sm hover:underline">
+                    Ver opiniones
+                  </div>
                 </div>
               )}
             </div>

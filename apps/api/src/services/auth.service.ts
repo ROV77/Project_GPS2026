@@ -16,6 +16,7 @@ import {
   findUserByEmail,
   findUserWithStoreById,
   getRoleNames,
+  removeRole,
 } from '../repositories/auth.repository';
 
 /** Firma un JWT cuyo `sub` es el id del usuario (como string, por el BigInt). */
@@ -148,6 +149,14 @@ export async function registerCustomerService(input: RegisterCourierInput) {
  */
 export async function becomeCourierService(userId: bigint) {
   await addRoleIfMissing(userId, 'delivery');
+  return getMeService(userId);
+}
+
+/**
+ * Quita el rol de repartidor al usuario logueado y devuelve su perfil actualizado.
+ */
+export async function quitCourierService(userId: bigint) {
+  await removeRole(userId, 'delivery');
   return getMeService(userId);
 }
 

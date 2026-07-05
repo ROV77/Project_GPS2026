@@ -74,13 +74,14 @@ export function VacanciesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-brand-900">Bolsa de Trabajo</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h3 className="text-lg font-medium text-brand-900">Tus Publicaciones</h3>
         <Button
           variant="primary"
           icon={<Plus className="size-4" />}
           onClick={openCreate}
           disabled={!myStore}
+          className="sm:w-auto w-full"
         >
           Publicar vacante
         </Button>

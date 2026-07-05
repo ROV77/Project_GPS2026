@@ -13,6 +13,7 @@ import {
   registerCourier,
   registerCustomer,
   becomeCourier,
+  quitCourier,
   updateMe,
   me,
 } from '../controllers/auth.controller';
@@ -42,6 +43,9 @@ authRouter.post(
 
 // POST /api/auth/become-courier → { user, store } (suma rol delivery al usuario logueado)
 authRouter.post('/become-courier', requireAuth, becomeCourier);
+
+// POST /api/auth/quit-courier → { user, store } (quita rol delivery al usuario logueado)
+authRouter.post('/quit-courier', requireAuth, quitCourier);
 
 // GET /api/auth/me → { user, store } (requiere Bearer token)
 authRouter.get('/me', requireAuth, me);

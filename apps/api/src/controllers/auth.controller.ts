@@ -11,6 +11,7 @@ import {
   registerCourierService,
   registerCustomerService,
   becomeCourierService,
+  quitCourierService,
   updateMeService,
   getMeService,
 } from '../services/auth.service';
@@ -47,6 +48,12 @@ export const registerCustomer = async (_req: Request, res: Response): Promise<vo
 /** POST /auth/become-courier — requireAuth dejó el id en res.locals.userId. */
 export const becomeCourier = async (_req: Request, res: Response): Promise<void> => {
   const result = await becomeCourierService(res.locals.userId as bigint);
+  res.json(result);
+};
+
+/** POST /auth/quit-courier — requireAuth dejó el id en res.locals.userId. */
+export const quitCourier = async (_req: Request, res: Response): Promise<void> => {
+  const result = await quitCourierService(res.locals.userId as bigint);
   res.json(result);
 };
 
