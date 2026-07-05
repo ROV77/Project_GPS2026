@@ -204,10 +204,6 @@ storesRouter.get('/:id/status', async (req, res, next) => {
 storesRouter.get('/:id', getStoreDetail);
 
 // ─── Montar rutas CRUD genéricas después de las rutas específicas ────────────
-<<<<<<< Updated upstream
-// (para que /search, /:id/stats, /:id/schedules, /:id/status, /:id/products y
-//  /:id no colisionen con el CRUD genérico)
-=======
 // (para que /search, /:id/stats, /:id/schedules y /:id/status no colisionen con /:id)
 
 /**
@@ -244,6 +240,5 @@ storesRouter.put('/:id', validateBody(updateStoreSchema), async (req, res, next)
   }
 });
 
->>>>>>> Stashed changes
 const crudRoutes = crudRouter(crud);
 storesRouter.use('/', crudRoutes);

@@ -12,10 +12,9 @@ import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
-import { useMyAccount } from '@/features/user/hooks/useUser';
 import { useMySubscription } from '@/features/subscriptions/hooks/useSubscription';
 import { planShowsVerifiedBadge } from '@/features/plans/lib/planBenefits';
-import { AvatarUploader } from '@/features/user/components/AvatarUploader';
+import { StoreLogoUploader } from '../components/StoreLogoUploader';
 import { MapPicker } from '../components/MapPicker';
 import { StoreMobilePreview } from '../components/StoreMobilePreview';
 import type { StorePreviewData } from '../components/StoreMobilePreview';
@@ -40,7 +39,6 @@ function findOptionLabel(
  */
 export function MyStorePage() {
   const { data: store, isLoading } = useMyStore();
-  const { data: account } = useMyAccount();
   const { data: subscription } = useMySubscription();
   const update = useUpdateStore();
   const categories = useCatalogOptions('categories');
@@ -91,7 +89,7 @@ export function MyStorePage() {
       name: watchedName ?? store?.name ?? '',
       description: watchedDescription ?? store?.description ?? '',
       categoryName: selectedCategoryLabel,
-      logoUrl: watchedLogoUrl || account?.avatar_url || store?.logo_url,
+      logoUrl: watchedLogoUrl || store?.logo_url,
       address: watchedAddress,
       addressStreet: watchedStreet,
       addressNumber: watchedNumber,
@@ -102,7 +100,6 @@ export function MyStorePage() {
       verified: planShowsVerifiedBadge(subscription?.plan),
     }),
     [
-      account?.avatar_url,
       selectedCategoryLabel,
       selectedCommuneLabel,
       selectedRegionLabel,
@@ -249,20 +246,20 @@ export function MyStorePage() {
           <EmptyState description="Aún no hay una tienda asociada a esta cuenta" />
         ) : (
           <div>
-            {/* Encabezado con editor del avatar del usuario */}
+            {/* Encabezado con editor del logo de la tienda (independiente del vendedor) */}
             <div className="mb-6 flex items-center gap-5 border-b border-border pb-5">
-              {account && (
-                <AvatarUploader
-                  userId={account.id}
-                  value={account.avatar_url ?? undefined}
-                  name={account.name ?? store.name}
-                />
-              )}
+              <StoreLogoUploader
+                storeId={store.id}
+                value={watchedLogoUrl || store.logo_url || undefined}
+                onUploaded={(url) =>
+                  setValue('logo_url', url, { shouldDirty: false, shouldValidate: true })
+                }
+              />
               <div>
                 <p className="font-medium text-foreground">{store.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  Pasa el mouse sobre tu foto y haz clic para cambiarla. El resto de
-                  los datos son obligatorios.
+                  Este es el logo de tu tienda: es lo que verán los clientes en la app.
+                  Pasa el mouse sobre él y haz clic para cambiarlo.
                 </p>
               </div>
             </div>
