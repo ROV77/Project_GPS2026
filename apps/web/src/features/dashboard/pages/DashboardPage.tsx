@@ -1,20 +1,19 @@
-import { Package, Boxes, Star, MessageSquare } from 'lucide-react';
+import { BarChart3, LineChart, Star } from 'lucide-react';
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
-import { Alert, Card, EmptyState } from '@/shared/ui';
+import { PageHeader } from '@/shared/components/PageHeader';
+import { EmptyState, Skeleton } from '@/shared/ui';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
-import { KpiCard } from '@/shared/components/KpiCard';
-import { ProductThumb } from '@/shared/components/ProductThumb';
-import { formatCLP } from '@/shared/lib/format';
 import { useProducts } from '@/features/products/hooks/useProducts';
 import { useMyStore } from '@/features/stores/hooks/useStores';
 import { useDashboardStats } from '../hooks/useDashboardStats';
+import { DashboardStatsCards } from '../components/DashboardStatsCards';
+import { FeaturedProductsPanel } from '../components/FeaturedProductsPanel';
 
-/** Paleta de la dona/barras: tokens de marca (navy) definidos en index.css. */
 const CHART_COLORS = [
   'var(--chart-1)',
   'var(--chart-2)',
@@ -24,115 +23,143 @@ const CHART_COLORS = [
 ];
 
 const stockChartConfig = {
-  stock: { label: 'Stock' },
+  stock: { label: 'Unidades' },
 } satisfies ChartConfig;
 
 export function DashboardPage() {
-  const { data: store } = useMyStore();
-  const { data: stats } = useDashboardStats(store?.id);
+  const { data: store, isLoading: loadingStore } = useMyStore();
+  const { data: stats, isLoading: loadingStats } = useDashboardStats(store?.id);
 
-  // Top productos por stock para el gráfico (Bar Chart - Mixed).
-  const { data: topStock } = useProducts({ page: 1, limit: 6, sort: 'stock_desc' });
+  const { data: topStock, isLoading: loadingStockChart } = useProducts({
+    page: 1,
+    limit: 6,
+    sort: 'stock_desc',
+  });
   const stockData = (topStock?.data ?? []).map((p, i) => ({
     name: p.name,
     stock: p.stock,
     fill: CHART_COLORS[i % CHART_COLORS.length],
   }));
 
-  // Productos destacados (dato real: featured = true).
-  const { data: featuredData } = useProducts({ page: 1, limit: 5, featured: true });
+  const { data: featuredData, isLoading: loadingFeatured } = useProducts({
+    page: 1,
+    limit: 5,
+    featured: true,
+  });
   const featured = featuredData?.data ?? [];
 
+  const loadingKpis = loadingStore || loadingStats;
+
   return (
-    <>
-      {store && (
-        <p className="mb-4 text-sm text-muted-foreground">
-          Resumen de <span className="font-medium text-foreground">{store.name}</span>
-        </p>
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard"
+        subtitle={
+          store
+            ? `Métricas y rendimiento de ${store.name}`
+            : 'Resumen de tu comercio en CaseritApp'
+        }
+      />
+
+      {loadingKpis ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[76px] rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <DashboardStatsCards
+          productCount={stats?.product_count ?? 0}
+          totalStock={stats?.total_stock ?? 0}
+          reviewCount={stats?.review_count ?? 0}
+          avgRating={stats?.avg_rating ?? 0}
+        />
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          title="Productos en catálogo"
-          value={stats?.product_count ?? 0}
-          icon={<Package className="size-5" />}
-        />
-        <KpiCard
-          title="Stock total"
-          value={stats?.total_stock ?? 0}
-          icon={<Boxes className="size-5" />}
-        />
-        <KpiCard
-          title="Reseñas recibidas"
-          value={stats?.review_count ?? 0}
-          icon={<MessageSquare className="size-5" />}
-        />
-        <KpiCard
-          title="Rating promedio"
-          value={stats?.avg_rating ?? 0}
-          suffix="/ 5"
-          icon={<Star className="size-5" />}
-        />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs lg:col-span-2">
+          <div className="flex items-start gap-3 border-b border-border px-5 py-4">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+              <BarChart3 className="size-5" strokeWidth={2} />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Stock por producto</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Top 6 productos con más inventario en tu catálogo.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-5">
+            {loadingStockChart ? (
+              <Skeleton className="h-[280px] w-full rounded-lg" />
+            ) : stockData.length > 0 ? (
+              <ChartContainer config={stockChartConfig} className="h-[280px] w-full">
+                <BarChart
+                  accessibilityLayer
+                  data={stockData}
+                  layout="vertical"
+                  margin={{ left: 8, right: 16, top: 4, bottom: 4 }}
+                >
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tickLine={false}
+                    axisLine={false}
+                    width={128}
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tickFormatter={(v: string) => (v.length > 18 ? `${v.slice(0, 18)}…` : v)}
+                  />
+                  <XAxis dataKey="stock" type="number" hide />
+                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                  <Bar dataKey="stock" radius={[0, 6, 6, 0]} barSize={22} />
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <EmptyState description="Aún no hay productos en el catálogo." className="py-12" />
+            )}
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+          <div className="flex items-start gap-3 border-b border-border px-5 py-4">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+              <Star className="size-5" strokeWidth={2} />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Productos destacados</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Los que marcaste para resaltar en la app.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4">
+            {loadingFeatured ? (
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[72px] rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <FeaturedProductsPanel products={featured} />
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card title="Stock por producto" className="lg:col-span-2">
-          {stockData.length > 0 ? (
-            <ChartContainer config={stockChartConfig} className="h-[280px] w-full">
-              <BarChart
-                accessibilityLayer
-                data={stockData}
-                layout="vertical"
-                margin={{ left: 12, right: 16 }}
-              >
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  tickLine={false}
-                  axisLine={false}
-                  width={120}
-                  tickFormatter={(v: string) =>
-                    v.length > 16 ? `${v.slice(0, 16)}…` : v
-                  }
-                />
-                <XAxis dataKey="stock" type="number" hide />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                <Bar dataKey="stock" radius={5} />
-              </BarChart>
-            </ChartContainer>
-          ) : (
-            <EmptyState description="Aún no hay productos en el catálogo." />
-          )}
-        </Card>
-
-        <Card title="Productos destacados">
-          {featured.length > 0 ? (
-            <ul className="divide-y divide-border">
-              {featured.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 py-2">
-                  <ProductThumb src={p.image_url} alt={p.name} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatCLP(p.price)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState
-              icon={<Star className="size-10" />}
-              description="Marca productos como destacados para que aparezcan aquí."
-            />
-          )}
-        </Card>
+      <div className="flex items-start gap-4 rounded-xl border border-dashed border-brand-200 bg-gradient-to-r from-brand-50/80 to-slate-50 p-5">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+          <LineChart className="size-5" strokeWidth={2} />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-brand-900">Próximamente: analítica de visitas</p>
+          <p className="mt-1 text-sm leading-relaxed text-brand-800/80">
+            Visitas a tu tienda, seguidores y pedidos llegarán cuando activemos el módulo de
+            analytics en la API. Mientras tanto, revisa stock, reseñas y productos destacados.
+          </p>
+        </div>
       </div>
-
-      <Alert
-        className="mt-4"
-        type="info"
-        title="Próximamente: analítica de visitas"
-        description="Las métricas de visitas, seguidores y pedidos requieren el módulo de analytics, que aún no está disponible en la API."
-      />
-    </>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ import { Button } from '@/ui/Button';
 import { RemoteImage } from '@/ui/RemoteImage';
 import { colors } from '@/ui/theme';
 import { getCategoryStyle } from '@/features/stores/categoryStyle';
+import { formatStoreAddress } from '@/features/stores/formatStoreAddress';
 import type { Store } from '@/features/stores/types';
 
 interface Props {
@@ -48,7 +49,7 @@ export const StoreDetailSheet = forwardRef<BottomSheet, Props>(function StoreDet
 
   const style = store ? getCategoryStyle(store.category_name) : null;
   const rating = store ? Number(store.avg_rating) || 0 : 0;
-  const location = store ? [store.commune_name, store.region_name].filter(Boolean).join(', ') : '';
+  const addressLine = store ? formatStoreAddress(store) : '';
   const lat = store ? Number(store.latitude) : NaN;
   const lng = store ? Number(store.longitude) : NaN;
   const canNavigate = !Number.isNaN(lat) && !Number.isNaN(lng);
@@ -91,10 +92,12 @@ export const StoreDetailSheet = forwardRef<BottomSheet, Props>(function StoreDet
             </View>
           </View>
 
-          {location ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <MapPin size={14} color={colors.mutedForeground} strokeWidth={2} />
-              <Text variant="body" style={{ color: colors.mutedForeground }}>{location}</Text>
+          {addressLine ? (
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+              <MapPin size={14} color={colors.mutedForeground} strokeWidth={2} style={{ marginTop: 2 }} />
+              <Text variant="body" style={{ color: colors.mutedForeground, flex: 1 }}>
+                {addressLine}
+              </Text>
             </View>
           ) : null}
 
@@ -111,7 +114,15 @@ export const StoreDetailSheet = forwardRef<BottomSheet, Props>(function StoreDet
               </View>
             ) : null}
             <View style={{ flex: 1 }}>
-              <Button label="Ver tienda completa" onPress={() => router.push(`/store/${store.id}`)} />
+              <Button
+                label="Ver tienda completa"
+                onPress={() =>
+                  router.push({
+                    pathname: '/store/[id]',
+                    params: { id: store.id, store: JSON.stringify(store) },
+                  })
+                }
+              />
             </View>
           </View>
         </BottomSheetView>

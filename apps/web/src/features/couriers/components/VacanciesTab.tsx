@@ -1,31 +1,31 @@
 import { useState } from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Briefcase, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { ConfirmDelete } from '@/shared/components/ConfirmDelete';
-import { Button, Pagination, Table, type Column } from '@/shared/ui';
+import { Button, EmptyState, Pagination, Skeleton } from '@/shared/ui';
 import { useTablePagination } from '@/shared/hooks/useTablePagination';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { useMyStore } from '@/features/stores/hooks/useStores';
 import { useVacancies, useDeleteVacancy } from '../hooks/useCouriers';
 import { VacancyFormDrawer } from './VacancyFormDrawer';
+import { VacancyCard } from './VacancyCard';
 import type { DeliveryVacancy } from '../types';
-import { formatDate } from '@/shared/lib/format';
 
 export function VacanciesTab() {
   const { data: myStore } = useMyStore();
   const { page, limit, onChange } = useTablePagination();
-  // Solo obtener vacantes de MI tienda
   const { data, isLoading } = useVacancies({ page, limit, store_id: myStore?.id });
   const del = useDeleteVacancy();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<DeliveryVacancy | null>(null);
 
+  const vacancies = data?.data ?? [];
+
   const openCreate = () => {
     setEditing(null);
     setDrawerOpen(true);
   };
-  
+
   const openEdit = (vacancy: DeliveryVacancy) => {
     setEditing(vacancy);
     setDrawerOpen(true);
@@ -38,68 +38,76 @@ export function VacanciesTab() {
     });
   };
 
-  const columns: Column<DeliveryVacancy>[] = [
-    { 
-      key: 'description', 
-      header: 'Descripción', 
-      render: (v) => <div className="max-w-md whitespace-pre-wrap">{v.description || 'Sin descripción'}</div> 
-    },
-    { 
-      key: 'created_at', 
-      header: 'Fecha de publicación', 
-      render: (v) => formatDate(v.created_at) 
-    },
-    {
-      key: 'actions',
-      header: 'Acciones',
-      width: 120,
-      render: (v) => (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="default"
-            icon={<Pencil className="size-4" />}
-            onClick={() => openEdit(v)}
-            aria-label="Editar"
-          />
-          <ConfirmDelete
-            title="¿Eliminar esta vacante?"
-            onConfirm={() => handleDelete(v.id)}
-            loading={del.isPending}
-          />
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h3 className="text-lg font-medium text-brand-900">Tus Publicaciones</h3>
-        <Button
-          variant="primary"
-          icon={<Plus className="size-4" />}
-          onClick={openCreate}
-          disabled={!myStore}
-          className="sm:w-auto w-full"
-        >
-          Publicar vacante
-        </Button>
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Publicaciones</h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Publica ofertas para que repartidores de la zona postulen a tu tienda.
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            icon={<Plus className="size-4" />}
+            onClick={openCreate}
+            disabled={!myStore}
+          >
+            Publicar vacante
+          </Button>
+        </div>
+
+        <div className="p-5">
+          {isLoading ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-44 rounded-xl" />
+              ))}
+            </div>
+          ) : vacancies.length === 0 ? (
+            <EmptyState
+              icon={<Briefcase className="size-10 text-brand-300" />}
+              description={
+                <span className="text-center">
+                  Aún no tienes vacantes publicadas.
+                  <br />
+                  <button
+                    type="button"
+                    onClick={openCreate}
+                    disabled={!myStore}
+                    className="mt-2 font-medium text-brand-700 hover:underline disabled:opacity-50"
+                  >
+                    Publica la primera vacante
+                  </button>
+                </span>
+              }
+              className="py-14"
+            />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {vacancies.map((vacancy) => (
+                <VacancyCard
+                  key={vacancy.id}
+                  vacancy={vacancy}
+                  onEdit={openEdit}
+                  onDelete={handleDelete}
+                  deleting={del.isPending}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <Table<DeliveryVacancy>
-        columns={columns}
-        data={data?.data ?? []}
-        loading={isLoading}
-        emptyText="No tienes vacantes publicadas"
-      />
-      
-      <Pagination
-        page={data?.page ?? page}
-        pageSize={data?.limit ?? limit}
-        total={data?.total ?? 0}
-        onChange={onChange}
-      />
+      {(data?.total ?? 0) > 0 ? (
+        <Pagination
+          page={data?.page ?? page}
+          pageSize={data?.limit ?? limit}
+          total={data?.total ?? 0}
+          onChange={onChange}
+        />
+      ) : null}
 
       <VacancyFormDrawer
         open={drawerOpen}

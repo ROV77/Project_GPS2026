@@ -11,9 +11,9 @@ import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LandingSearch } from '../components/LandingSearch';
+import { LandingHeader } from '../components/LandingHeader';
 
 import bgVideo from '@/assets/videos/entrega_pedido.mp4';
-import logoUrl from '@/assets/icons/logo_caseritapp.png';
 import imgHamburguesa from '@/assets/images/hamburguesa_con_papas.jpg';
 import imgSushi from '@/assets/images/sushi.jpg';
 import imgCallejera from '@/assets/images/entrega_comida_callejera.jpg';
@@ -54,8 +54,10 @@ const categories = [
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
+      <LandingHeader />
+
       {/* Hero con video de fondo */}
-      <section className="relative isolate flex min-h-[88vh] flex-col overflow-hidden text-white">
+      <section className="relative isolate flex min-h-[calc(88vh-5rem)] flex-col overflow-hidden text-white">
         <video
           autoPlay
           muted
@@ -66,34 +68,6 @@ export function LandingPage() {
           <source src={bgVideo} type="video/mp4" />
         </video>
         <div className="absolute inset-0 -z-10 bg-brand-900/70" />
-
-        {/* Header */}
-        <header className="flex items-center justify-between px-6 py-5 md:px-12">
-          <img src={logoUrl} alt="CaseritApp" className="h-12 w-auto" />
-          <nav className="flex items-center gap-2 sm:gap-3">
-            <Link
-              to="/register-repartidor"
-              className={cn(
-                buttonVariants({ variant: 'ghost' }),
-                'hidden text-white hover:bg-white/10 sm:inline-flex',
-              )}
-            >
-              Soy repartidor
-            </Link>
-            <Link
-              to="/login"
-              className={cn(
-                buttonVariants({ variant: 'ghost' }),
-                'border border-white/40 bg-transparent text-white hover:bg-white/10',
-              )}
-            >
-              Iniciar sesión
-            </Link>
-            <Link to="/register" className={buttonVariants({ variant: 'primary' })}>
-              Registra tu negocio
-            </Link>
-          </nav>
-        </header>
 
         {/* Contenido del hero */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-6 py-12 text-center">

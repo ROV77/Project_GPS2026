@@ -13,16 +13,40 @@ export interface Store {
   description: string | null;
   logo_url: string | null;
   verified: boolean;
+  /** Teléfono de contacto de la tienda (formato libre, ej. "+56 9 ..."). Base del enlace de WhatsApp. */
+  store_phone: string | null;
   /** La API devuelve Decimal como string (Prisma $queryRaw), pero puede llegar como number. */
   latitude: string | number | null;
   /** La API devuelve Decimal como string (Prisma $queryRaw), pero puede llegar como number. */
   longitude: string | number | null;
+  /** Dirección completa legible (metadata.address). */
+  address: string | null;
+  /** Calle (metadata.street). */
+  address_street: string | null;
+  /** Número de casa/local (metadata.number). */
+  address_number: string | null;
   region_name: string | null;
   commune_name: string | null;
   commune_city: string | null;
   category_name: string | null;
   avg_rating: string | number;
   review_count: number;
+}
+
+/**
+ * Producto del catálogo de una tienda, alineado con GET /api/stores/:id/products
+ * (ver apps/api/src/repositories/store.repository.ts → findPublicStoreProducts).
+ * `price` llega como string (Decimal serializado) o number; se normaliza al mostrar.
+ * El mobile solo lee imágenes (`image_url`), nunca las sube.
+ */
+export interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price: string | number;
+  stock: number;
+  image_url: string | null;
+  featured: boolean;
 }
 
 export interface Paginated<T> {

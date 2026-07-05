@@ -9,10 +9,12 @@ import { Text } from '@/ui/Text';
 import { RemoteImage } from '@/ui/RemoteImage';
 import { colors } from '@/ui/theme';
 import type { Store } from '@/features/stores/types';
+import { formatStoreAddressShort } from '@/features/stores/formatStoreAddress';
 
 export function StoreCard({ store, onPress }: { store: Store; onPress: () => void }) {
   const rating = Number(store.avg_rating) || 0;
-  const meta = [store.category_name, store.commune_name].filter(Boolean).join(' · ');
+  const addressShort = formatStoreAddressShort(store);
+  const meta = [store.category_name, addressShort || store.commune_name].filter(Boolean).join(' · ');
 
   return (
     <Card onPress={onPress} className="flex-row items-center gap-3">

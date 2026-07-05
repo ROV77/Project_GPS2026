@@ -9,17 +9,18 @@ const createUserSchema = z.object({
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   name: z.string().optional(),
   phone: z.string().max(20).optional(),
-  avatar_url: z.string().url().optional(),
+  avatar_url: z.union([z.string().url(), z.literal('')]).optional(),
 });
 const updateUserSchema = createUserSchema.partial();
 
 const crud = makeCrud(prisma.users, createUserSchema, updateUserSchema, {
   softDelete: true,
   transform: (data) => {
-    const { password, ...rest } = data as { password?: string };
-    if (password === undefined) return rest;
-    // Se hashea con bcrypt antes de persistir (mismo algoritmo que el login).
-    return { ...rest, password_hash: bcrypt.hashSync(password, 10) };
+    const { password, ...rest } = data as { password?: string; avatar_url?: string };
+    const out = { ...rest } as Record<string, unknown>;
+    if (out.avatar_url === '') out.avatar_url = null;
+    if (password === undefined) return out;
+    return { ...out, password_hash: bcrypt.hashSync(password, 10) };
   },
 });
 

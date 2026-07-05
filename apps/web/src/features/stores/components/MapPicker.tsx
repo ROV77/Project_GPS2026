@@ -6,7 +6,10 @@ import { Input } from '@/shared/ui';
 import { cn } from '@/lib/utils';
 import {
   buildFullAddress,
+  extractNumberFromQuery,
+  formatStreetLine,
   getGeolocationErrorMessage,
+  resolveNumberFromQuery,
   reverseGeocode,
   searchAddresses,
 } from '../lib/geocoding';
@@ -72,11 +75,14 @@ export function MapPicker({
   const suppressSearchRef = useRef(false);
   const coordsRef = useRef<{ lat: number; lng: number } | null>(null);
   const contextRef = useRef('');
-  const streetNumberRef = useRef('');
+  const streetRef = useRef('');
+  const numberRef = useRef('');
 
-  const [streetQuery, setStreetQuery] = useState(addressStreet ?? '');
-  const [streetNumber, setStreetNumber] = useState(addressNumber ?? '');
-  streetNumberRef.current = streetNumber;
+  const initialQuery = formatStreetLine(addressStreet ?? '', addressNumber ?? '');
+  const [addressQuery, setAddressQuery] = useState(initialQuery);
+  const [numberInput, setNumberInput] = useState(addressNumber ?? '');
+  const addressQueryRef = useRef(initialQuery);
+  addressQueryRef.current = addressQuery;
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -98,6 +104,8 @@ export function MapPicker({
     ) => {
       coordsRef.current = { lat, lng };
       contextRef.current = context;
+      streetRef.current = street;
+      numberRef.current = number;
 
       onChangeRef.current({
         lat,
@@ -116,13 +124,15 @@ export function MapPicker({
   const applyLocation = useCallback(
     (
       location: Omit<StoreLocation, 'address'> & { context?: string },
-      options?: { preserveNumber?: boolean },
+      opts?: { preserveNumber?: boolean; userQuery?: string },
     ) => {
+      const resolvedNumber = opts?.preserveNumber
+        ? numberRef.current
+        : resolveNumberFromQuery(location.number, opts?.userQuery ?? addressQueryRef.current);
+
       suppressSearchRef.current = true;
-      setStreetQuery(location.street);
-      if (!options?.preserveNumber) {
-        setStreetNumber(location.number);
-      }
+      setAddressQuery(formatStreetLine(location.street, resolvedNumber));
+      setNumberInput(resolvedNumber);
 
       const context = location.context ?? contextRef.current;
       contextRef.current = context;
@@ -134,7 +144,7 @@ export function MapPicker({
         location.lat,
         location.lng,
         location.street,
-        options?.preserveNumber ? streetNumberRef.current : location.number,
+        resolvedNumber,
         context,
         {
           regionName: location.regionName,
@@ -152,15 +162,16 @@ export function MapPicker({
 
   const applyNumberChange = useCallback(
     (number: string) => {
-      setStreetNumber(number);
+      setNumberInput(number);
       const coords =
         coordsRef.current ??
         (latitude != null && longitude != null ? { lat: latitude, lng: longitude } : null);
-      if (!coords) return;
+      if (!coords || !streetRef.current.trim()) return;
 
-      emitLocation(coords.lat, coords.lng, streetQuery, number, contextRef.current);
+      emitLocation(coords.lat, coords.lng, streetRef.current, number, contextRef.current);
+      setAddressQuery(formatStreetLine(streetRef.current, number));
     },
-    [emitLocation, latitude, longitude, streetQuery],
+    [emitLocation, latitude, longitude],
   );
 
   const resolveAddressForCoords = useCallback(
@@ -173,32 +184,45 @@ export function MapPicker({
         setIsReverseGeocoding(true);
         try {
           const parsed = await reverseGeocode(lat, lng, reverseAbortRef.current?.signal);
-          applyLocation({
-            lat,
-            lng,
-            street: parsed.street,
-            number: parsed.number,
-            context: parsed.context,
-            regionName: parsed.regionName,
-            communeName: parsed.communeName,
-            confirmed: true,
-          });
+          const number = resolveNumberFromQuery(
+            parsed.number,
+            addressQueryRef.current,
+          ) || numberRef.current;
+
+          applyLocation(
+            {
+              lat,
+              lng,
+              street: parsed.street,
+              number,
+              context: parsed.context,
+              regionName: parsed.regionName,
+              communeName: parsed.communeName,
+              confirmed: true,
+            },
+            { userQuery: addressQueryRef.current },
+          );
         } catch (error) {
           if (error instanceof DOMException && error.name === 'AbortError') return;
-          applyLocation({
-            lat,
-            lng,
-            street: streetQuery,
-            number: '',
-            context: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
-            confirmed: false,
-          });
+          const fallbackNumber =
+            numberRef.current || extractNumberFromQuery(addressQueryRef.current);
+          applyLocation(
+            {
+              lat,
+              lng,
+              street: streetRef.current,
+              number: fallbackNumber,
+              context: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+              confirmed: false,
+            },
+            { preserveNumber: !!numberRef.current },
+          );
         } finally {
           setIsReverseGeocoding(false);
         }
       }, REVERSE_DEBOUNCE_MS);
     },
-    [applyLocation, streetQuery],
+    [applyLocation],
   );
 
   const handleCoordsChange = useCallback(
@@ -272,17 +296,20 @@ export function MapPicker({
   }, [latitude, longitude]);
 
   useEffect(() => {
-    if (addressStreet != null && addressStreet !== streetQuery) {
-      suppressSearchRef.current = true;
-      setStreetQuery(addressStreet);
-    }
-  }, [addressStreet]);
+    const street = addressStreet ?? '';
+    const number = addressNumber ?? '';
+    const line = formatStreetLine(street, number);
+    if (!line) return;
 
-  useEffect(() => {
-    if (addressNumber != null && addressNumber !== streetNumber) {
-      setStreetNumber(addressNumber);
-    }
-  }, [addressNumber]);
+    setAddressQuery((current) => {
+      if (current === line) return current;
+      suppressSearchRef.current = true;
+      streetRef.current = street;
+      numberRef.current = number;
+      setNumberInput(number);
+      return line;
+    });
+  }, [addressStreet, addressNumber]);
 
   useEffect(() => {
     if (suppressSearchRef.current) {
@@ -293,7 +320,7 @@ export function MapPicker({
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
     searchAbortRef.current?.abort();
 
-    const trimmed = streetQuery.trim();
+    const trimmed = addressQuery.trim();
     if (trimmed.length < 3) {
       setSuggestions([]);
       setIsSearching(false);
@@ -325,7 +352,7 @@ export function MapPicker({
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
       searchAbortRef.current?.abort();
     };
-  }, [streetQuery]);
+  }, [addressQuery]);
 
   useEffect(
     () => () => {
@@ -342,13 +369,13 @@ export function MapPicker({
         lat: suggestion.lat,
         lng: suggestion.lng,
         street: suggestion.street,
-        number: streetNumber,
+        number: suggestion.number,
         context: suggestion.context,
         regionName: suggestion.regionName,
         communeName: suggestion.communeName,
         confirmed: true,
       },
-      { preserveNumber: true },
+      { userQuery: addressQueryRef.current },
     );
   };
 
@@ -377,7 +404,10 @@ export function MapPicker({
 
   const hasCoords = latitude != null && longitude != null;
   const isBusy = isSearching || isLocating || isReverseGeocoding;
-  const previewAddress = address?.trim() || buildFullAddress(streetQuery, streetNumber, contextRef.current);
+  const showNumberHint = hasCoords && !numberInput.trim();
+  const previewAddress =
+    address?.trim() ||
+    buildFullAddress(streetRef.current, numberRef.current, contextRef.current);
 
   return (
     <div className="space-y-3">
@@ -398,13 +428,18 @@ export function MapPicker({
 
       <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
         <div className="relative">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Calle</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
+            Dirección
+          </label>
           <Input
-            value={streetQuery}
+            value={addressQuery}
             onChange={(event) => {
-              setStreetQuery(event.target.value);
+              const value = event.target.value;
+              setAddressQuery(value);
               setLocationError(null);
               setIsSearchOpen(true);
+              const extracted = extractNumberFromQuery(value);
+              if (extracted) setNumberInput(extracted);
             }}
             onFocus={() => {
               if (suggestions.length > 0) setIsSearchOpen(true);
@@ -419,7 +454,7 @@ export function MapPicker({
                 <Search className="size-4" />
               )
             }
-            placeholder="Busca tu calle (ej: Lago Riñihue, Concepción)"
+            placeholder="Calle, número y ciudad (ej: Lago Riñihue 155, Concepción)"
             autoComplete="off"
             aria-autocomplete="list"
             aria-expanded={isSearchOpen}
@@ -454,18 +489,27 @@ export function MapPicker({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Número</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
+            Número
+          </label>
           <Input
-            value={streetNumber}
+            value={numberInput}
             onChange={(event) => applyNumberChange(event.target.value)}
             prefix={<Hash className="size-4" />}
             placeholder="Nº"
             className="placeholder:opacity-35"
             inputMode="text"
             autoComplete="off"
+            disabled={!hasCoords && !streetRef.current.trim()}
           />
         </div>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        {showNumberHint
+          ? 'Ubicación en el mapa lista. Agrega el número de casa o local si no se detectó automáticamente.'
+          : 'Las coordenadas se guardan con el pin; calle y número se muestran al cliente en la app.'}
+      </p>
 
       {previewAddress && (
         <p className="text-xs text-muted-foreground">

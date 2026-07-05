@@ -12,7 +12,7 @@ export interface Store {
   store_phone?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  metadata?: { address?: string | null } | null;
+  metadata?: { address?: string | null; street?: string | null; number?: string | null } | null;
   verified?: boolean;
 }
 

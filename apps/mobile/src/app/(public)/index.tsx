@@ -147,7 +147,15 @@ export default function HomeScreen() {
         }
         renderItem={({ item }) => (
           <View className="px-5 pb-3">
-            <StoreCard store={item} onPress={() => router.push(`/(public)/store/${item.id}`)} />
+            <StoreCard
+              store={item}
+              onPress={() =>
+                router.push({
+                  pathname: '/(public)/store/[id]',
+                  params: { id: item.id, store: JSON.stringify(item) },
+                })
+              }
+            />
           </View>
         )}
         ListEmptyComponent={

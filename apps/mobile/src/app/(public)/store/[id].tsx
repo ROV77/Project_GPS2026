@@ -1,21 +1,52 @@
 /**
- * Detalle de tienda + catálogo. El catálogo real depende de un endpoint público
- * pendiente en el backend (GET /api/stores/:id/products); mientras tanto esta
- * pantalla deja el armazón navegable. Ver docs/MOBILE-GUIA-INICIO.md §1.2.
+ * Detalle de tienda: ficha (info + ubicación) + catálogo de productos.
+ * Se abre con solo `id` en la URL, pero Home y el mapa además pasan el objeto
+ * `Store` serializado por params para pintar la ficha al instante (ver
+ * useStoreDetail). Los datos se refetchean desde:
+ *   - GET /api/stores/:id           (ficha enriquecida)
+ *   - GET /api/stores/:id/products  (catálogo público)
  */
-import { View, Pressable } from 'react-native';
+import { useMemo, useRef } from 'react';
+import { View, Pressable, Linking, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, PackageOpen } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type BottomSheet from '@gorhom/bottom-sheet';
+import { ChevronLeft, Star, BadgeCheck, MapPin, PackageOpen, ChevronRight } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
+import { RemoteImage } from '@/ui/RemoteImage';
 import { colors } from '@/ui/theme';
+import { getCategoryStyle } from '@/features/stores/categoryStyle';
+import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
+import { formatCLP } from '@/shared/lib/format';
+import { useStoreDetail } from '@/features/stores/useStoreDetail';
+import { useCart, cartCount, cartTotal } from '@/features/cart/cart.store';
+import { ProductCard } from '@/components/ProductCard';
+import { CartSheet } from '@/components/CartSheet';
+import type { Product, Store } from '@/features/stores/types';
 
 export default function StoreDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, store: storeParam } = useLocalSearchParams<{ id: string; store?: string }>();
   const router = useRouter();
+
+  // Hidratación instantánea: Home/mapa pasan el Store serializado por params.
+  const initialStore = useMemo<Store | null>(() => {
+    if (!storeParam) return null;
+    try {
+      return JSON.parse(storeParam) as Store;
+    } catch {
+      return null;
+    }
+  }, [storeParam]);
+
+  const { store, products, loading, error, reload } = useStoreDetail(id, initialStore);
+  const cartRef = useRef<BottomSheet>(null);
 
   return (
     <Screen>
+      {/* Header con botón volver (consistente con el resto de la app) */}
       <View className="flex-row items-center gap-2 px-3 py-2">
         <Pressable
           onPress={() => router.back()}
@@ -29,16 +60,210 @@ export default function StoreDetailScreen() {
         <Text variant="heading">Tienda</Text>
       </View>
 
-      <View className="flex-1 items-center justify-center gap-3 px-8">
-        <PackageOpen size={44} color={colors.mutedForeground} strokeWidth={1.5} />
-        <Text variant="subtitle" className="text-center">
-          Catálogo en camino
-        </Text>
-        <Text variant="caption" className="text-center">
-          Aquí se mostrará el catálogo de productos (tienda #{id}) cuando el endpoint
-          público esté disponible.
-        </Text>
-      </View>
+      {store ? (
+        <>
+          <FlatList
+            data={products}
+            keyExtractor={(p: Product) => p.id}
+            contentContainerStyle={{ paddingBottom: 96 }}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={<StoreHeader store={store} />}
+            renderItem={({ item }) => (
+              <View className="px-5 pb-3">
+                <ProductCard product={item} store={store} />
+              </View>
+            )}
+            ListEmptyComponent={loading ? <CatalogSkeleton /> : <CatalogEmpty />}
+          />
+          <OrderBar store={store} onPress={() => cartRef.current?.expand()} />
+          <CartSheet ref={cartRef} store={store} />
+        </>
+      ) : error ? (
+        <ErrorState onRetry={reload} />
+      ) : (
+        <StoreHeaderSkeleton />
+      )}
     </Screen>
+  );
+}
+
+/** Barra inferior fija con el resumen del pedido. Se auto-oculta si el carrito
+ *  no es de esta tienda o está vacío. Toca → abre el CartSheet. */
+function OrderBar({ store, onPress }: { store: Store; onPress: () => void }) {
+  const insets = useSafeAreaInsets();
+  const count = useCart((s) => (s.storeId === store.id ? cartCount(s.items) : 0));
+  const total = useCart((s) => (s.storeId === store.id ? cartTotal(s.items) : 0));
+  if (count === 0) return null;
+
+  return (
+    <View
+      className="absolute inset-x-0 bottom-0 border-t border-border bg-card px-5 pt-3"
+      style={{ paddingBottom: insets.bottom || 12 }}
+    >
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel="Ver pedido"
+        className="flex-row items-center justify-between rounded-lg bg-brand-700 px-4 py-3"
+        style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+      >
+        <Text variant="subtitle" className="text-white">
+          {count} {count === 1 ? 'producto' : 'productos'} · {formatCLP(total)}
+        </Text>
+        <View className="flex-row items-center gap-1">
+          <Text variant="label" className="text-white">
+            Ver pedido
+          </Text>
+          <ChevronRight size={18} color={colors.white} strokeWidth={2.5} />
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+/** Ficha superior: logo, nombre, categoría, rating, ubicación, descripción y CTA. */
+function StoreHeader({ store }: { store: Store }) {
+  const style = getCategoryStyle(store.category_name);
+  const rating = Number(store.avg_rating) || 0;
+  const location = [store.commune_name, store.region_name].filter(Boolean).join(', ');
+  const lat = Number(store.latitude);
+  const lng = Number(store.longitude);
+  const canNavigate = !Number.isNaN(lat) && !Number.isNaN(lng);
+
+  const openDirections = () => {
+    void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+  };
+
+  const whatsappUrl = buildWhatsAppUrl(
+    store.store_phone,
+    `Hola ${store.name}, te contacto desde Caserita 👋`,
+  );
+
+  return (
+    <View className="gap-3 px-5 pb-4">
+      <View className="flex-row items-center gap-3">
+        <RemoteImage uri={store.logo_url} size={72} rounded={16} />
+        <View className="flex-1">
+          <View className="flex-row items-center gap-1">
+            <Text variant="subtitle" numberOfLines={2} className="flex-shrink">
+              {store.name}
+            </Text>
+            {store.verified ? (
+              <BadgeCheck size={16} color={colors.brand[500]} strokeWidth={2} />
+            ) : null}
+          </View>
+
+          <View className="mt-1 flex-row items-center gap-1">
+            <style.Icon size={13} color={style.color} strokeWidth={2.25} />
+            <Text variant="caption" style={{ color: style.color }}>
+              {store.category_name ?? 'Tienda'}
+            </Text>
+          </View>
+
+          <View className="mt-1 flex-row items-center gap-1">
+            <Star size={14} color={colors.amber} fill={colors.amber} strokeWidth={0} />
+            <Text variant="caption" className="text-foreground">
+              {rating > 0 ? rating.toFixed(1) : 'Nuevo'}
+            </Text>
+            {store.review_count > 0 ? (
+              <Text variant="caption">· {store.review_count} reseñas</Text>
+            ) : null}
+          </View>
+        </View>
+      </View>
+
+      {location ? (
+        <View className="flex-row items-center gap-1.5">
+          <MapPin size={14} color={colors.mutedForeground} strokeWidth={2} />
+          <Text variant="body" style={{ color: colors.mutedForeground }}>
+            {location}
+          </Text>
+        </View>
+      ) : null}
+
+      {store.description ? (
+        <Text variant="body" className="text-foreground">
+          {store.description}
+        </Text>
+      ) : null}
+
+      {canNavigate ? (
+        <Button label="Cómo llegar" variant="secondary" onPress={openDirections} />
+      ) : null}
+
+      {whatsappUrl ? (
+        <Button label="Contactar por WhatsApp" onPress={() => void Linking.openURL(whatsappUrl)} />
+      ) : null}
+
+      <View className="mt-1">
+        <Text variant="subtitle">Catálogo</Text>
+      </View>
+    </View>
+  );
+}
+
+/** Skeletons del catálogo mientras carga (coherente con la Home). */
+function CatalogSkeleton() {
+  return (
+    <View className="gap-3 px-5">
+      {[0, 1, 2].map((i) => (
+        <Card key={i} className="h-[92px] flex-row items-center gap-3">
+          <View className="h-16 w-16 rounded-xl bg-muted" />
+          <View className="flex-1 gap-2">
+            <View className="h-4 w-2/3 rounded bg-muted" />
+            <View className="h-3 w-1/2 rounded bg-muted" />
+            <View className="h-4 w-1/4 rounded bg-muted" />
+          </View>
+        </Card>
+      ))}
+    </View>
+  );
+}
+
+function CatalogEmpty() {
+  return (
+    <View className="items-center gap-2 px-8 pt-8">
+      <PackageOpen size={40} color={colors.mutedForeground} strokeWidth={1.5} />
+      <Text variant="subtitle" className="text-center">
+        Aún sin productos
+      </Text>
+      <Text variant="caption" className="text-center">
+        Esta tienda todavía no publica productos en su catálogo.
+      </Text>
+    </View>
+  );
+}
+
+/** Placeholder de la ficha cuando se entra por deep-link (sin params) y aún carga. */
+function StoreHeaderSkeleton() {
+  return (
+    <View className="gap-3 px-5 pt-2">
+      <View className="flex-row items-center gap-3">
+        <View className="h-[72px] w-[72px] rounded-2xl bg-muted" />
+        <View className="flex-1 gap-2">
+          <View className="h-5 w-2/3 rounded bg-muted" />
+          <View className="h-3 w-1/3 rounded bg-muted" />
+          <View className="h-3 w-1/4 rounded bg-muted" />
+        </View>
+      </View>
+      <View className="h-4 w-1/2 rounded bg-muted" />
+      <View className="h-16 w-full rounded bg-muted" />
+    </View>
+  );
+}
+
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <View className="items-center gap-3 px-8 pt-16">
+      <Text variant="subtitle" className="text-center">
+        No pudimos cargar la tienda
+      </Text>
+      <Text variant="caption" className="text-center" style={{ color: colors.destructive }}>
+        Revisa tu conexión o que la API esté disponible.
+      </Text>
+      <View className="w-40 pt-2">
+        <Button label="Reintentar" onPress={onRetry} variant="secondary" />
+      </View>
+    </View>
   );
 }

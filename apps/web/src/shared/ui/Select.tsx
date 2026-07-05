@@ -6,7 +6,7 @@ import {
   ComboboxOptions,
   ComboboxOption,
 } from '@headlessui/react';
-import { ChevronsUpDown, Check, X } from 'lucide-react';
+import { ChevronDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { controlBase, controlBorder } from './_control';
 
@@ -48,6 +48,8 @@ export function Select({
       ? options
       : options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()));
 
+  const showClear = allowClear && value != null && value !== '';
+
   return (
     <Combobox
       value={value ?? null}
@@ -57,26 +59,37 @@ export function Select({
     >
       <div className={cn('relative', className)}>
         <ComboboxInput
-          className={cn(controlBase, 'h-10 pr-16', controlBorder(invalid))}
+          className={cn(
+            controlBase,
+            'h-10 truncate',
+            showClear ? 'pr-14' : 'pr-9',
+            controlBorder(invalid),
+          )}
           placeholder={placeholder}
           displayValue={(val: string | null) =>
             options.find((o) => o.value === val)?.label ?? ''
           }
           onChange={(e) => setQuery(e.target.value)}
         />
-        <div className="absolute inset-y-0 right-2 flex items-center gap-1">
-          {allowClear && value != null && value !== '' && (
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-y-0 right-0 flex items-center',
+            showClear ? 'gap-0.5 pr-1' : 'justify-center',
+            showClear ? 'w-14' : 'w-9',
+          )}
+        >
+          {showClear && (
             <button
               type="button"
               onClick={() => onChange(null)}
-              className="text-slate-400 hover:text-slate-600"
+              className="pointer-events-auto rounded p-0.5 text-slate-400 hover:text-slate-600"
               tabIndex={-1}
             >
-              <X className="size-4" />
+              <X className="size-4 shrink-0" />
             </button>
           )}
-          <ComboboxButton className="text-slate-400">
-            <ChevronsUpDown className="size-4" />
+          <ComboboxButton className="pointer-events-auto rounded p-0.5 text-slate-400">
+            <ChevronDown className="size-4 shrink-0" />
           </ComboboxButton>
         </div>
 

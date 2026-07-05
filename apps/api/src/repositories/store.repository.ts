@@ -17,10 +17,14 @@ interface StoreRawRow {
   description: string | null;
   logo_url: string | null;
   verified: boolean;
+  store_phone: string | null;
   latitude: number | null;
   longitude: number | null;
   opening_time: string | null;
   closing_time: string | null;
+  address: string | null;
+  address_street: string | null;
+  address_number: string | null;
   region_name: string | null;
   commune_name: string | null;
   commune_city: string | null;
@@ -75,10 +79,14 @@ export async function findStoresWithRating(
       s.description,
       s.logo_url,
       s.verified,
+      s.store_phone,
       s.latitude,
       s.longitude,
       s.opening_time,
       s.closing_time,
+      s.metadata->>'address' AS address,
+      s.metadata->>'street' AS address_street,
+      s.metadata->>'number' AS address_number,
       r.name  AS region_name,
       c.name  AS commune_name,
       c.city  AS commune_city,
@@ -91,7 +99,7 @@ export async function findStoresWithRating(
     LEFT JOIN categories cat ON cat.id = s.category_id
     LEFT JOIN reviews    rv  ON rv.store_id = s.id
     ${whereClause}
-    GROUP BY s.id, r.name, c.name, c.city, cat.name
+    GROUP BY s.id, s.metadata, r.name, c.name, c.city, cat.name
     ORDER BY s.id
     LIMIT  ${limit}
     OFFSET ${offset}
@@ -155,6 +163,79 @@ export async function findStoresWithRating(
 }
 
 /**
+ * Detalle de una tienda individual con el mismo shape enriquecido que el
+ * listado (`findStoresWithRating`): rating promedio, nombres de categoría/
+ * comuna/región y estado visual (semáforo). Reutiliza el mismo SELECT + JOINs,
+ * acotado por `WHERE s.id = ${id}` y sin paginación.
+ *
+ * Devuelve `null` si la tienda no existe (para que el controlador responda 404).
+ */
+export async function findStoreByIdWithRating(
+  id: bigint,
+): Promise<StoreWithRating | null> {
+  const rawStores = await prisma.$queryRaw<StoreRawRow[]>`
+    SELECT
+      s.id,
+      s.name,
+      s.description,
+      s.logo_url,
+      s.verified,
+      s.store_phone,
+      s.latitude,
+      s.longitude,
+      s.opening_time,
+      s.closing_time,
+      r.name  AS region_name,
+      c.name  AS commune_name,
+      c.city  AS commune_city,
+      cat.name AS category_name,
+      COALESCE(ROUND(AVG(rv.rating)::NUMERIC, 1), 0) AS avg_rating,
+      COUNT(rv.id)::INT                               AS review_count
+    FROM   stores s
+    LEFT JOIN regions    r   ON r.id   = s.region_id
+    LEFT JOIN communes   c   ON c.id   = s.commune_id
+    LEFT JOIN categories cat ON cat.id = s.category_id
+    LEFT JOIN reviews    rv  ON rv.store_id = s.id
+    WHERE  s.id = ${id}
+    GROUP BY s.id, r.name, c.name, c.city, cat.name
+  `;
+
+  const store = rawStores[0];
+  if (!store) return null;
+
+  // Enriquecer con el estado visual (semáforo) del día actual.
+  const dayOfWeek = getCurrentDayOfWeek();
+  const schedules = await findTodaySchedulesForStores([store.id], dayOfWeek);
+  const schedule = schedules[0];
+
+  let openingStr: string | null = null;
+  let closingStr: string | null = null;
+  let isClosed = false;
+
+  if (schedule) {
+    isClosed = schedule.is_closed;
+    openingStr = schedule.opening_time
+      ? schedule.opening_time.toISOString().substring(11, 19)
+      : null;
+    closingStr = schedule.closing_time
+      ? schedule.closing_time.toISOString().substring(11, 19)
+      : null;
+  } else {
+    // Fallback a los campos de la tabla stores
+    openingStr = store.opening_time;
+    closingStr = store.closing_time;
+  }
+
+  const statusResult = calculateStoreStatus(openingStr, closingStr, { isClosed });
+  return {
+    ...store,
+    status: statusResult.status,
+    color: statusResult.color,
+    minutesUntilClose: statusResult.minutesUntilClose,
+  };
+}
+
+/**
  * Métricas agregadas de una tienda para el dashboard:
  * conteo de productos activos, stock total, número de reseñas y rating promedio.
  */
@@ -180,5 +261,27 @@ export async function findStoreStats(storeId: bigint) {
       ? Math.round(reviewAgg._avg.rating * 10) / 10
       : 0,
   };
+}
+
+/**
+ * Catálogo público de una tienda: sus productos no eliminados, con los destacados
+ * primero. Solo expone campos de lectura para el cliente (mobile) — nunca
+ * `deleted_at`/`updated_at`. Los BigInt y Decimal se serializan a string vía el
+ * parche global de app.ts al hacer res.json.
+ */
+export async function findPublicStoreProducts(storeId: bigint) {
+  return prisma.products.findMany({
+    where: { store_id: storeId, deleted_at: null },
+    orderBy: [{ featured: 'desc' }, { id: 'asc' }],
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      stock: true,
+      image_url: true,
+      featured: true,
+    },
+  });
 }
 

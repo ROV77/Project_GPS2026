@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Table, type Column, Drawer, Button, Input } from '@/shared/ui';
-import { useApplications, useCreateCourierRating } from '../hooks/useCouriers';
-import { useMyStore } from '@/features/stores/hooks/useStores';
-import type { CourierApplication } from '../types';
 import { Star } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Table, type Column, Drawer, Button, Input, EmptyState, Pagination, Select } from '@/shared/ui';
+import { useApplications, useCreateCourierRating, useCourierRatings } from '../hooks/useCouriers';
+import { useMyStore } from '@/features/stores/hooks/useStores';
+import type { CourierApplication, CourierRating } from '../types';
+import { formatDate } from '@/shared/lib/format';
 import { toast } from 'sonner';
 
 export function RatingsTab() {
