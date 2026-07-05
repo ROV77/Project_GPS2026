@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
-import { useSessionStore } from '@/features/auth/session.store';
+import { useSession } from '@/features/auth/session.store';
 import { useCourierRatings } from '@/features/delivery/hooks';
 import { Star } from 'lucide-react-native';
 
 export default function CourierReviewsScreen() {
-  const { user } = useSessionStore();
+  const { user } = useSession();
 
   const { data: reviews, loading: isLoading, error: isError } = useCourierRatings(String(user?.id));
 
