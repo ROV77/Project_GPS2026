@@ -35,6 +35,9 @@ export interface CourierRating {
   users?: {
     name: string | null;
   };
+  stores?: {
+    name: string;
+  };
 }
 
 /** Repartidor disponible (usuario con rol delivery) que la tienda visualiza. */

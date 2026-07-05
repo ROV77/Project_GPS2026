@@ -196,8 +196,6 @@ export function ApplicationsTab() {
                 </div>
               </div>
             )}
-            </div>
-
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Vacante
