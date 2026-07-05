@@ -1,18 +1,13 @@
 import React from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
 import { useSessionStore } from '@/features/auth/session.store';
-import { getCourierRatings } from '@/features/delivery/api';
+import { useCourierRatings } from '@/features/delivery/hooks';
 import { Star } from 'lucide-react-native';
 
 export default function CourierReviewsScreen() {
   const { user } = useSessionStore();
 
-  const { data: reviews, isLoading, isError } = useQuery({
-    queryKey: ['courier-reviews', user?.id],
-    queryFn: () => getCourierRatings(String(user?.id)),
-    enabled: !!user?.id,
-  });
+  const { data: reviews, loading: isLoading, error: isError } = useCourierRatings(String(user?.id));
 
   const renderStars = (rating: number) => {
     return (
