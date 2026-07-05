@@ -50,6 +50,12 @@ export interface StoreWithRating {
   longitude: number | null;
   opening_time: string | null;
   closing_time: string | null;
+  /** Dirección completa legible (stores.metadata.address). */
+  address: string | null;
+  /** Calle (stores.metadata.street). */
+  address_street: string | null;
+  /** Número de casa/local (stores.metadata.number). */
+  address_number: string | null;
   region_name: string | null;
   commune_name: string | null;
   commune_city: string | null;

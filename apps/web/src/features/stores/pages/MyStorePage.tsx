@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -13,8 +13,12 @@ import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
 import { useMyAccount } from '@/features/user/hooks/useUser';
+import { useMySubscription } from '@/features/subscriptions/hooks/useSubscription';
+import { planShowsVerifiedBadge } from '@/features/plans/lib/planBenefits';
 import { AvatarUploader } from '@/features/user/components/AvatarUploader';
 import { MapPicker } from '../components/MapPicker';
+import { StoreMobilePreview } from '../components/StoreMobilePreview';
+import type { StorePreviewData } from '../components/StoreMobilePreview';
 import { ScheduleEditor } from '../components/ScheduleEditor';
 import { getStoreLocationMetadata } from '../lib/storeMetadata';
 import { resolveCommuneId, resolveRegionId } from '../lib/resolveCatalogLocation';
@@ -22,10 +26,11 @@ import { geocodeCommune } from '../lib/geocoding';
 import type { StoreLocation } from '../types/location';
 function findOptionLabel(
   options: Array<{ value: string; label: string }>,
-  id?: number | null,
+  id?: number | string | null,
 ): string {
-  if (id == null) return '';
-  return options.find((option) => Number(option.value) === id)?.label ?? '';
+  if (id == null || id === '') return '';
+  const idStr = String(id);
+  return options.find((option) => option.value === idStr || String(option.value) === idStr)?.label ?? '';
 }
 
 /**
@@ -36,9 +41,11 @@ function findOptionLabel(
 export function MyStorePage() {
   const { data: store, isLoading } = useMyStore();
   const { data: account } = useMyAccount();
+  const { data: subscription } = useMySubscription();
   const update = useUpdateStore();
   const categories = useCatalogOptions('categories');
   const regions = useCatalogOptions('regions');
+  const [manualLocation, setManualLocation] = useState(false);
 
   const {
     control,
@@ -70,9 +77,50 @@ export function MyStorePage() {
   const watchedStreet = watch('address_street');
   const watchedNumber = watch('address_number');
   const watchedCommuneId = watch('commune_id');
+  const watchedName = watch('name');
+  const watchedDescription = watch('description');
+  const watchedCategoryId = watch('category_id');
+  const watchedLogoUrl = watch('logo_url');
 
   const selectedRegionLabel = findOptionLabel(regions.options, watchedRegionId);
   const selectedCommuneLabel = findOptionLabel(communes.options, watchedCommuneId);
+  const selectedCategoryLabel = findOptionLabel(categories.options, watchedCategoryId);
+
+  const previewData = useMemo<StorePreviewData>(
+    () => ({
+      name: watchedName ?? store?.name ?? '',
+      description: watchedDescription ?? store?.description ?? '',
+      categoryName: selectedCategoryLabel,
+      logoUrl: watchedLogoUrl || account?.avatar_url || store?.logo_url,
+      address: watchedAddress,
+      addressStreet: watchedStreet,
+      addressNumber: watchedNumber,
+      communeName: selectedCommuneLabel,
+      regionName: selectedRegionLabel,
+      latitude: watchedLat,
+      longitude: watchedLng,
+      verified: planShowsVerifiedBadge(subscription?.plan),
+    }),
+    [
+      account?.avatar_url,
+      selectedCategoryLabel,
+      selectedCommuneLabel,
+      selectedRegionLabel,
+      store?.description,
+      store?.logo_url,
+      store?.name,
+      subscription?.plan,
+      watchedAddress,
+      watchedCategoryId,
+      watchedDescription,
+      watchedLat,
+      watchedLng,
+      watchedLogoUrl,
+      watchedName,
+      watchedNumber,
+      watchedStreet,
+    ],
+  );
 
   useEffect(() => {
     if (!store) return;
@@ -95,20 +143,13 @@ export function MyStorePage() {
     });
   }, [store, reset]);
 
-  // Centra el mapa en la comuna elegida (comuna = fuente de verdad) y resetea
-  // la calle para que el usuario afine el punto exacto dentro de esa comuna.
   const centerMapOnCommune = useCallback(
     async (communeLabel: string, regionLabel: string) => {
       const geo = await geocodeCommune(communeLabel, regionLabel);
       if (!geo) return;
       setValue('latitude', geo.lat, { shouldDirty: true, shouldValidate: true });
       setValue('longitude', geo.lng, { shouldDirty: true, shouldValidate: true });
-      setValue('address_street', '', { shouldDirty: true });
-      setValue('address_number', '', { shouldDirty: true });
-      setValue('address', [communeLabel, regionLabel].filter(Boolean).join(', '), {
-        shouldDirty: true,
-      });
-      clearErrors(['latitude', 'longitude', 'address_street']);
+      clearErrors(['latitude', 'longitude']);
     },
     [clearErrors, setValue],
   );
@@ -125,14 +166,25 @@ export function MyStorePage() {
     [clearErrors, setValue],
   );
 
-  // Reverse híbrido NO destructivo: solo actualiza Región/Comuna si el punto cae
-  // en una comuna que SÍ existe en el catálogo; si no, respeta la selección.
+  // Deriva región/comuna del catálogo a partir de la dirección confirmada en el mapa.
   const syncCatalogFromLocation = useCallback(
     async (location: StoreLocation) => {
-      if (!location.communeName) return;
+      if (!location.communeName) {
+        setValue('region_id', undefined as unknown as number, { shouldDirty: true, shouldValidate: true });
+        setValue('commune_id', undefined as unknown as number, { shouldDirty: true, shouldValidate: true });
+        return;
+      }
 
       const regionId = resolveRegionId(location.regionName, regions.options);
-      if (!regionId) return;
+      if (!regionId) {
+        setValue('region_id', undefined as unknown as number, { shouldDirty: true, shouldValidate: true });
+        setValue('commune_id', undefined as unknown as number, { shouldDirty: true, shouldValidate: true });
+        setError('commune_id', {
+          type: 'manual',
+          message: 'No pudimos asociar esta dirección a una región del catálogo.',
+        });
+        return;
+      }
 
       const regionCommunes = await api
         .get<Array<{ id: Id; name: string }>>(`/regions/${regionId}/communes`)
@@ -144,13 +196,21 @@ export function MyStorePage() {
       }));
 
       const communeId = resolveCommuneId(location.communeName, communeOptions);
-      if (!communeId) return;
+      if (!communeId) {
+        setValue('region_id', undefined as unknown as number, { shouldDirty: true, shouldValidate: true });
+        setValue('commune_id', undefined as unknown as number, { shouldDirty: true, shouldValidate: true });
+        setError('commune_id', {
+          type: 'manual',
+          message: `La comuna "${location.communeName}" no está en el catálogo. Ajusta el pin o elige otra dirección.`,
+        });
+        return;
+      }
 
       setValue('region_id', regionId, { shouldDirty: true, shouldValidate: true });
       setValue('commune_id', communeId, { shouldDirty: true, shouldValidate: true });
       clearErrors(['region_id', 'commune_id']);
     },
-    [clearErrors, regions.options, setValue],
+    [clearErrors, regions.options, setError, setValue],
   );
 
   const onSubmit = (values: StoreProfileInput) => {
@@ -173,7 +233,10 @@ export function MyStorePage() {
         title="Mi Tienda"
         subtitle="Datos de tu comercio, visibles para los clientes en la app"
       />
-      <Card className="max-w-4xl">
+
+      <div className="flex w-full flex-col gap-6 xl:flex-row xl:items-start xl:gap-8">
+        <div className="min-w-0 flex-1 space-y-6">
+      <Card>
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2">
             <Skeleton className="h-10 w-full" />
@@ -247,65 +310,17 @@ export function MyStorePage() {
                 </Field>
               </div>
 
-              <Field label="Categoría" required error={errors.category_id?.message}>
+              <Field label="Categoría" required error={errors.category_id?.message} className="md:col-span-2">
                 <Controller
                   name="category_id"
                   control={control}
                   render={({ field }) => (
                     <Select
                       value={field.value != null ? String(field.value) : null}
-                      onChange={(v) => field.onChange(v ?? undefined)}
+                      onChange={(v) => field.onChange(v ? Number(v) : undefined)}
                       options={categories.options}
                       loading={categories.isLoading}
                       placeholder="Selecciona una categoría"
-                    />
-                  )}
-                />
-              </Field>
-
-              <Field label="Región" required error={errors.region_id?.message}>
-                <Controller
-                  name="region_id"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value != null ? String(field.value) : null}
-                      onChange={(v) => {
-                        const next = v ? Number(v) : undefined;
-                        field.onChange(next);
-                        // Al cambiar la región se reinicia la comuna (cascada).
-                        setValue('commune_id', undefined as unknown as number, { shouldDirty: true });
-                        clearErrors(['region_id', 'commune_id']);
-                      }}
-                      options={regions.options}
-                      loading={regions.isLoading}
-                      placeholder="Selecciona una región"
-                    />
-                  )}
-                />
-              </Field>
-
-              <Field label="Comuna" required error={errors.commune_id?.message}>
-                <Controller
-                  name="commune_id"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value != null ? String(field.value) : null}
-                      onChange={(v) => {
-                        const next = v ? Number(v) : undefined;
-                        const label = findOptionLabel(communes.options, next);
-                        field.onChange(next);
-                        clearErrors('commune_id');
-                        // Comuna = fuente de verdad: centra el mapa en ella.
-                        if (next && label) {
-                          void centerMapOnCommune(label, selectedRegionLabel);
-                        }
-                      }}
-                      options={communes.options}
-                      loading={communes.isLoading}
-                      placeholder={watchedRegionId ? 'Selecciona una comuna' : 'Elige región primero'}
-                      disabled={!watchedRegionId}
                     />
                   )}
                 />
@@ -319,12 +334,15 @@ export function MyStorePage() {
                 address={watchedAddress}
                 addressStreet={watchedStreet}
                 addressNumber={watchedNumber}
-                communeName={selectedCommuneLabel}
-                regionName={selectedRegionLabel}
+                // En modo automático busca en todo Chile; no sesgar por RM/Santiago guardados.
+                communeName={manualLocation ? selectedCommuneLabel || undefined : undefined}
+                regionName={manualLocation ? selectedRegionLabel || undefined : undefined}
                 streetError={errors.latitude?.message}
                 onChange={(location) => {
                   applyMapLocation(location);
-                  void syncCatalogFromLocation(location);
+                  if (!manualLocation) {
+                    void syncCatalogFromLocation(location);
+                  }
                 }}
               />
               {errors.longitude?.message && !errors.latitude?.message && (
@@ -332,6 +350,98 @@ export function MyStorePage() {
                   {errors.longitude.message}
                 </p>
               )}
+
+              <p className="mt-3 text-xs text-muted-foreground">
+                {manualLocation
+                  ? 'Elige región y comuna; la búsqueda se acotará a esa zona. Escribe calle, número y ciudad en un solo campo.'
+                  : 'Busca calle, número y ciudad en un solo campo (ej: Lago Riñihue 155, Concepción). Región y comuna se completan solas.'}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => setManualLocation((prev) => !prev)}
+                className="mt-2 text-xs font-medium text-brand-700 hover:underline"
+              >
+                {manualLocation
+                  ? 'Volver a buscar por dirección'
+                  : '¿No encuentras tu dirección? Ingresa región y comuna manualmente'}
+              </button>
+
+              <div className="mt-4 grid gap-x-6 md:grid-cols-2">
+                {manualLocation ? (
+                  <>
+                    <Field label="Región" required error={errors.region_id?.message}>
+                      <Controller
+                        name="region_id"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value != null ? String(field.value) : null}
+                            onChange={(v) => {
+                              const next = v ? Number(v) : undefined;
+                              field.onChange(next);
+                              setValue('commune_id', undefined as unknown as number, {
+                                shouldDirty: true,
+                              });
+                              clearErrors(['region_id', 'commune_id']);
+                            }}
+                            options={regions.options}
+                            loading={regions.isLoading}
+                            placeholder="Selecciona una región"
+                          />
+                        )}
+                      />
+                    </Field>
+
+                    <Field label="Comuna" required error={errors.commune_id?.message}>
+                      <Controller
+                        name="commune_id"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value != null ? String(field.value) : null}
+                            onChange={(v) => {
+                              const next = v ? Number(v) : undefined;
+                              const label = findOptionLabel(communes.options, next);
+                              field.onChange(next);
+                              clearErrors('commune_id');
+                              if (next && label) {
+                                void centerMapOnCommune(label, selectedRegionLabel);
+                              }
+                            }}
+                            options={communes.options}
+                            loading={communes.isLoading}
+                            placeholder={watchedRegionId ? 'Selecciona una comuna' : 'Elige región primero'}
+                            disabled={!watchedRegionId}
+                          />
+                        )}
+                      />
+                    </Field>
+                  </>
+                ) : (
+                  <>
+                    <Field label="Región" required error={errors.region_id?.message}>
+                      <Input
+                        value={selectedRegionLabel}
+                        readOnly
+                        disabled
+                        placeholder="Se completa al confirmar tu dirección"
+                        className="cursor-default bg-slate-50 text-slate-700 disabled:opacity-100"
+                      />
+                    </Field>
+
+                    <Field label="Comuna" required error={errors.commune_id?.message}>
+                      <Input
+                        value={selectedCommuneLabel}
+                        readOnly
+                        disabled
+                        placeholder="Se completa al confirmar tu dirección"
+                        className="cursor-default bg-slate-50 text-slate-700 disabled:opacity-100"
+                      />
+                    </Field>
+                  </>
+                )}
+              </div>
             </div>
 
             <Button variant="primary" loading={update.isPending} onClick={handleSubmit(onSubmit)}>
@@ -342,11 +452,20 @@ export function MyStorePage() {
       </Card>
 
       {store && (
-        <Card className="max-w-2xl mt-6">
+        <Card>
           <h3 className="text-lg font-semibold text-slate-900 mb-4">Horarios de atención</h3>
           <ScheduleEditor storeId={store.id} />
         </Card>
       )}
+        </div>
+
+        {store && (
+          <StoreMobilePreview
+            data={previewData}
+            className="hidden shrink-0 xl:mr-6 xl:block xl:sticky xl:top-6"
+          />
+        )}
+      </div>
     </>
   );
 }

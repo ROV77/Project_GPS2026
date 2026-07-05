@@ -19,6 +19,7 @@ export interface AddressSuggestion {
   placeId: number;
   label: string;
   street: string;
+  number: string;
   context: string;
   lat: number;
   lng: number;

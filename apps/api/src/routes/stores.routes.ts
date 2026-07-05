@@ -26,26 +26,32 @@ import {
 
 const fkFields = ['owner_id', 'category_id', 'region_id', 'commune_id'] as const;
 
+function buildStoreWriteData(data: Record<string, unknown>, existingMetadata?: unknown) {
+  const { address, address_street, address_number, ...rest } = data;
+  const out: Record<string, unknown> = { ...rest };
+
+  for (const field of fkFields) {
+    if (out[field] !== undefined) out[field] = BigInt(out[field] as number);
+  }
+
+  const locationPatch: Record<string, unknown> = {};
+  if (address !== undefined) locationPatch.address = address || null;
+  if (address_street !== undefined) locationPatch.street = address_street || null;
+  if (address_number !== undefined) locationPatch.number = address_number || null;
+
+  if (Object.keys(locationPatch).length > 0) {
+    const prev =
+      existingMetadata && typeof existingMetadata === 'object'
+        ? (existingMetadata as Record<string, unknown>)
+        : {};
+    out.metadata = { ...prev, ...locationPatch };
+  }
+
+  return out;
+}
+
 const crud = makeCrud(prisma.stores, createStoreSchema, updateStoreSchema, {
-  transform: (data) => {
-    const { address, address_street, address_number, ...rest } = data;
-    const out: Record<string, unknown> = { ...rest };
-
-    for (const field of fkFields) {
-      if (out[field] !== undefined) out[field] = BigInt(out[field] as number);
-    }
-
-    const locationMeta: Record<string, unknown> = {};
-    if (address !== undefined) locationMeta.address = address || null;
-    if (address_street !== undefined) locationMeta.street = address_street || null;
-    if (address_number !== undefined) locationMeta.number = address_number || null;
-
-    if (Object.keys(locationMeta).length > 0) {
-      out.metadata = locationMeta;
-    }
-
-    return out;
-  },
+  transform: (data) => buildStoreWriteData(data),
 });
 
 export const storesRouter = Router();
@@ -198,7 +204,46 @@ storesRouter.get('/:id/status', async (req, res, next) => {
 storesRouter.get('/:id', getStoreDetail);
 
 // ─── Montar rutas CRUD genéricas después de las rutas específicas ────────────
+<<<<<<< Updated upstream
 // (para que /search, /:id/stats, /:id/schedules, /:id/status, /:id/products y
 //  /:id no colisionen con el CRUD genérico)
+=======
+// (para que /search, /:id/stats, /:id/schedules y /:id/status no colisionen con /:id)
+
+/**
+ * PUT /stores/:id — actualización con merge de metadata (preserva claves existentes).
+ * Registrado antes del CRUD genérico para que tenga prioridad sobre su PUT /:id.
+ */
+storesRouter.put('/:id', validateBody(updateStoreSchema), async (req, res, next) => {
+  try {
+    const id = parseBigIntId(String(req.params.id));
+    if (id === null) {
+      res.status(400).json({ error: 'ID inválido' });
+      return;
+    }
+
+    const data = updateStoreSchema.parse(req.body);
+    const existing = await prisma.stores.findFirst({
+      where: { id },
+      select: { metadata: true },
+    });
+
+    if (!existing) {
+      res.status(404).json({ error: 'No encontrado' });
+      return;
+    }
+
+    const updated = await prisma.stores.update({
+      where: { id },
+      data: buildStoreWriteData(data, existing.metadata),
+    });
+
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
+
+>>>>>>> Stashed changes
 const crudRoutes = crudRouter(crud);
 storesRouter.use('/', crudRoutes);

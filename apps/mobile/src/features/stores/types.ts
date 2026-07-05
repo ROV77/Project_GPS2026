@@ -19,6 +19,12 @@ export interface Store {
   latitude: string | number | null;
   /** La API devuelve Decimal como string (Prisma $queryRaw), pero puede llegar como number. */
   longitude: string | number | null;
+  /** Dirección completa legible (metadata.address). */
+  address: string | null;
+  /** Calle (metadata.street). */
+  address_street: string | null;
+  /** Número de casa/local (metadata.number). */
+  address_number: string | null;
   region_name: string | null;
   commune_name: string | null;
   commune_city: string | null;

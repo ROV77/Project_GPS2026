@@ -22,6 +22,9 @@ interface StoreRawRow {
   longitude: number | null;
   opening_time: string | null;
   closing_time: string | null;
+  address: string | null;
+  address_street: string | null;
+  address_number: string | null;
   region_name: string | null;
   commune_name: string | null;
   commune_city: string | null;
@@ -81,6 +84,9 @@ export async function findStoresWithRating(
       s.longitude,
       s.opening_time,
       s.closing_time,
+      s.metadata->>'address' AS address,
+      s.metadata->>'street' AS address_street,
+      s.metadata->>'number' AS address_number,
       r.name  AS region_name,
       c.name  AS commune_name,
       c.city  AS commune_city,
@@ -93,7 +99,7 @@ export async function findStoresWithRating(
     LEFT JOIN categories cat ON cat.id = s.category_id
     LEFT JOIN reviews    rv  ON rv.store_id = s.id
     ${whereClause}
-    GROUP BY s.id, r.name, c.name, c.city, cat.name
+    GROUP BY s.id, s.metadata, r.name, c.name, c.city, cat.name
     ORDER BY s.id
     LIMIT  ${limit}
     OFFSET ${offset}
