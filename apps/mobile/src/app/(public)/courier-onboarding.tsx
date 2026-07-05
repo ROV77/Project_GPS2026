@@ -8,8 +8,6 @@ import { Button } from '@/ui/Button';
 import { colors } from '@/ui/theme';
 import { useSession } from '@/features/auth/session.store';
 
-const { width, height } = Dimensions.get('window');
-
 const ONBOARDING_STEPS = [
   {
     title: 'Conviértete en Repartidor',
@@ -36,9 +34,7 @@ export default function CourierOnboardingScreen() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [shooting, setShooting] = useState(false);
   const scaleAnim = useRef(new Animated.Value(0)).current;
-  const shootAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (showCelebration) {
@@ -50,91 +46,6 @@ export default function CourierOnboardingScreen() {
       }).start();
     }
   }, [showCelebration]);
-
-  const handleEntendido = () => {
-    setShooting(true);
-    Animated.timing(shootAnim, {
-      toValue: 1,
-      duration: 1200,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start(() => {
-      router.back();
-    });
-  };
-
-  const renderSerpentines = () => {
-    if (!shooting) return null;
-
-    const elements = [];
-    // Izquierda
-    for (let i = 0; i < 4; i++) {
-      const translateY = shootAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [height * 0.6, height * 0.2 - i * 40]
-      });
-      const translateX = shootAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [-50, width * 0.3 + i * 20]
-      });
-      const opacity = shootAnim.interpolate({
-        inputRange: [0, 0.7, 1],
-        outputRange: [1, 1, 0]
-      });
-      const rotate = shootAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', `${180 + i * 60}deg`]
-      });
-
-      elements.push(
-        <Animated.Text key={`left-${i}`} style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          fontSize: 35,
-          transform: [{ translateX }, { translateY }, { rotate }],
-          opacity,
-        }}>
-          {i % 2 === 0 ? '🎊' : '🎉'}
-        </Animated.Text>
-      );
-    }
-
-    // Derecha
-    for (let i = 0; i < 4; i++) {
-      const translateY = shootAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [height * 0.6, height * 0.2 - i * 40]
-      });
-      const translateX = shootAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [width + 50, width * 0.7 - i * 20]
-      });
-      const opacity = shootAnim.interpolate({
-        inputRange: [0, 0.7, 1],
-        outputRange: [1, 1, 0]
-      });
-      const rotate = shootAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', `-${180 + i * 60}deg`]
-      });
-
-      elements.push(
-        <Animated.Text key={`right-${i}`} style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          fontSize: 35,
-          transform: [{ translateX }, { translateY }, { rotate }],
-          opacity,
-        }}>
-          {i % 2 === 0 ? '🎉' : '🎊'}
-        </Animated.Text>
-      );
-    }
-
-    return elements;
-  };
 
   const currentStep = ONBOARDING_STEPS[step];
   const Icon = currentStep.icon;
@@ -166,7 +77,6 @@ export default function CourierOnboardingScreen() {
     return (
       <Screen>
         <View className="flex-1 justify-center items-center px-6 relative">
-          {renderSerpentines()}
           <Animated.View style={{ transform: [{ scale: scaleAnim }], alignItems: 'center' }}>
             <Text style={{ fontSize: 80, marginBottom: 10, lineHeight: 100 }}>🎉</Text>
             <View className="flex-row gap-4 mb-6">
@@ -185,9 +95,8 @@ export default function CourierOnboardingScreen() {
           
           <View className="w-full">
             <Button 
-              label={shooting ? "Despegando..." : "¡Entendido!"} 
-              onPress={handleEntendido} 
-              disabled={shooting} 
+              label="¡Entendido!" 
+              onPress={() => router.back()} 
             />
           </View>
         </View>
