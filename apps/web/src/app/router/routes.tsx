@@ -12,6 +12,8 @@ import { ProductsListPage } from '@/features/products/pages/ProductsListPage';
 import { PlansListPage } from '@/features/plans/pages/PlansListPage';
 import { MyAccountPage } from '@/features/user/pages/MyAccountPage';
 import { CouriersPage } from '@/features/couriers/pages/CouriersPage';
+import { ExplorePage } from '@/features/explore/pages/ExplorePage';
+import { PublicStorePage } from '@/features/explore/pages/PublicStorePage';
 
 /**
  * Árbol de rutas. La jerarquía aplica los wrappers en orden:
@@ -21,6 +23,8 @@ import { CouriersPage } from '@/features/couriers/pages/CouriersPage';
  */
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
+  { path: '/explorar', element: <ExplorePage /> },
+  { path: '/tienda/:id', element: <PublicStorePage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/register-repartidor', element: <RegisterCourierPage /> },
