@@ -8,6 +8,7 @@ import type { CourierApplication } from '../types';
 import { formatDate } from '@/shared/lib/format';
 import { useMyStore } from '@/features/stores/hooks/useStores';
 import { Star } from 'lucide-react';
+import { CourierReviewsModal } from './CourierReviewsModal';
 
 export function ApplicationsTab() {
   const { data: myStore } = useMyStore();
@@ -16,10 +17,11 @@ export function ApplicationsTab() {
   const update = useUpdateApplication();
 
   const [selectedApp, setSelectedApp] = useState<CourierApplication | null>(null);
+  const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
+  const [selectedReviewsCourierId, setSelectedReviewsCourierId] = useState<string | null>(null);
+  const [selectedReviewsCourierName, setSelectedReviewsCourierName] = useState<string>('');
 
   const handleUpdateState = (id: string, newState: number) => {
-    if (!window.confirm(`¿Estás seguro de que deseas ${newState === 2 ? 'aceptar' : 'rechazar'} a este repartidor?`)) return;
-    
     update.mutate({ id, data: { state_id: newState } }, {
       onSuccess: () => {
         toast.success('Estado de postulación actualizado');
@@ -85,7 +87,14 @@ export function ApplicationsTab() {
               )}
               {selectedApp.users?.courier_ratings && (
                 <div className="mt-2 inline-flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-md border border-yellow-100">
-                  <span className="font-medium text-yellow-700 text-sm">
+                  <span 
+                    className="font-medium text-yellow-700 text-sm cursor-pointer hover:underline"
+                    onClick={() => {
+                      setSelectedReviewsCourierId(String(selectedApp.courier_id));
+                      setSelectedReviewsCourierName(selectedApp.users?.name || 'Repartidor');
+                      setReviewsModalOpen(true);
+                    }}
+                  >
                     {selectedApp.users.courier_ratings.length > 0
                       ? (selectedApp.users.courier_ratings.reduce((acc, r) => acc + (r.stars ?? 0), 0) / selectedApp.users.courier_ratings.length).toFixed(1)
                       : 'Sin calificar'}
@@ -119,26 +128,38 @@ export function ApplicationsTab() {
             </div>
 
             <div className="pt-6 border-t border-slate-200 flex flex-col gap-3">
-              <Button 
-                variant="primary" 
-                className="w-full"
-                onClick={() => handleUpdateState(selectedApp.id, 2)} 
+              <ConfirmPopover
+                className="w-full relative"
+                triggerClassName="w-full flex items-center justify-center h-10 px-4 py-2 bg-brand-600 text-white hover:bg-brand-700 rounded-md text-sm font-medium transition-colors"
+                title="¿Estás seguro de que deseas aceptar a este repartidor?"
+                confirmText="Aceptar"
+                onConfirm={() => handleUpdateState(selectedApp.id, 2)}
                 disabled={selectedApp.state_id === '2' || update.isPending}
               >
                 Aceptar Repartidor
-              </Button>
-              <Button 
-                variant="default" 
-                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                onClick={() => handleUpdateState(selectedApp.id, 3)} 
+              </ConfirmPopover>
+              
+              <ConfirmPopover
+                className="w-full relative"
+                triggerClassName="w-full flex items-center justify-center h-10 px-4 py-2 border border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md text-sm font-medium transition-colors"
+                title="¿Estás seguro de que deseas rechazar a este repartidor?"
+                confirmText="Rechazar"
+                onConfirm={() => handleUpdateState(selectedApp.id, 3)}
                 disabled={selectedApp.state_id === '3' || update.isPending}
               >
                 Rechazar Repartidor
-              </Button>
+              </ConfirmPopover>
             </div>
           </div>
         )}
       </Drawer>
+
+      <CourierReviewsModal 
+        isOpen={reviewsModalOpen}
+        onClose={() => setReviewsModalOpen(false)}
+        courierId={selectedReviewsCourierId}
+        courierName={selectedReviewsCourierName}
+      />
     </div>
   );
 }

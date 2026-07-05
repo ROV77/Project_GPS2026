@@ -40,4 +40,7 @@ export const courierRatingsApi = {
   
   create: (data: { store_id: number; courier_id: number; stars: number; comment?: string }) =>
     api.post<CourierRating>('/courier-ratings', data).then((r) => r.data),
+    
+  getByCourier: (courierId: string | number) =>
+    api.get<CourierRating[]>(`/courier-ratings/courier/${courierId}`).then((r) => r.data),
 };
