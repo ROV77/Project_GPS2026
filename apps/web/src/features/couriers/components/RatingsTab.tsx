@@ -1,140 +1,166 @@
-import { useMemo, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Star } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { EmptyState, Pagination, Select, Table, type Column } from '@/shared/ui';
-import { useTablePagination } from '@/shared/hooks/useTablePagination';
-import { useCourierRatings, useApplications } from '../hooks/useCouriers';
+import { Table, type Column, Drawer, Button, Input } from '@/shared/ui';
+import { useApplications, useCreateCourierRating } from '../hooks/useCouriers';
 import { useMyStore } from '@/features/stores/hooks/useStores';
-import type { CourierRating, CourierApplication } from '../types';
-import { formatDate } from '@/shared/lib/format';
-
-function StarRating({ value }: { value: number }) {
-  const stars = Math.max(0, Math.min(5, Math.round(value)));
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          className={cn(
-            'size-4',
-            i < stars ? 'fill-amber-400 text-amber-400' : 'text-slate-200',
-          )}
-          strokeWidth={1.5}
-        />
-      ))}
-      <span className="ml-1.5 text-sm font-medium tabular-nums text-foreground">{value}</span>
-    </div>
-  );
-}
+import type { CourierApplication } from '../types';
+import { toast } from 'sonner';
 
 export function RatingsTab() {
   const { data: myStore } = useMyStore();
-  const { page, limit, onChange } = useTablePagination();
+  
+  // Modal state
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [selectedCourierId, setSelectedCourierId] = useState<string | null>(null);
+  const [selectedCourierName, setSelectedCourierName] = useState<string>('');
+  const [stars, setStars] = useState<number>(5);
+  const [hoverStars, setHoverStars] = useState<number>(0);
+  const [comment, setComment] = useState<string>('');
 
-  const { data, isLoading } = useCourierRatings({
-    page,
-    limit,
-    store_id: myStore?.id,
-    courier_id: selectedCourierId || undefined,
-  });
+  const { mutate: createRating, isPending: submitting } = useCreateCourierRating();
 
-  const { data: applicationsData } = useApplications({
-    page: 1,
-    store_id: myStore?.id,
-    limit: 100,
-  });
-
-  const courierOptions = useMemo(() => {
-    const apps = applicationsData?.data ?? [];
-    const acceptedApps = apps.filter((a: CourierApplication) => a.state_id === '2');
-    const uniqueCouriers = new Map<string, string>();
+  const { data: applicationsData, isLoading } = useApplications({ page: 1, store_id: myStore?.id, limit: 100 });
+  
+  const couriersList = useMemo(() => {
+    const apps = Array.isArray(applicationsData) ? applicationsData : (applicationsData?.data ?? []);
+    // Filtrar solo las aceptadas
+    const acceptedApps = apps.filter((a: CourierApplication) => String(a.state_id) === '2');
+    
+    // Extraer repartidores únicos y calcular su promedio de estrellas general
+    const uniqueCouriers = new Map<string, { id: string, name: string, email: string, averageRating: number }>();
     acceptedApps.forEach((a: CourierApplication) => {
       const courierIdStr = String(a.courier_id);
       if (!uniqueCouriers.has(courierIdStr)) {
-        uniqueCouriers.set(courierIdStr, a.users?.name || `Repartidor #${courierIdStr}`);
+        // Calcular promedio de estrellas si existe
+        let avg = 0;
+        const ratings = a.users?.courier_ratings ?? [];
+        if (ratings.length > 0) {
+          const sum = ratings.reduce((acc, r) => acc + (r.stars ?? 0), 0);
+          avg = sum / ratings.length;
+        }
+
+        uniqueCouriers.set(courierIdStr, {
+          id: courierIdStr,
+          name: a.users?.name || `ID: ${courierIdStr}`,
+          email: a.users?.email || 'Sin correo',
+          averageRating: avg
+        });
       }
     });
-    return Array.from(uniqueCouriers.entries()).map(([id, name]) => ({
-      value: id,
-      label: name,
-    }));
+
+    return Array.from(uniqueCouriers.values());
   }, [applicationsData]);
 
-  const columns: Column<CourierRating>[] = [
-    {
-      key: 'courier_id',
-      header: 'Repartidor',
+  const openRatingModal = (courierId: string, name: string) => {
+    setSelectedCourierId(courierId);
+    setSelectedCourierName(name);
+    setStars(5);
+    setHoverStars(0);
+    setComment('');
+    setRatingModalOpen(true);
+  };
+
+  const handleRate = () => {
+    if (!myStore?.id || !selectedCourierId) return;
+    createRating(
+      { store_id: Number(myStore.id), courier_id: Number(selectedCourierId), stars, comment },
+      {
+        onSuccess: () => {
+          toast.success('Calificación guardada exitosamente');
+          setRatingModalOpen(false);
+        },
+        onError: () => toast.error('Error al guardar calificación')
+      }
+    );
+  };
+
+  const columns: Column<typeof couriersList[0]>[] = [
+    { key: 'name', header: 'Repartidor', dataIndex: 'name' },
+    { key: 'email', header: 'Correo', dataIndex: 'email' },
+    { 
+      key: 'averageRating', 
+      header: 'Promedio General', 
       render: (r) => (
-        <span className="font-medium text-foreground">
-          {r.users?.name || `Repartidor #${r.courier_id}`}
-        </span>
-      ),
+        <div className="flex items-center gap-1 font-medium">
+          {r.averageRating > 0 ? r.averageRating.toFixed(1) : 'S/N'} <Star className="size-4 text-yellow-500 fill-current" />
+        </div>
+      )
     },
-    {
-      key: 'stars',
-      header: 'Calificación',
-      render: (r) => <StarRating value={Number(r.stars)} />,
-    },
-    {
-      key: 'comment',
-      header: 'Comentario',
+    { 
+      key: 'actions', 
+      header: 'Acciones', 
       render: (r) => (
-        <span className="line-clamp-2 text-sm text-muted-foreground">{r.comment || '—'}</span>
-      ),
-    },
-    {
-      key: 'created_at',
-      header: 'Fecha',
-      render: (r) => (
-        <span className="text-sm text-muted-foreground">{formatDate(r.created_at)}</span>
-      ),
+        <Button 
+          variant="default" 
+          size="sm"
+          onClick={() => openRatingModal(r.id, r.name)}
+        >
+          Calificar
+        </Button>
+      )
     },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
-        <div className="flex flex-col gap-4 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-foreground">Historial de calificaciones</h3>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Revisa cómo has evaluado a tus repartidores aceptados.
-            </p>
-          </div>
-          <div className="w-full sm:w-64">
-            <Select
-              value={selectedCourierId}
-              onChange={setSelectedCourierId}
-              options={courierOptions}
-              placeholder="Filtrar por repartidor..."
-              allowClear
-            />
-          </div>
-        </div>
-
-        <div className="[&>div]:rounded-none [&>div]:border-0">
-          <Table<CourierRating>
-            columns={columns}
-            data={data?.data ?? []}
-            loading={isLoading}
-            emptyText={
-              <EmptyState
-                icon={<Star className="size-10 text-brand-300" />}
-                description="No has registrado calificaciones para ningún repartidor"
-                className="py-8"
-              />
-            }
-          />
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h3 className="text-lg font-medium text-brand-900">Repartidores Actuales</h3>
       </div>
 
-      <Pagination
-        page={data?.page ?? page}
-        pageSize={data?.limit ?? limit}
-        total={data?.total ?? 0}
-        onChange={onChange}
+      <Table<typeof couriersList[0]>
+        columns={columns}
+        data={couriersList}
+        loading={isLoading}
+        emptyText="No hay repartidores trabajando contigo actualmente"
       />
+
+      <Drawer
+        open={ratingModalOpen}
+        onClose={() => setRatingModalOpen(false)}
+        title={`Calificar a ${selectedCourierName}`}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Estrellas
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((s) => {
+                const isActive = hoverStars > 0 ? s <= hoverStars : s <= stars;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setStars(s)}
+                    onMouseEnter={() => setHoverStars(s)}
+                    onMouseLeave={() => setHoverStars(0)}
+                    className={`p-2 rounded-full transition-colors ${isActive ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}
+                  >
+                    <Star className={`size-8 transition-colors ${isActive ? 'fill-current' : ''}`} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Comentario (opcional)
+            </label>
+            <Input
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Ej. Excelente disposición..."
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="default" onClick={() => setRatingModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleRate} disabled={submitting}>
+              {submitting ? 'Guardando...' : 'Guardar Calificación'}
+            </Button>
+          </div>
+        </div>
+      </Drawer>
     </div>
   );
 }

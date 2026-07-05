@@ -19,6 +19,8 @@ import { getInitials, formatDate } from '@/shared/lib/format';
 import { useApplications, useUpdateApplication } from '../hooks/useCouriers';
 import type { CourierApplication } from '../types';
 import { useMyStore } from '@/features/stores/hooks/useStores';
+import { Star } from 'lucide-react';
+import { CourierReviewsModal } from './CourierReviewsModal';
 
 function applicationState(stateId: Id | null) {
   if (String(stateId) === '2') return { label: 'Aceptada', tone: 'green' as const };
@@ -42,6 +44,9 @@ export function ApplicationsTab() {
   const update = useUpdateApplication();
 
   const [selectedApp, setSelectedApp] = useState<CourierApplication | null>(null);
+  const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
+  const [selectedReviewsCourierId, setSelectedReviewsCourierId] = useState<string | null>(null);
+  const [selectedReviewsCourierName, setSelectedReviewsCourierName] = useState<string>('');
 
   const handleUpdateState = (id: string, newState: number) => {
     update.mutate(
@@ -161,6 +166,36 @@ export function ApplicationsTab() {
               {selectedState ? <Badge tone={selectedState.tone}>{selectedState.label}</Badge> : null}
             </div>
 
+            {selectedApp.users?.courier_ratings && (
+              <div 
+                className="flex items-center justify-between bg-yellow-50/50 p-3 rounded-xl border border-yellow-200 cursor-pointer hover:bg-yellow-50 transition-colors"
+                onClick={() => {
+                  setSelectedReviewsCourierId(String(selectedApp.courier_id));
+                  setSelectedReviewsCourierName(selectedApp.users?.name || 'Repartidor');
+                  setReviewsModalOpen(true);
+                }}
+              >
+                <div className="flex flex-col">
+                  <span className="text-xs text-yellow-700/80 uppercase tracking-wide font-semibold mb-1">
+                    Calificación
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-yellow-900 text-lg">
+                      {selectedApp.users.courier_ratings.length > 0
+                        ? (selectedApp.users.courier_ratings.reduce((acc, r) => acc + (r.stars ?? 0), 0) / selectedApp.users.courier_ratings.length).toFixed(1)
+                        : 'S/N'}
+                    </span>
+                    <Star className="size-5 text-yellow-500 fill-current" />
+                    <span className="text-sm text-yellow-700 ml-1">
+                      ({selectedApp.users.courier_ratings.length} opiniones)
+                    </span>
+                  </div>
+                </div>
+                <div className="text-brand-600 font-medium text-sm hover:underline">
+                  Ver opiniones
+                </div>
+              </div>
+            )}
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Vacante
@@ -208,6 +243,13 @@ export function ApplicationsTab() {
           </div>
         ) : null}
       </Drawer>
+
+      <CourierReviewsModal 
+        isOpen={reviewsModalOpen}
+        onClose={() => setReviewsModalOpen(false)}
+        courierId={selectedReviewsCourierId}
+        courierName={selectedReviewsCourierName}
+      />
     </div>
   );
 }

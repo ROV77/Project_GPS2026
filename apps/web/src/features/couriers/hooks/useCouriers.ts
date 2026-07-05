@@ -84,3 +84,19 @@ export function useCourierRatings(params: PageParams & { store_id?: string; cour
     placeholderData: keepPreviousData,
   });
 }
+
+export function useCourierReviews(courierId: string | null) {
+  return useQuery({
+    queryKey: [RATINGS_KEY, 'courier', courierId],
+    queryFn: () => courierRatingsApi.getByCourier(courierId!),
+    enabled: !!courierId,
+  });
+}
+
+export function useCreateCourierRating() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: courierRatingsApi.create,
+    onSuccess: () => qc.invalidateQueries({ queryKey: [RATINGS_KEY] }),
+  });
+}

@@ -9,7 +9,7 @@
  */
 import { create } from 'zustand';
 import { getToken, setToken, deleteToken } from '@/shared/lib/secureToken';
-import { getMe } from './api';
+import { getMe, becomeCourier, quitCourier } from './api';
 import type { Profile, SessionStoreInfo } from './types';
 
 type Status = 'loading' | 'authenticated' | 'anonymous';
@@ -28,7 +28,7 @@ interface SessionState {
   logout: () => Promise<void>;
 }
 
-export const useSession = create<SessionState>((set, get) => ({
+export const useSession = create<SessionState & { becomeCourier: () => Promise<void>, quitCourier: () => Promise<void> }>((set, get) => ({
   user: null,
   store: null,
   status: 'loading',
@@ -50,8 +50,6 @@ export const useSession = create<SessionState>((set, get) => ({
       const { user, store } = await getMe();
       set({ user, store, status: 'authenticated' });
     } catch {
-      // Token inválido/expirado: dejamos la sesión limpia (el interceptor 401
-      // ya borró el token, pero lo aseguramos aquí también).
       await deleteToken();
       set({ user: null, store: null, status: 'anonymous' });
     }
@@ -60,5 +58,25 @@ export const useSession = create<SessionState>((set, get) => ({
   logout: async () => {
     await deleteToken();
     set({ user: null, store: null, status: 'anonymous' });
+  },
+
+  becomeCourier: async () => {
+    try {
+      const { user, store } = await becomeCourier();
+      set({ user, store, status: 'authenticated' });
+    } catch (e) {
+      console.error('Failed to become courier', e);
+      throw e;
+    }
+  },
+
+  quitCourier: async () => {
+    try {
+      const { user, store } = await quitCourier();
+      set({ user, store, status: 'authenticated' });
+    } catch (e) {
+      console.error('Failed to quit courier', e);
+      throw e;
+    }
   },
 }));

@@ -39,6 +39,12 @@ export async function becomeCourier(): Promise<MeResponse> {
   return data;
 }
 
+/** POST /api/auth/quit-courier → { user, store } (quita rol delivery). */
+export async function quitCourier(): Promise<MeResponse> {
+  const { data } = await api.post<MeResponse>('/auth/quit-courier');
+  return data;
+}
+
 /** PATCH /api/auth/me → { user, store } (actualiza perfil propio: name/phone/avatar_url). */
 export async function updateMe(input: {
   name?: string;

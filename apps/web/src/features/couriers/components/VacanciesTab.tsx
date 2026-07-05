@@ -43,7 +43,7 @@ export function VacanciesTab() {
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
           <div>
-            <h3 className="text-base font-semibold text-foreground">Bolsa de Trabajo</h3>
+            <h3 className="text-base font-semibold text-foreground">Publicaciones</h3>
             <p className="mt-0.5 text-sm text-muted-foreground">
               Publica ofertas para que repartidores de la zona postulen a tu tienda.
             </p>

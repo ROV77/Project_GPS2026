@@ -17,14 +17,15 @@ import {
 type TabId = 'vacancies' | 'applications' | 'ratings';
 
 const tabs = [
-  { id: 'vacancies' as const, label: 'Bolsa de Trabajo', icon: Briefcase },
+  { id: 'vacancies' as const, label: 'Publicaciones', icon: Briefcase },
   { id: 'applications' as const, label: 'Postulaciones', icon: UserCheck },
-  { id: 'ratings' as const, label: 'Calificaciones', icon: Star },
+  { id: 'ratings' as const, label: 'Repartidores', icon: Star },
 ];
 
 export function CouriersPage() {
   const [activeTab, setActiveTab] = useState<TabId>('vacancies');
   const { data: myStore } = useMyStore();
+
 
   const { data: vacanciesData, isLoading: loadingVacancies } = useVacancies({
     page: 1,

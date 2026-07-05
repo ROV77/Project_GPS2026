@@ -33,10 +33,20 @@ export async function getAllApplications(
       orderBy: { applied_at: 'desc' },
       include: {
         users: {
-          select: { name: true, email: true },
+          select: { 
+            name: true, 
+            email: true,
+            avatar_url: true,
+            courier_ratings: { select: { stars: true } }
+          },
         },
         delivery_vacancies: {
-          select: { description: true },
+          select: { 
+            description: true,
+            stores: {
+              select: { name: true, store_phone: true }
+            }
+          },
         },
       },
     }),

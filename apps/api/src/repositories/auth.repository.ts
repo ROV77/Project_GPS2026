@@ -158,3 +158,20 @@ export async function addRoleIfMissing(userId: bigint, roleName: string): Promis
     }
   });
 }
+
+/**
+ * Quita un rol al usuario si lo tiene.
+ */
+export async function removeRole(userId: bigint, roleName: string): Promise<void> {
+  const role = await prisma.roles.findUnique({
+    where: { name: roleName },
+  });
+  if (!role) return;
+
+  await prisma.user_roles.deleteMany({
+    where: {
+      user_id: userId,
+      role_id: role.id,
+    },
+  });
+}
