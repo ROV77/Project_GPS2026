@@ -1,12 +1,39 @@
 import { useState } from 'react';
+import { Calendar, Mail, UserCheck, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button, Pagination, Table, type Column, Badge, Drawer } from '@/shared/ui';
+import { cn } from '@/lib/utils';
+import type { Id } from '@/shared/api/types';
+import {
+  Badge,
+  Button,
+  ConfirmPopover,
+  Drawer,
+  EmptyState,
+  Pagination,
+  Table,
+  type Column,
+} from '@/shared/ui';
 import { useTablePagination } from '@/shared/hooks/useTablePagination';
 import { getApiErrorMessage } from '@/shared/api/errors';
+import { getInitials, formatDate } from '@/shared/lib/format';
 import { useApplications, useUpdateApplication } from '../hooks/useCouriers';
 import type { CourierApplication } from '../types';
-import { formatDate } from '@/shared/lib/format';
 import { useMyStore } from '@/features/stores/hooks/useStores';
+
+function applicationState(stateId: Id | null) {
+  if (String(stateId) === '2') return { label: 'Aceptada', tone: 'green' as const };
+  if (String(stateId) === '3') return { label: 'Rechazada', tone: 'red' as const };
+  return { label: 'Pendiente', tone: 'gold' as const };
+}
+
+function CourierAvatar({ name }: { name?: string | null }) {
+  const initials = getInitials(name) || '?';
+  return (
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-800">
+      {initials}
+    </span>
+  );
+}
 
 export function ApplicationsTab() {
   const { data: myStore } = useMyStore();
@@ -17,34 +44,55 @@ export function ApplicationsTab() {
   const [selectedApp, setSelectedApp] = useState<CourierApplication | null>(null);
 
   const handleUpdateState = (id: string, newState: number) => {
-    if (!window.confirm(`¿Estás seguro de que deseas ${newState === 2 ? 'aceptar' : 'rechazar'} a este repartidor?`)) return;
-    
-    update.mutate({ id, data: { state_id: newState } }, {
-      onSuccess: () => {
-        toast.success('Estado de postulación actualizado');
-        setSelectedApp(null);
+    update.mutate(
+      { id, data: { state_id: newState } },
+      {
+        onSuccess: () => {
+          toast.success('Estado de postulación actualizado');
+          setSelectedApp(null);
+        },
+        onError: (e) => toast.error(getApiErrorMessage(e)),
       },
-      onError: (e) => toast.error(getApiErrorMessage(e)),
-    });
+    );
   };
 
   const columns: Column<CourierApplication>[] = [
-    { key: 'id', header: 'ID Postulación', dataIndex: 'id' },
-    { key: 'courier', header: 'Repartidor', render: (a) => a.users?.name || `ID: ${a.courier_id}` },
-    { key: 'applied_at', header: 'Fecha', render: (a) => formatDate(a.applied_at) },
-    { 
-      key: 'state_id', 
-      header: 'Estado', 
+    {
+      key: 'courier',
+      header: 'Repartidor',
+      render: (a) => (
+        <div className="flex items-center gap-3">
+          <CourierAvatar name={a.users?.name} />
+          <div className="min-w-0">
+            <p className="truncate font-medium text-foreground">
+              {a.users?.name || `Repartidor #${a.courier_id}`}
+            </p>
+            {a.users?.email ? (
+              <p className="truncate text-xs text-muted-foreground">{a.users.email}</p>
+            ) : null}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'applied_at',
+      header: 'Fecha',
+      render: (a) => (
+        <span className="text-sm text-muted-foreground">{formatDate(a.applied_at)}</span>
+      ),
+    },
+    {
+      key: 'state_id',
+      header: 'Estado',
       render: (a) => {
-        if (a.state_id === '2') return <Badge tone="green">Aceptada</Badge>;
-        if (a.state_id === '3') return <Badge tone="red">Rechazada</Badge>;
-        return <Badge tone="gold">Pendiente</Badge>;
-      } 
+        const state = applicationState(a.state_id);
+        return <Badge tone={state.tone}>{state.label}</Badge>;
+      },
     },
     {
       key: 'actions',
       header: 'Acciones',
-      width: 120,
+      width: 130,
       render: (a) => (
         <Button size="sm" variant="default" onClick={() => setSelectedApp(a)}>
           Ver detalle
@@ -53,15 +101,36 @@ export function ApplicationsTab() {
     },
   ];
 
+  const selectedState = selectedApp ? applicationState(selectedApp.state_id) : null;
+  const isAccepted = String(selectedApp?.state_id) === '2';
+  const isRejected = String(selectedApp?.state_id) === '3';
+
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-brand-900">Postulaciones Recibidas</h3>
-      <Table<CourierApplication>
-        columns={columns}
-        data={data?.data ?? []}
-        loading={isLoading}
-        emptyText="Aún no hay postulaciones a tus vacantes"
-      />
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+        <div className="border-b border-border px-5 py-4">
+          <h3 className="text-base font-semibold text-foreground">Postulaciones recibidas</h3>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Revisa quién quiere repartir para tu tienda y acepta o rechaza cada postulación.
+          </p>
+        </div>
+
+        <div className="[&>div]:rounded-none [&>div]:border-0">
+          <Table<CourierApplication>
+            columns={columns}
+            data={data?.data ?? []}
+            loading={isLoading}
+            emptyText={
+              <EmptyState
+                icon={<Users className="size-10 text-brand-300" />}
+                description="Aún no hay postulaciones a tus vacantes"
+                className="py-8"
+              />
+            }
+          />
+        </div>
+      </div>
+
       <Pagination
         page={data?.page ?? page}
         pageSize={data?.limit ?? limit}
@@ -72,58 +141,72 @@ export function ApplicationsTab() {
       <Drawer
         open={!!selectedApp}
         onClose={() => setSelectedApp(null)}
-        title="Detalle de la Postulación"
+        title="Detalle de la postulación"
       >
-        {selectedApp && (
-          <div className="space-y-6">
-            <div>
-              <h4 className="text-sm font-medium text-slate-500 mb-1">Repartidor</h4>
-              <p className="text-slate-900 font-medium">{selectedApp.users?.name || `ID: ${selectedApp.courier_id}`}</p>
-              {selectedApp.users?.email && (
-                <p className="text-sm text-slate-600">{selectedApp.users.email}</p>
-              )}
+        {selectedApp ? (
+          <div className="space-y-5">
+            <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/30 p-4">
+              <CourierAvatar name={selectedApp.users?.name} />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-foreground">
+                  {selectedApp.users?.name || `Repartidor #${selectedApp.courier_id}`}
+                </p>
+                {selectedApp.users?.email ? (
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Mail className="size-3.5 shrink-0" />
+                    {selectedApp.users.email}
+                  </p>
+                ) : null}
+              </div>
+              {selectedState ? <Badge tone={selectedState.tone}>{selectedState.label}</Badge> : null}
             </div>
-            
-            <div>
-              <h4 className="text-sm font-medium text-slate-500 mb-1">Vacante a la que postuló (ID: {selectedApp.vacancy_id})</h4>
-              <div className="bg-slate-50 p-3 rounded-md text-sm text-slate-700 whitespace-pre-wrap border border-slate-100">
+
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Vacante
+              </p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                 {selectedApp.delivery_vacancies?.description || 'Sin descripción'}
-              </div>
+              </p>
             </div>
 
-            <div className="flex gap-4 items-center">
-              <div>
-                <h4 className="text-sm font-medium text-slate-500 mb-1">Fecha</h4>
-                <p className="text-sm text-slate-900">{formatDate(selectedApp.applied_at)}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-slate-500 mb-1">Estado</h4>
-                {selectedApp.state_id === '2' ? <Badge tone="green">Aceptada</Badge> : 
-                 selectedApp.state_id === '3' ? <Badge tone="red">Rechazada</Badge> : 
-                 <Badge tone="gold">Pendiente</Badge>}
-              </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="size-4 shrink-0" />
+              Postuló el {formatDate(selectedApp.applied_at)}
             </div>
 
-            <div className="pt-6 border-t border-slate-200 flex flex-col gap-3">
-              <Button 
-                variant="primary" 
-                className="w-full"
-                onClick={() => handleUpdateState(selectedApp.id, 2)} 
-                disabled={selectedApp.state_id === '2' || update.isPending}
+            <div className="space-y-2 border-t border-border pt-5">
+              <ConfirmPopover
+                className="relative flex w-full"
+                title="¿Aceptar a este repartidor? Podrá trabajar contigo según lo acordado."
+                confirmText="Aceptar"
+                onConfirm={() => handleUpdateState(selectedApp.id, 2)}
+                loading={update.isPending}
+                triggerClassName={cn(
+                  'flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand-800 disabled:opacity-70',
+                  isAccepted && 'pointer-events-none opacity-50',
+                )}
               >
-                Aceptar Repartidor
-              </Button>
-              <Button 
-                variant="default" 
-                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                onClick={() => handleUpdateState(selectedApp.id, 3)} 
-                disabled={selectedApp.state_id === '3' || update.isPending}
+                <UserCheck className="size-4" />
+                {isAccepted ? 'Ya aceptado' : 'Aceptar repartidor'}
+              </ConfirmPopover>
+
+              <ConfirmPopover
+                className="relative flex w-full"
+                title="¿Rechazar esta postulación? El repartidor será notificado del cambio."
+                confirmText="Rechazar"
+                onConfirm={() => handleUpdateState(selectedApp.id, 3)}
+                loading={update.isPending}
+                triggerClassName={cn(
+                  'flex h-10 w-full items-center justify-center rounded-lg border border-red-200 bg-card px-4 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-70',
+                  isRejected && 'pointer-events-none opacity-50',
+                )}
               >
-                Rechazar Repartidor
-              </Button>
+                {isRejected ? 'Ya rechazado' : 'Rechazar postulación'}
+              </ConfirmPopover>
             </div>
           </div>
-        )}
+        ) : null}
       </Drawer>
     </div>
   );

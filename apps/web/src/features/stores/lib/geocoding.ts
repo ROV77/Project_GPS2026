@@ -29,9 +29,39 @@ interface NominatimReverseResult {
   address?: NominatimAddress;
 }
 
+/** Calle + número en una sola línea (sin comuna/región). */
+export function formatStreetLine(street: string, number: string): string {
+  return [street.trim(), number.trim()].filter(Boolean).join(' ');
+}
+
+/**
+ * Intenta extraer el número de casa/local del texto que escribió el usuario
+ * (p. ej. "Lago Riñihue 155 concepc" → "155").
+ */
+export function extractNumberFromQuery(query: string): string {
+  const trimmed = query.trim();
+  if (!trimmed) return '';
+
+  for (const match of trimmed.matchAll(/\b(\d{1,5}[A-Za-z]?)\b/g)) {
+    const candidate = match[1];
+    const numeric = parseInt(candidate, 10);
+    if (Number.isNaN(numeric)) continue;
+    // Evitar años u otros números largos que no parecen número de casa.
+    if (numeric >= 1900 && numeric <= 2099 && !/[A-Za-z]/.test(candidate)) continue;
+    return candidate;
+  }
+
+  return '';
+}
+
+/** Prioriza el número de Nominatim; si no hay, usa el que el usuario escribió. */
+export function resolveNumberFromQuery(nominatimNumber: string, userQuery: string): string {
+  return nominatimNumber.trim() || extractNumberFromQuery(userQuery);
+}
+
 /** Compone la dirección completa a partir de calle, número y contexto geográfico. */
 export function buildFullAddress(street: string, number: string, context?: string): string {
-  const streetLine = [street.trim(), number.trim()].filter(Boolean).join(' ');
+  const streetLine = formatStreetLine(street, number);
   const trimmedContext = context?.trim() ?? '';
 
   if (!streetLine) return trimmedContext;
@@ -138,6 +168,7 @@ export async function searchAddresses(
       placeId: item.place_id,
       label: item.display_name,
       street: parsed.street,
+      number: parsed.number,
       context: parsed.context,
       lat: Number(item.lat),
       lng: Number(item.lon),

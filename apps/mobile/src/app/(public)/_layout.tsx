@@ -58,8 +58,10 @@ export default function PublicLayout() {
           },
         }}
       />
-      {/* Detalle de tienda: navegable desde las tarjetas, oculto de la TabBar. */}
-      <Tabs.Screen name="store/[id]" options={{ href: null }} />
+      {/* Detalle de tienda: navegable desde las tarjetas, oculto de la TabBar.
+          Además se oculta la propia TabBar en esta ruta para que no compita con
+          la barra del pedido (OrderBar) del detalle. */}
+      <Tabs.Screen name="store/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }

@@ -8,8 +8,8 @@ import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, Field, Input, Skeleton } from '@/shared/ui';
 import { useMyAccount, useUpdateUser } from '../hooks/useUser';
+import { AvatarUploader } from '../components/AvatarUploader';
 
-// El correo no se edita aquí (es la identidad de la cuenta). Solo nombre y teléfono.
 const accountSchema = z.object({
   name: z.string().optional(),
   phone: z.string().max(20, 'Máximo 20 caracteres').optional(),
@@ -40,7 +40,7 @@ export function MyAccountPage() {
     update.mutate(
       { id: user.id, data: values },
       {
-        onSuccess: () => toast.success('Cuenta actualizada'),
+        onSuccess: () => toast.success('Perfil actualizado'),
         onError: (error) => {
           if (applyApiValidationErrors(error, setError)) return;
           toast.error(getApiErrorMessage(error));
@@ -49,49 +49,90 @@ export function MyAccountPage() {
     );
   };
 
+  const handleRemovePhoto = () => {
+    if (!user?.avatar_url) return;
+    update.mutate(
+      { id: user.id, data: { avatar_url: '' } },
+      {
+        onSuccess: () => toast.success('Foto de perfil eliminada'),
+        onError: (error) => toast.error(getApiErrorMessage(error)),
+      },
+    );
+  };
+
   return (
     <>
-      <PageHeader title="Mi cuenta" subtitle="Datos del titular del comercio" />
+      <PageHeader
+        title="Mi perfil"
+        subtitle="Tu foto y datos personales como vendedor (independientes de la tienda)"
+      />
+
       <Card className="max-w-xl">
         {isLoading ? (
           <div className="space-y-3">
+            <Skeleton className="size-28 rounded-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-1/3" />
           </div>
-        ) : (
-          <div>
-            <Field label="Correo electrónico">
-              <Input value={user?.email ?? ''} disabled />
-            </Field>
-            <Field label="Nombre" error={errors.name?.message}>
-              <Controller
-                name="name"
-                control={control}
-                render={({ field }) => (
-                  <Input value={field.value ?? ''} onChange={field.onChange} invalid={!!errors.name} />
-                )}
+        ) : user ? (
+          <div className="space-y-6">
+            <div className="flex flex-col items-start gap-4 border-b border-border pb-6 sm:flex-row sm:items-center">
+              <AvatarUploader
+                userId={user.id}
+                value={user.avatar_url ?? undefined}
+                name={user.name ?? user.email}
               />
-            </Field>
-            <Field label="Teléfono" error={errors.phone?.message}>
-              <Controller
-                name="phone"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    value={field.value ?? ''}
-                    onChange={field.onChange}
-                    invalid={!!errors.phone}
-                    placeholder="+56 9 ..."
-                  />
-                )}
-              />
-            </Field>
-            <Button variant="primary" loading={update.isPending} onClick={handleSubmit(onSubmit)}>
-              Guardar
-            </Button>
+              <div className="min-w-0">
+                <p className="font-medium text-foreground">{user.name ?? 'Sin nombre'}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+                {user.avatar_url ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 h-8 px-0 text-destructive hover:bg-transparent hover:text-red-700"
+                    loading={update.isPending}
+                    onClick={handleRemovePhoto}
+                  >
+                    Quitar foto
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Field label="Correo electrónico">
+                <Input value={user.email ?? ''} disabled />
+              </Field>
+              <Field label="Nombre" error={errors.name?.message}>
+                <Controller
+                  name="name"
+                  control={control}
+                  render={({ field }) => (
+                    <Input value={field.value ?? ''} onChange={field.onChange} invalid={!!errors.name} />
+                  )}
+                />
+              </Field>
+              <Field label="Teléfono personal" error={errors.phone?.message}>
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      invalid={!!errors.phone}
+                      placeholder="+56 9 ..."
+                    />
+                  )}
+                />
+              </Field>
+              <Button variant="primary" loading={update.isPending} onClick={handleSubmit(onSubmit)}>
+                Guardar cambios
+              </Button>
+            </div>
           </div>
-        )}
+        ) : null}
       </Card>
     </>
   );

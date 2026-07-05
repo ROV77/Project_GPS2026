@@ -6,6 +6,7 @@ import {
   ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
+  User,
 } from 'lucide-react';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useMyAccount } from '@/features/user/hooks/useUser';
 import { getInitials } from '@/shared/lib/format';
 import logoNavy from '@/assets/icons/logo-caseritapp_navy.png';
+import { SidebarProfile } from './SidebarProfile';
 
 /**
  * Shell del panel: sidebar (marca + nav + perfil) + header (título + acciones) +
@@ -36,7 +38,10 @@ export function AdminLayout() {
 
   const selectedKey =
     navItems.find((i) => location.pathname.startsWith(i.key))?.key ?? '/dashboard';
-  const currentLabel = navItems.find((i) => i.key === selectedKey)?.label ?? 'Panel';
+  const isAccountPage = location.pathname.startsWith('/mi-cuenta');
+  const currentLabel = isAccountPage
+    ? 'Mi perfil'
+    : navItems.find((i) => i.key === selectedKey)?.label ?? 'Panel';
 
   const handleLogout = () => {
     logout();
@@ -94,6 +99,14 @@ export function AdminLayout() {
             );
           })}
         </nav>
+
+        <SidebarProfile
+          account={account}
+          displayName={user?.name}
+          collapsed={collapsed}
+          active={isAccountPage}
+          onClick={() => navigate('/mi-cuenta')}
+        />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -156,6 +169,12 @@ export function AdminLayout() {
                 </div>
               }
               items={[
+                {
+                  key: 'account',
+                  label: 'Mi perfil',
+                  icon: <User className="size-4" />,
+                  onClick: () => navigate('/mi-cuenta'),
+                },
                 {
                   key: 'logout',
                   label: 'Cerrar sesión',
