@@ -222,7 +222,7 @@ export default function AccountScreen() {
                   <Text variant="subtitle">
                     {ratingsLoading ? '...' : (average > 0 ? average.toFixed(1) : 'S/N')}
                   </Text>
-                  <ChevronRight size={16} color={colors.brand[600]} />
+                  <ChevronRight size={16} color={colors.brand[700]} />
                 </TouchableOpacity>
               </View>
               <Button 
