@@ -111,7 +111,15 @@ export const StoreDetailSheet = forwardRef<BottomSheet, Props>(function StoreDet
               </View>
             ) : null}
             <View style={{ flex: 1 }}>
-              <Button label="Ver tienda completa" onPress={() => router.push(`/store/${store.id}`)} />
+              <Button
+                label="Ver tienda completa"
+                onPress={() =>
+                  router.push({
+                    pathname: '/store/[id]',
+                    params: { id: store.id, store: JSON.stringify(store) },
+                  })
+                }
+              />
             </View>
           </View>
         </BottomSheetView>

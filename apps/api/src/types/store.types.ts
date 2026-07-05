@@ -45,6 +45,7 @@ export interface StoreWithRating {
   description: string | null;
   logo_url: string | null;
   verified: boolean;
+  store_phone: string | null;
   latitude: number | null;
   longitude: number | null;
   opening_time: string | null;

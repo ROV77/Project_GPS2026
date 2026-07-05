@@ -10,7 +10,12 @@ import { prisma } from '../config/prisma';
 import { makeCrud } from '../lib/crud';
 import { crudRouter } from '../lib/router';
 import { parseBigIntId } from '../lib/http';
-import { searchStores, getStoreStats } from '../controllers/store.controller';
+import {
+  searchStores,
+  getStoreStats,
+  getStoreDetail,
+  getStoreProducts,
+} from '../controllers/store.controller';
 import { validateQuery, validateBody } from '../middlewares/validate';
 import { calculateStoreStatus, getCurrentDayOfWeek } from '../services/store-status.service';
 import {
@@ -57,6 +62,12 @@ storesRouter.get('/search', validateQuery(StoreFiltersSchema), searchStores);
  * Métricas agregadas de la tienda para el dashboard.
  */
 storesRouter.get('/:id/stats', getStoreStats);
+
+/**
+ * GET /stores/:id/products
+ * Catálogo público de la tienda (sin auth) — usado por el detalle en mobile.
+ */
+storesRouter.get('/:id/products', getStoreProducts);
 
 /**
  * GET /stores/:id/schedules
@@ -178,7 +189,16 @@ storesRouter.get('/:id/status', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /stores/:id
+ * Ficha enriquecida (categoría, comuna, región, rating, estado). Debe ir DESPUÉS
+ * de las rutas /:id/* específicas y ANTES del CRUD genérico, para tener prioridad
+ * sobre el getById crudo (que solo devuelve la fila sin campos computados).
+ */
+storesRouter.get('/:id', getStoreDetail);
+
 // ─── Montar rutas CRUD genéricas después de las rutas específicas ────────────
-// (para que /search, /:id/stats, /:id/schedules y /:id/status no colisionen con /:id)
+// (para que /search, /:id/stats, /:id/schedules, /:id/status, /:id/products y
+//  /:id no colisionen con el CRUD genérico)
 const crudRoutes = crudRouter(crud);
 storesRouter.use('/', crudRoutes);
