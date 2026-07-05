@@ -22,8 +22,6 @@ export async function applyToVacancy(vacancyId: string, courierId: string): Prom
 }
 
 export async function getCourierRatings(courierId: string): Promise<CourierRating[]> {
-  const { data } = await api.get<{ data: CourierRating[] }>('/courier-ratings', {
-    params: { courier_id: courierId },
-  });
-  return data.data;
+  const { data } = await api.get<CourierRating[]>(`/courier-ratings/courier/${courierId}`);
+  return data;
 }

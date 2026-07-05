@@ -9,9 +9,9 @@
  * deriva al web (caseritapp.cl) para crear/configurar un negocio.
  */
 import { useState } from 'react';
-import { View, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, ActivityIndicator, Alert, Linking, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike, User, Phone, Store as StoreIcon, Star } from 'lucide-react-native';
+import { Bike, User, Phone, Store as StoreIcon, Star, ChevronRight } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
@@ -49,9 +49,9 @@ export default function AccountScreen() {
   const router = useRouter();
   const status = useSession((s) => s.status);
   const user = useSession((s) => s.user);
-  const becomeCourier = useSession((s) => s.becomeCourier);
   const logout = useSession((s) => s.logout);
-  const [becoming, setBecoming] = useState(false);
+  const quitCourier = useSession((s) => s.quitCourier);
+  const [quitting, setQuitting] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
 
   const isAuth = status === 'authenticated' && !!user;
@@ -73,15 +73,28 @@ export default function AccountScreen() {
     }
   };
 
-  const onBecomeCourier = async () => {
-    setBecoming(true);
-    try {
-      await becomeCourier();
-    } catch (e) {
-      Alert.alert('No se pudo completar', getApiErrorMessage(e));
-    } finally {
-      setBecoming(false);
-    }
+  const onQuitCourier = () => {
+    Alert.alert(
+      '¿Dejar de ser repartidor?',
+      'Se te quitarán los accesos exclusivos y dejarás de recibir ofertas. ¿Estás seguro?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sí, dejar de ser', 
+          style: 'destructive',
+          onPress: async () => {
+            setQuitting(true);
+            try {
+              if (quitCourier) await quitCourier();
+            } catch (e) {
+              Alert.alert('Error', getApiErrorMessage(e));
+            } finally {
+              setQuitting(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (status === 'loading') {
@@ -198,23 +211,32 @@ export default function AccountScreen() {
             </View>
           </View>
           {isCourier ? (
-            <View className="pt-4 flex-row items-center justify-between border-t border-gray-100 mt-4">
-              <Text variant="body" className="font-medium text-gray-700">Mi Calificación</Text>
-              <View className="flex-row items-center gap-1">
-                <Star size={20} color={colors.warning} fill={average > 0 ? colors.warning : 'transparent'} />
-                <Text variant="subtitle">
-                  {ratingsLoading ? '...' : (average > 0 ? average.toFixed(1) : 'S/N')}
-                </Text>
+            <View className="pt-4 flex-col gap-4 border-t border-gray-100 mt-4">
+              <View className="flex-row items-center justify-between">
+                <Text variant="body" className="font-medium text-gray-700">Mi Calificación</Text>
+                <TouchableOpacity 
+                  className="flex-row items-center gap-1 bg-brand-50 px-3 py-1.5 rounded-lg active:bg-brand-100 transition-colors"
+                  onPress={() => router.push('/courier-reviews')}
+                >
+                  <Star size={20} color={colors.amber} fill={average > 0 ? colors.amber : 'transparent'} />
+                  <Text variant="subtitle">
+                    {ratingsLoading ? '...' : (average > 0 ? average.toFixed(1) : 'S/N')}
+                  </Text>
+                  <ChevronRight size={16} color={colors.brand[600]} />
+                </TouchableOpacity>
               </View>
+              <Button 
+                label="Ya no quiero ser repartidor" 
+                variant="secondary" 
+                onPress={onQuitCourier}
+                loading={quitting}
+              />
             </View>
           ) : (
             <View className="pt-4">
               <Button
                 label="Soy repartidor"
-                loading={becoming}
-                onPress={
-                  isAuth ? onBecomeCourier : () => router.push('/register?role=courier')
-                }
+                onPress={() => router.push('/courier-onboarding')}
               />
             </View>
           )}

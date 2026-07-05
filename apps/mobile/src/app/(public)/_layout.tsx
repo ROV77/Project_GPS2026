@@ -82,6 +82,8 @@ export default function PublicLayout() {
       />
       {/* Detalle de tienda: navegable desde las tarjetas, oculto de la TabBar. */}
       <Tabs.Screen name="store/[id]" options={{ href: null }} />
+      <Tabs.Screen name="courier-onboarding" options={{ href: null }} />
+      <Tabs.Screen name="courier-reviews" options={{ href: null, title: 'Mis Reseñas' }} />
     </Tabs>
   );
 }
