@@ -37,32 +37,46 @@ const EMPTY = {
   items: {} as Record<string, CartItem>,
 };
 
+/** Limita la cantidad al stock disponible del producto (definido en el panel web). */
+export function capCartQty(product: Product, qty: number): number {
+  const max = Math.max(0, product.stock);
+  return Math.min(Math.max(0, qty), max);
+}
+
 export const useCart = create<CartState>((set, get) => ({
   ...EMPTY,
 
   addItem: (store, product) => {
+    if (product.stock <= 0) return;
     const { storeId, items } = get();
     // Carrito de una tienda a la vez: si cambia de tienda, se reemplaza.
     const base = storeId === store.id ? items : {};
     const prevQty = base[product.id]?.qty ?? 0;
+    const nextQty = capCartQty(product, prevQty + 1);
+    if (nextQty <= prevQty) return;
     set({
       storeId: store.id,
       storeName: store.name,
       storePhone: store.store_phone,
-      items: { ...base, [product.id]: { product, qty: prevQty + 1 } },
+      items: { ...base, [product.id]: { product, qty: nextQty } },
     });
   },
 
-  increment: (productId) => get().setQty(productId, (get().items[productId]?.qty ?? 0) + 1),
+  increment: (productId) => {
+    const item = get().items[productId];
+    if (!item) return;
+    get().setQty(productId, item.qty + 1);
+  },
   decrement: (productId) => get().setQty(productId, (get().items[productId]?.qty ?? 0) - 1),
 
   setQty: (productId, qty) => {
     const { items } = get();
     const item = items[productId];
     if (!item) return;
+    const clamped = capCartQty(item.product, qty);
     const next = { ...items };
-    if (qty <= 0) delete next[productId];
-    else next[productId] = { ...item, qty };
+    if (clamped <= 0) delete next[productId];
+    else next[productId] = { ...item, qty: clamped };
     // Si el carrito queda vacío, limpiamos también la referencia de tienda.
     if (Object.keys(next).length === 0) set({ ...EMPTY });
     else set({ items: next });

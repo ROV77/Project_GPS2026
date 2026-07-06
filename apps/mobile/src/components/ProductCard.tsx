@@ -79,6 +79,7 @@ export function ProductCard({ product, store }: { product: Product; store: Store
           ) : qty > 0 ? (
             <QuantityStepper
               qty={qty}
+              maxQty={product.stock}
               onDecrement={() => decrement(product.id)}
               onIncrement={() => increment(product.id)}
             />
