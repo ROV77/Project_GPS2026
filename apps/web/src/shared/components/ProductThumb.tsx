@@ -1,11 +1,18 @@
 import { Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/shared/lib/format';
+import { displayWidth, optimizeCloudinaryUrl } from '@/shared/lib/cloudinaryImage';
 
 const SIZE_CLASS = {
   sm: 'size-9 text-xs',
   md: 'size-14 text-sm',
   lg: 'size-full text-lg',
+} as const;
+
+const SIZE_PX = {
+  sm: 36,
+  md: 56,
+  lg: 320,
 } as const;
 
 /**
@@ -24,13 +31,15 @@ export function ProductThumb({
   size?: keyof typeof SIZE_CLASS;
 }) {
   const sizeClass = SIZE_CLASS[size];
+  const optimized = optimizeCloudinaryUrl(src, { width: displayWidth(SIZE_PX[size]) });
 
-  if (src) {
+  if (optimized) {
     return (
       <img
-        src={src}
+        src={optimized}
         alt={alt}
         loading="lazy"
+        decoding="async"
         className={cn(
           'rounded-md border border-border object-cover',
           size !== 'lg' && sizeClass,

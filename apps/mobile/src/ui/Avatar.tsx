@@ -1,12 +1,11 @@
 /**
  * Avatar del usuario: muestra `avatar_url` con expo-image y un fallback de ícono
- * de persona (a diferencia de RemoteImage, cuyo fallback es un ícono de tienda).
- * Si recibe `onPress` se vuelve táctil y muestra un badge de cámara para editar;
- * con `loading` superpone un spinner mientras se sube la nueva foto.
+ * de persona. Si recibe `onPress` se vuelve táctil y muestra un badge de cámara.
  */
 import { View, Pressable, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { User, Camera } from 'lucide-react-native';
+import { displayWidth, optimizeCloudinaryUrl } from '@/lib/cloudinaryImage';
 import { colors } from './theme';
 
 export function Avatar({
@@ -21,8 +20,8 @@ export function Avatar({
   loading?: boolean;
 }) {
   const radius = size / 2;
+  const optimized = optimizeCloudinaryUrl(uri, { width: displayWidth(size) });
 
-  // Borde blanco + sombra suave (elevation para Android, shadow* para iOS).
   const shadowStyle = {
     borderRadius: radius,
     borderWidth: 2,
@@ -37,11 +36,12 @@ export function Avatar({
 
   const inner = (
     <View style={{ width: size, height: size, ...shadowStyle }}>
-      {uri ? (
+      {optimized ? (
         <Image
-          source={uri}
+          source={optimized}
           contentFit="cover"
           transition={200}
+          cachePolicy="memory-disk"
           style={{ width: size, height: size, borderRadius: radius }}
         />
       ) : (

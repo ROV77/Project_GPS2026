@@ -2,6 +2,7 @@ import { Pencil, Star } from 'lucide-react';
 import { ConfirmDelete } from '@/shared/components/ConfirmDelete';
 import { Badge, Button } from '@/shared/ui';
 import { formatCLP, getInitials } from '@/shared/lib/format';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import { LOW_STOCK_THRESHOLD, type Product } from '../types';
 
 function StockBadge({ stock }: { stock: number }) {
@@ -56,9 +57,10 @@ export function ProductCardGrid({
             disabled={!product.image_url}
           >
             {product.image_url ? (
-              <img
+              <CloudinaryImg
                 src={product.image_url}
                 alt={product.name}
+                displayWidthPx={400}
                 className="size-full object-cover transition group-hover:scale-[1.02]"
               />
             ) : (

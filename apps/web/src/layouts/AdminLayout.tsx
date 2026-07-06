@@ -15,6 +15,7 @@ import { navItems } from '@/shared/config/navigation';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useMyAccount } from '@/features/user/hooks/useUser';
 import { getInitials } from '@/shared/lib/format';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import logoNavy from '@/assets/icons/logo-caseritapp_navy.png';
 import { SidebarProfile } from './SidebarProfile';
 
@@ -153,9 +154,10 @@ export function AdminLayout() {
                 <div className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 hover:bg-slate-100">
                   <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-700 text-sm font-semibold text-white">
                     {account?.avatar_url ? (
-                      <img
+                      <CloudinaryImg
                         src={account.avatar_url}
                         alt={account.name ?? 'Avatar'}
+                        displayWidthPx={40}
                         className="size-full object-cover"
                       />
                     ) : (
