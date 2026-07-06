@@ -1,10 +1,10 @@
 import { Pencil, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { ConfirmDelete } from '@/shared/components/ConfirmDelete';
 import { Badge, Button } from '@/shared/ui';
 import { formatCLP, getInitials } from '@/shared/lib/format';
-import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
+import { optimizeCloudinaryUrl, displayWidth } from '@/shared/lib/cloudinaryImage';
 import { LOW_STOCK_THRESHOLD, type Product } from '../types';
-
 function StockBadge({ stock }: { stock: number }) {
   if (stock === 0) return <Badge tone="red">Sin stock</Badge>;
   if (stock <= LOW_STOCK_THRESHOLD) return <Badge tone="gold">Bajo · {stock}</Badge>;
@@ -21,6 +21,42 @@ interface ProductCardGridProps {
   onDelete: (id: string) => void;
   onPreviewImage?: (src: string, alt: string) => void;
   deleteLoading?: boolean;
+}
+
+function ProductCardImage({ product }: { product: Product }) {
+  const rawUrl = product.image_url?.trim() ?? '';
+  const optimized = optimizeCloudinaryUrl(rawUrl, { width: displayWidth(400) });
+  const [src, setSrc] = useState(optimized ?? rawUrl);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setSrc(optimized ?? rawUrl);
+    setFailed(false);
+  }, [rawUrl, optimized]);
+
+  if (!rawUrl || failed) {
+    return (
+      <div className="flex size-full items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">
+        <span className="text-3xl font-bold text-brand-700">
+          {getInitials(product.name) || '?'}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={product.name}
+      loading="lazy"
+      decoding="async"
+      onError={() => {
+        if (src !== rawUrl) setSrc(rawUrl);
+        else setFailed(true);
+      }}
+      className="size-full object-cover transition group-hover:scale-[1.02]"
+    />
+  );
 }
 
 export function ProductCardGrid({
@@ -57,12 +93,7 @@ export function ProductCardGrid({
             disabled={!product.image_url}
           >
             {product.image_url ? (
-              <CloudinaryImg
-                src={product.image_url}
-                alt={product.name}
-                displayWidthPx={400}
-                className="size-full object-cover transition group-hover:scale-[1.02]"
-              />
+              <ProductCardImage product={product} />
             ) : (
               <div className="flex size-full items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100">
                 <span className="text-3xl font-bold text-brand-700">
