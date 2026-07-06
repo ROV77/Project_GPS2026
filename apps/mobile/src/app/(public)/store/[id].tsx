@@ -132,6 +132,7 @@ function OrderBar({ store, onPress }: { store: Store; onPress: () => void }) {
 
 /** Ficha superior: logo, nombre, categoría, rating, ubicación, descripción y CTA. */
 function StoreHeader({ store }: { store: Store }) {
+  const router = useRouter();
   const style = getCategoryStyle(store.category_name);
   const rating = Number(store.avg_rating) || 0;
   const location = [store.commune_name, store.region_name].filter(Boolean).join(', ');
@@ -141,6 +142,14 @@ function StoreHeader({ store }: { store: Store }) {
 
   const openDirections = () => {
     void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+  };
+
+  // Lleva a la pestaña Mapa centrada en esta tienda (con su ficha abierta).
+  const goToMap = () => {
+    router.push({
+      pathname: '/(public)/map',
+      params: { focusId: store.id, focusLat: String(lat), focusLng: String(lng) },
+    });
   };
 
   const whatsappUrl = buildWhatsAppUrl(
@@ -194,6 +203,10 @@ function StoreHeader({ store }: { store: Store }) {
         <Text variant="body" className="text-foreground">
           {store.description}
         </Text>
+      ) : null}
+
+      {canNavigate ? (
+        <Button label="Ver en el mapa" variant="secondary" onPress={goToMap} />
       ) : null}
 
       {canNavigate ? (

@@ -13,12 +13,17 @@
 import { useMemo, useRef, useState } from 'react';
 import { View, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MapPin, Search as SearchIcon } from 'lucide-react-native';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate, Extrapolation } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
+import { Logo } from '@/ui/Logo';
+import { BrandGradient } from '@/ui/BrandGradient';
 import { colors } from '@/ui/theme';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
@@ -30,17 +35,39 @@ import type { Store } from '@/features/stores/types';
 const COMPACT_FROM = 80;
 const COMPACT_TO = 140;
 
+// Sombra del buscador flotante (monta sobre el gradiente del hero).
+const FLOAT_SHADOW = {
+  shadowColor: '#0f1d2e',
+  shadowOpacity: 0.18,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 8 },
+  elevation: 8,
+  borderRadius: 10,
+  backgroundColor: colors.card,
+} as const;
+
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { stores, loading, refreshing, error, reload, refresh } = useStores({ limit: 50 });
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
+  // `compact` alterna solo al cruzar el umbral (no en cada frame): controla el
+  // color de la barra de estado (claro sobre el hero navy, oscuro sobre la barra
+  // compacta clara).
+  const [compact, setCompact] = useState(false);
   const listRef = useRef<Animated.FlatList<Store>>(null);
   const scrollY = useSharedValue(0);
+  const isCompact = useSharedValue(false);
 
   const scrollHandler = useAnimatedScrollHandler((e) => {
     scrollY.value = e.contentOffset.y;
+    const next = e.contentOffset.y > COMPACT_FROM;
+    if (next !== isCompact.value) {
+      isCompact.value = next;
+      scheduleOnRN(setCompact, next);
+    }
   });
 
   const bigHeaderStyle = useAnimatedStyle(() => ({
@@ -74,7 +101,10 @@ export default function HomeScreen() {
   }, [stores, search, category]);
 
   return (
-    <Screen>
+    <Screen edges={{ top: false }}>
+      {/* Barra de estado: texto claro sobre el hero navy, oscuro sobre la barra compacta. */}
+      <StatusBar style={compact ? 'dark' : 'light'} />
+
       {/* Barra compacta: aparece fija arriba al scrollear pasado el header grande */}
       <Animated.View
         pointerEvents="box-none"
@@ -84,12 +114,10 @@ export default function HomeScreen() {
         ]}
       >
         <View
-          className="flex-row items-center justify-between border-b px-5 py-3"
-          style={{ backgroundColor: colors.background, borderColor: colors.border }}
+          className="flex-row items-center justify-between border-b px-5 pb-3"
+          style={{ backgroundColor: colors.background, borderColor: colors.border, paddingTop: insets.top + 8 }}
         >
-          <Text style={{ color: colors.brand[700] }} variant="heading">
-            Caserita
-          </Text>
+          <Logo variant="plain" height={26} />
           <Pressable onPress={scrollToTop} hitSlop={10} accessibilityRole="button" accessibilityLabel="Buscar">
             <SearchIcon size={20} color={colors.brand[700]} strokeWidth={2} />
           </Pressable>
@@ -109,31 +137,35 @@ export default function HomeScreen() {
         }
         ListHeaderComponent={
           <View>
-            {/* Header: marca + ubicación + título, se desvanece al scrollear */}
+            {/* Hero inmersivo: gradiente navy full-bleed (bajo el status bar) con
+                logo, saludo y título; se desvanece al scrollear. */}
             <Animated.View style={bigHeaderStyle}>
-              <View className="flex-row items-center justify-between px-5 pb-2 pt-2">
-                <Text style={{ color: colors.brand[700] }} variant="heading">
-                  Caserita
-                </Text>
-                <View className="flex-row items-center gap-1">
-                  <MapPin size={14} color={colors.mutedForeground} strokeWidth={2} />
-                  <Text variant="caption">Concepción, Bío Bío</Text>
+              <BrandGradient
+                style={{ paddingTop: insets.top + 14, paddingHorizontal: 20, paddingBottom: 40 }}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Logo variant="border" height={40} />
+                  <View className="flex-row items-center gap-1">
+                    <MapPin size={14} color="#c7d6ef" strokeWidth={2} />
+                    <Text variant="caption" style={{ color: '#c7d6ef' }}>Concepción</Text>
+                  </View>
                 </View>
-              </View>
 
-              <View className="px-5 pb-4 pt-2">
-                <Text variant="title">Descubre los comercios</Text>
-                <Text variant="title">de tu barrio</Text>
-              </View>
+                <Text variant="title" className="mt-5" style={{ color: colors.white }}>
+                  Descubre los comercios de tu barrio
+                </Text>
+              </BrandGradient>
             </Animated.View>
 
-            {/* Búsqueda */}
-            <View className="px-5 pb-3">
-              <SearchBar value={search} onChangeText={setSearch} />
+            {/* Búsqueda flotante: monta sobre el borde inferior del gradiente. */}
+            <View className="px-5" style={{ marginTop: -22, zIndex: 3 }}>
+              <View style={FLOAT_SHADOW}>
+                <SearchBar value={search} onChangeText={setSearch} />
+              </View>
             </View>
 
             {/* Categorías */}
-            <View className="pb-4">
+            <View className="pb-4 pt-3">
               <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
             </View>
 

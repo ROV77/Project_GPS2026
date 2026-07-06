@@ -20,7 +20,8 @@
  * (onRegionChangeComplete) — más espacio real para explorar sin estorbos.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ActivityIndicator, Linking, Platform } from 'react-native';
+import { View, ActivityIndicator, Linking, Platform, Pressable, Keyboard } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import * as Location from 'expo-location';
 import ClusteredMapView from 'react-native-map-clustering';
@@ -65,7 +66,15 @@ export default function MapScreen() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
 
+  const params = useLocalSearchParams<{ focusId?: string; focusLat?: string; focusLng?: string }>();
   const sheetRef = useRef<BottomSheet>(null);
+  // Instancia real del MapView (react-native-map-clustering la reenvía por `mapRef`).
+  // ponytail: `any` — los tipos de la lib declaran mapRef como Ref<MapView>, pero
+  // en runtime entrega la instancia (con animateToRegion). Ver ClusteredMapView.js.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapViewRef = useRef<any>(null);
+  // Último focusId procesado (viene del detalle de tienda) para no repetir.
+  const handledFocus = useRef<string | null>(null);
   // react-native-map-clustering fija sus valores por defecto (mapRef,
   // clusteringEnabled, onMarkersChange, onClusterPress, superClusterRef) vía
   // `Component.defaultProps`, mecanismo que React 19 ya no soporta en
@@ -101,6 +110,22 @@ export default function MapScreen() {
   const handleMapPress = useCallback(() => {
     setSelectedId(null);
     sheetRef.current?.close();
+  }, []);
+
+  // Centrar el mapa en una tienda + seleccionarla y abrir su ficha (igual que
+  // tocar su marker). Cierra el desplegable del buscador.
+  const focusStore = useCallback((store: Store) => {
+    const latitude = Number(store.latitude);
+    const longitude = Number(store.longitude);
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) return;
+    mapViewRef.current?.animateToRegion(
+      { latitude, longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
+      600,
+    );
+    setSelectedId(store.id);
+    sheetRef.current?.snapToIndex(1);
+    Keyboard.dismiss();
+    setSearch('');
   }, []);
 
   // Al montar, pedir permiso y obtener la ubicación del usuario.
@@ -184,6 +209,25 @@ export default function MapScreen() {
     [geoStores, selectedId],
   );
 
+  // Resultados del buscador para el desplegable (solo con texto). Reutiliza el
+  // filtrado existente; cap a 8 filas.
+  const searchMatches = useMemo(
+    () => (search.trim() ? filteredStores.slice(0, 8) : []),
+    [search, filteredStores],
+  );
+
+  // Foco entrante desde el detalle de tienda ("Ver en el mapa"): cuando llega un
+  // focusId nuevo y la tienda ya cargó, centra el mapa y abre su ficha.
+  useEffect(() => {
+    const focusId = params.focusId;
+    if (!focusId || locating || handledFocus.current === focusId) return;
+    const target = geoStores.find((s) => s.id === focusId);
+    if (!target) return; // aún no cargan las tiendas; reintenta al actualizarse geoStores
+    handledFocus.current = focusId;
+    const t = setTimeout(() => focusStore(target), 350);
+    return () => clearTimeout(t);
+  }, [params.focusId, locating, geoStores, focusStore]);
+
   // Abrir ajustes del sistema cuando se negó el permiso y el usuario quiere
   // habilitarlo manualmente.
   const openSettings = () => {
@@ -207,15 +251,40 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Buscador + chips de categoría: se colapsan mientras se arrastra el mapa */}
-      <Animated.View style={filtersStyle}>
-        <View className="px-5 pb-3">
-          <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar tiendas en el mapa" />
-        </View>
-        <View className="pb-3">
-          <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
-        </View>
-      </Animated.View>
+      {/* Buscador + chips de categoría: se colapsan mientras se arrastra el mapa.
+          El desplegable de resultados va fuera del área que colapsa (overflow) y
+          se posiciona bajo el buscador. */}
+      <View style={{ zIndex: 20 }}>
+        <Animated.View style={filtersStyle}>
+          <View className="px-5 pb-3">
+            <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar tiendas en el mapa" />
+          </View>
+          <View className="pb-3">
+            <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
+          </View>
+        </Animated.View>
+
+        {searchMatches.length > 0 && (
+          <View style={{ position: 'absolute', top: 54, left: 20, right: 20, zIndex: 30 }}>
+            <Card elevated className="p-0 overflow-hidden">
+              {searchMatches.map((s, i) => {
+                const meta = [s.category_name, s.commune_name].filter(Boolean).join(' · ');
+                return (
+                  <Pressable
+                    key={s.id}
+                    onPress={() => focusStore(s)}
+                    className="px-4 py-3 active:bg-muted"
+                    style={i > 0 ? { borderTopWidth: 1, borderTopColor: colors.border } : undefined}
+                  >
+                    <Text variant="body" numberOfLines={1}>{s.name}</Text>
+                    {meta ? <Text variant="caption" numberOfLines={1}>{meta}</Text> : null}
+                  </Pressable>
+                );
+              })}
+            </Card>
+          </View>
+        )}
+      </View>
 
       <View className="mx-5 flex-1 overflow-hidden rounded-2xl border bg-card" style={{ borderColor: colors.border }}>
         {locating ? (
@@ -226,7 +295,8 @@ export default function MapScreen() {
         ) : (
           <View style={{ flex: 1 }}>
             <ClusteredMapView
-              mapRef={() => {}}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              mapRef={(map: any) => { mapViewRef.current = map; }}
               superClusterRef={superClusterRef}
               clusteringEnabled
               onMarkersChange={() => {}}
