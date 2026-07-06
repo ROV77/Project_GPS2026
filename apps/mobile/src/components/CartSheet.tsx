@@ -77,6 +77,7 @@ export const CartSheet = forwardRef<BottomSheet, { store: Store }>(function Cart
                 </View>
                 <QuantityStepper
                   qty={it.qty}
+                  maxQty={it.product.stock}
                   onDecrement={() => decrement(it.product.id)}
                   onIncrement={() => increment(it.product.id)}
                 />
