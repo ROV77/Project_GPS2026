@@ -1,6 +1,10 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { env } from './env';
 import { HttpError } from '../lib/httpError';
+import {
+  IMAGE_UPLOAD_PRESETS,
+  type ImageUploadKind,
+} from './image-upload';
 
 const isConfigured = Boolean(
   env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET,
@@ -16,24 +20,22 @@ if (isConfigured) {
 }
 
 /**
- * Sube un buffer de imagen a Cloudinary y devuelve su secure_url.
- * Usa upload_stream (la API de buffer de Cloudinary es por stream) envuelto en
- * una Promise. Si faltan credenciales, lanza 503 en vez de fallar opacamente.
+ * Sube un buffer de imagen a Cloudinary y devuelve su secure_url (sin transformaciones
+ * de entrega — el cliente añade w_/q_/f_ al mostrar).
  */
-export function uploadImage(buffer: Buffer): Promise<string> {
+export function uploadImage(buffer: Buffer, kind: ImageUploadKind = 'product'): Promise<string> {
   if (!isConfigured) {
     throw new HttpError(503, 'Cloudinary no configurado: define las variables CLOUDINARY_* en el .env');
   }
 
+  const preset = IMAGE_UPLOAD_PRESETS[kind];
+
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: 'avatars',
+        folder: preset.folder,
         resource_type: 'image',
-        // Compresión no destructiva: limita el lado mayor a 1024px (solo reduce
-        // si es más grande, conserva proporción) y deja que Cloudinary elija
-        // calidad y formato óptimos. Baja mucho el peso sin recortar la imagen.
-        transformation: [{ width: 1024, height: 1024, crop: 'limit' }],
+        transformation: [{ width: preset.maxSize, height: preset.maxSize, crop: 'limit' }],
         quality: 'auto',
         fetch_format: 'auto',
       },

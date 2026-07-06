@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Package, LineChart, Tag, ArrowLeft } from "lucide-react";
 import bgVideo from "@/assets/videos/15759309_960_540_60fps.mp4";
-import logoUrl from "@/assets/icons/logo_caseritapp.png";
+import logoUrl from '@/assets/icons/logo_caseritapp.webp';
 
 const features = [
   {

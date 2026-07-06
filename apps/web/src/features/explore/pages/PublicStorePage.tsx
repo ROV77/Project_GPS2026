@@ -13,6 +13,7 @@ import { LandingHeader } from '@/features/landing/components/LandingHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { getInitials } from '@/shared/lib/format';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
 import type { StorePreviewData } from '@/features/stores/components/StoreMobilePreview';
 import { DownloadAppPanel } from '../components/DownloadAppPanel';
@@ -96,9 +97,10 @@ export function PublicStorePage() {
               <section className="rounded-2xl border border-white/70 bg-white/75 p-6 shadow-sm backdrop-blur-sm">
                 <div className="flex gap-4">
                   {store.logo_url ? (
-                    <img
+                    <CloudinaryImg
                       src={store.logo_url}
                       alt=""
+                      displayWidthPx={80}
                       className="size-20 shrink-0 rounded-2xl object-cover ring-1 ring-black/5"
                     />
                   ) : (

@@ -4,6 +4,7 @@ import { BadgeCheck, MapPin, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/shared/lib/format';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import { EXPLORE_CARD_HEIGHT } from '../lib/exploreLayout';
 import { getCategoryCardStyle } from '../lib/categoryStyle';
 import { formatStoreLocation } from '../lib/storeLocation';
@@ -39,9 +40,10 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
       <div className="relative h-28 shrink-0 overflow-hidden">
         {showLogo ? (
           <>
-            <img
-              src={store.logo_url!}
+            <CloudinaryImg
+              src={store.logo_url}
               alt=""
+              displayWidthPx={230}
               className="absolute inset-0 size-full object-cover transition duration-300 group-hover:scale-105"
               onError={() => setLogoFailed(true)}
             />

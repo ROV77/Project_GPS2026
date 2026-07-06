@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/shared/lib/format';
+import { displayWidth, optimizeCloudinaryUrl } from '@/shared/lib/cloudinaryImage';
 import { MobilePhoneFrame } from '@/shared/ui/MobilePhoneFrame';
 import { formatStoreAddressShort } from '../lib/formatStoreAddress';
 
@@ -64,9 +65,10 @@ function PreviewLogo({
   const showImage = logoUrl?.trim() && !failed;
 
   if (showImage) {
+    const src = optimizeCloudinaryUrl(logoUrl, { width: displayWidth(size) });
     return (
       <img
-        src={logoUrl!}
+        src={src}
         alt=""
         className="shrink-0 object-cover bg-muted"
         style={{ width: size, height: size, borderRadius: rounded }}

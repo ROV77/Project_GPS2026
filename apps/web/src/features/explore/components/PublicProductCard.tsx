@@ -1,4 +1,5 @@
 import { formatCLP, getInitials } from '@/shared/lib/format';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import { Badge } from '@/components/ui/badge';
 import type { PublicProduct } from '../types';
 
@@ -12,9 +13,10 @@ export function PublicProductCard({ product }: PublicProductCardProps) {
   return (
     <article className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-xs">
       {product.image_url ? (
-        <img
+        <CloudinaryImg
           src={product.image_url}
           alt=""
+          displayWidthPx={80}
           className="size-20 shrink-0 rounded-lg object-cover ring-1 ring-black/5"
         />
       ) : (

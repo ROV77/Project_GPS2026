@@ -63,14 +63,17 @@ export async function updateMe(input: {
  * fetch, al pasar un FormData, RN pone solo el `Content-Type: multipart/form-data;
  * boundary=…` correcto. El token se adjunta a mano (no pasa por el interceptor).
  */
-export async function uploadImage(uri: string): Promise<string> {
+export async function uploadImage(
+  uri: string,
+  kind: 'avatar' | 'store_logo' | 'product' = 'avatar',
+): Promise<string> {
   const token = await getToken();
   const form = new FormData();
-  form.append('file', { uri, name: 'avatar.jpg', type: 'image/jpeg' } as never);
+  form.append('file', { uri, name: `${kind}.jpg`, type: 'image/jpeg' } as never);
 
   let res: Response;
   try {
-    res = await fetch(`${env.apiUrl}/api/uploads/image`, {
+    res = await fetch(`${env.apiUrl}/api/uploads/image?kind=${kind}`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: form,

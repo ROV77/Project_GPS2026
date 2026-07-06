@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/shared/lib/format';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import type { User } from '@/features/user/types';
 
 interface SidebarProfileProps {
@@ -38,7 +39,12 @@ export function SidebarProfile({
       >
         <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-700 text-xs font-semibold text-white ring-2 ring-white/15">
           {account?.avatar_url ? (
-            <img src={account.avatar_url} alt={name} className="size-full object-cover" />
+            <CloudinaryImg
+              src={account.avatar_url}
+              alt={name}
+              displayWidthPx={36}
+              className="size-full object-cover"
+            />
           ) : (
             initials
           )}

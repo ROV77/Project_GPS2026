@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { PageHeader } from '@/shared/components/PageHeader';
 import { ConfirmDelete } from '@/shared/components/ConfirmDelete';
 import { ProductThumb } from '@/shared/components/ProductThumb';
+import { optimizeImagePreviewUrl } from '@/shared/ui/CloudinaryImg';
 import { Badge, Button, Input, Pagination, Select, Skeleton, Table, type Column } from '@/shared/ui';
 import { useTablePagination } from '@/shared/hooks/useTablePagination';
 import { formatCLP } from '@/shared/lib/format';
@@ -309,7 +310,7 @@ export function ProductsListPage() {
           <DialogPanel className="relative max-h-[85vh] max-w-lg">
             {preview && (
               <img
-                src={preview.src}
+                src={optimizeImagePreviewUrl(preview.src) ?? preview.src}
                 alt={preview.alt}
                 className="max-h-[85vh] w-full rounded-lg object-contain shadow-xl"
               />

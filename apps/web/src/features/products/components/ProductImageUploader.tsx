@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { uploadImage } from '@/shared/api/uploads';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import { getCroppedBlob } from '@/shared/lib/cropImage';
 
 interface ProductImageUploaderProps {
@@ -75,8 +76,8 @@ export function ProductImageUploader({ value, onChange }: ProductImageUploaderPr
     if (!imageSrc || !areaPixels) return;
     setUploading(true);
     try {
-      const blob = await getCroppedBlob(imageSrc, areaPixels);
-      const url = await uploadImage(blob);
+      const blob = await getCroppedBlob(imageSrc, areaPixels, { kind: 'product' });
+      const url = await uploadImage(blob, 'product');
       onChange(url);
       setImageSrc(null);
       setAreaPixels(null);
@@ -149,7 +150,12 @@ export function ProductImageUploader({ value, onChange }: ProductImageUploaderPr
       >
         {value ? (
           <>
-            <img src={value} alt="" className="size-full object-cover" />
+            <CloudinaryImg
+              src={value}
+              alt=""
+              displayWidthPx={160}
+              className="size-full object-cover"
+            />
             <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
               <Camera className="size-5" />
               Cambiar imagen
