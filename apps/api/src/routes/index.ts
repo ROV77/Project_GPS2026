@@ -10,6 +10,7 @@ import { productsRouter } from './products.routes';
 import { couriersRouter } from './couriers.routes';
 import { uploadsRouter } from './uploads.routes';
 import { subscriptionsRouter } from './subscriptions.routes';
+import { promotionsRouter } from './promotions.routes';
 
 import { deliveryVacanciesRouter } from './delivery/deliveryVacancies.routes';
 import { deliveryApplicationsRouter } from './delivery/deliveryApplications.routes';
@@ -28,6 +29,7 @@ apiRouter.use('/products', productsRouter);
 apiRouter.use('/couriers', couriersRouter);
 apiRouter.use('/uploads', uploadsRouter);
 apiRouter.use('/subscriptions', subscriptionsRouter);
+apiRouter.use('/promotions', promotionsRouter);
 
 apiRouter.use('/delivery-vacancies', deliveryVacanciesRouter);
 apiRouter.use('/delivery-applications', deliveryApplicationsRouter);

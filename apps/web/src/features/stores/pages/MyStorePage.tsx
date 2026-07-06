@@ -13,7 +13,6 @@ import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '@/shared/ui';
 import { useMyStore, useUpdateStore } from '../hooks/useStores';
 import { useMySubscription } from '@/features/subscriptions/hooks/useSubscription';
-import { planShowsVerifiedBadge } from '@/features/plans/lib/planBenefits';
 import { StoreLogoUploader } from '../components/StoreLogoUploader';
 import { MapPicker } from '../components/MapPicker';
 import { StoreMobilePreview } from '../components/StoreMobilePreview';
@@ -97,7 +96,8 @@ export function MyStorePage() {
       regionName: selectedRegionLabel,
       latitude: watchedLat,
       longitude: watchedLng,
-      verified: planShowsVerifiedBadge(subscription?.plan),
+      // El badge de verificado es exclusivo de Premium (capacidad del plan).
+      verified: subscription?.capabilities.verifiedBadge ?? false,
     }),
     [
       selectedCategoryLabel,
@@ -106,7 +106,7 @@ export function MyStorePage() {
       store?.description,
       store?.logo_url,
       store?.name,
-      subscription?.plan,
+      subscription?.capabilities.verifiedBadge,
       watchedAddress,
       watchedCategoryId,
       watchedDescription,

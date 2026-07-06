@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogPanel } from '@headlessui/react';
 import { LayoutGrid, List, Plus, Pencil, Search, Star, PackageX, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,6 +12,7 @@ import { useTablePagination } from '@/shared/hooks/useTablePagination';
 import { formatCLP } from '@/shared/lib/format';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { useMyStore } from '@/features/stores/hooks/useStores';
+import { useCapabilities } from '@/features/subscriptions/hooks/useSubscription';
 import { useProducts, useDeleteProduct } from '../hooks/useProducts';
 import { ProductFormDrawer } from '../components/ProductFormDrawer';
 import { ProductCardGrid } from '../components/ProductCardGrid';
@@ -106,6 +108,13 @@ export function ProductsListPage() {
     };
   }, [statsSource]);
 
+  // Límite de productos según el plan (null = ilimitado). El candado real vive
+  // en el backend; acá solo mostramos el contador y bloqueamos crear al tope.
+  const { maxProducts } = useCapabilities();
+  const productCount = stats.total;
+  const productLimited = maxProducts !== null;
+  const atProductLimit = maxProducts !== null && productCount >= maxProducts;
+
   const del = useDeleteProduct();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -195,6 +204,18 @@ export function ProductsListPage() {
 
       <ProductStatsCards {...stats} className="mb-5" />
 
+      {atProductLimit ? (
+        <div className="mb-5 flex flex-col items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            {productCount > (maxProducts ?? 0) ? 'Estás por encima del' : 'Alcanzaste el'} límite de{' '}
+            {maxProducts} productos de tu plan.
+          </span>
+          <Link to="/planes" className="shrink-0 font-semibold text-brand-700 hover:underline">
+            Mejora a Pro para publicar sin límite
+          </Link>
+        </div>
+      ) : null}
+
       <div className="mb-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="min-w-0 flex-1 sm:max-w-md">
@@ -205,11 +226,26 @@ export function ProductsListPage() {
               prefix={<Search className="size-4" />}
             />
           </div>
+          {productLimited ? (
+            <span
+              className={cn(
+                'text-sm font-medium tabular-nums',
+                atProductLimit ? 'text-destructive' : 'text-muted-foreground',
+              )}
+            >
+              {productCount} / {maxProducts}
+            </span>
+          ) : null}
           <Button
             variant="primary"
             icon={<Plus className="size-4" />}
             onClick={openCreate}
-            disabled={!myStore}
+            disabled={!myStore || atProductLimit}
+            title={
+              atProductLimit
+                ? 'Alcanzaste el límite de productos de tu plan. Mejora a Pro para publicar sin límite.'
+                : undefined
+            }
           >
             Nuevo producto
           </Button>

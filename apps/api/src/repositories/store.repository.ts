@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma';
 import { calculateStoreStatus, getCurrentDayOfWeek } from '../services/store-status.service';
+import { findVerifiedByPlanStoreIds } from '../services/plan-access.service';
 import { findTodaySchedulesForStores } from './schedule.repository';
 import type {
   StoreFilters,
@@ -115,8 +116,11 @@ export async function findStoresWithRating(
   // Enriquecer cada tienda con el estado visual (semáforo)
   const dayOfWeek = getCurrentDayOfWeek();
   const storeIds = rawStores.map((s) => s.id);
-  const schedules = await findTodaySchedulesForStores(storeIds, dayOfWeek);
-  
+  const [schedules, verifiedByPlan] = await Promise.all([
+    findTodaySchedulesForStores(storeIds, dayOfWeek),
+    findVerifiedByPlanStoreIds(storeIds),
+  ]);
+
   // Mapear por store_id para búsqueda rápida O(1)
   const schedulesMap = new Map(
     schedules.map((s) => [s.store_id.toString(), s])
@@ -147,6 +151,8 @@ export async function findStoresWithRating(
     const statusResult = calculateStoreStatus(openingStr, closingStr, { isClosed });
     return {
       ...store,
+      // Verificado efectivo: manual (columna) O por plan Premium vigente.
+      verified: store.verified || verifiedByPlan.has(store.id.toString()),
       status: statusResult.status,
       color: statusResult.color,
       minutesUntilClose: statusResult.minutesUntilClose,
@@ -203,9 +209,12 @@ export async function findStoreByIdWithRating(
   const store = rawStores[0];
   if (!store) return null;
 
-  // Enriquecer con el estado visual (semáforo) del día actual.
+  // Enriquecer con el estado visual (semáforo) del día actual + verificado por plan.
   const dayOfWeek = getCurrentDayOfWeek();
-  const schedules = await findTodaySchedulesForStores([store.id], dayOfWeek);
+  const [schedules, verifiedByPlan] = await Promise.all([
+    findTodaySchedulesForStores([store.id], dayOfWeek),
+    findVerifiedByPlanStoreIds([store.id]),
+  ]);
   const schedule = schedules[0];
 
   let openingStr: string | null = null;
@@ -229,6 +238,8 @@ export async function findStoreByIdWithRating(
   const statusResult = calculateStoreStatus(openingStr, closingStr, { isClosed });
   return {
     ...store,
+    // Verificado efectivo: manual (columna) O por plan Premium vigente.
+    verified: store.verified || verifiedByPlan.has(store.id.toString()),
     status: statusResult.status,
     color: statusResult.color,
     minutesUntilClose: statusResult.minutesUntilClose,
@@ -270,6 +281,7 @@ export async function findStoreStats(storeId: bigint) {
  * parche global de app.ts al hacer res.json.
  */
 export async function findPublicStoreProducts(storeId: bigint) {
+  const now = new Date();
   return prisma.products.findMany({
     where: { store_id: storeId, deleted_at: null },
     orderBy: [{ featured: 'desc' }, { id: 'asc' }],
@@ -281,6 +293,25 @@ export async function findPublicStoreProducts(storeId: bigint) {
       stock: true,
       image_url: true,
       featured: true,
+      // Promoción vigente del producto (activa y dentro de la ventana de fechas).
+      // Como solo puede haber una activa por producto, tomamos la primera.
+      promotions: {
+        where: {
+          is_active: true,
+          AND: [
+            { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
+            { OR: [{ valid_until: null }, { valid_until: { gte: now } }] },
+          ],
+        },
+        select: {
+          id: true,
+          discount_type: true,
+          discount_value: true,
+          valid_from: true,
+          valid_until: true,
+        },
+        take: 1,
+      },
     },
   });
 }
