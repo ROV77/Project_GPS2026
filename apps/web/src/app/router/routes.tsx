@@ -9,6 +9,7 @@ import { DeliveryDashboardPage } from '@/features/delivery/pages/DeliveryDashboa
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { MyStorePage } from '@/features/stores/pages/MyStorePage';
 import { ProductsListPage } from '@/features/products/pages/ProductsListPage';
+import { PromotionsListPage } from '@/features/promotions/pages/PromotionsListPage';
 import { PlansListPage } from '@/features/plans/pages/PlansListPage';
 import { MyAccountPage } from '@/features/user/pages/MyAccountPage';
 import { CouriersPage } from '@/features/couriers/pages/CouriersPage';
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/mi-tienda', element: <MyStorePage /> },
           { path: '/productos', element: <ProductsListPage /> },
+          { path: '/promociones', element: <PromotionsListPage /> },
           { path: '/repartidores', element: <CouriersPage /> },
           { path: '/planes', element: <PlansListPage /> },
           { path: '/mi-cuenta', element: <MyAccountPage /> },

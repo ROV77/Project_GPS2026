@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { DropdownMenu } from '@/shared/ui';
 import { navItems } from '@/shared/config/navigation';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useCapabilities } from '@/features/subscriptions/hooks/useSubscription';
 import { useMyAccount } from '@/features/user/hooks/useUser';
 import { getInitials } from '@/shared/lib/format';
 import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
@@ -31,14 +32,21 @@ export function AdminLayout() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const { data: account } = useMyAccount();
+  const capabilities = useCapabilities();
 
   // El panel de tienda no aplica a repartidores: van a su propio dashboard.
   if (user?.roles?.includes('delivery')) {
     return <Navigate to="/delivery" replace />;
   }
 
+  // Oculta los items que exigen una capacidad que el plan vigente no incluye
+  // (ej. "Promociones" solo en Pro/Premium). El backend igual protege las rutas.
+  const visibleNavItems = navItems.filter(
+    (i) => !i.requiresFeature || capabilities[i.requiresFeature],
+  );
+
   const selectedKey =
-    navItems.find((i) => location.pathname.startsWith(i.key))?.key ?? '/dashboard';
+    visibleNavItems.find((i) => location.pathname.startsWith(i.key))?.key ?? '/dashboard';
   const isAccountPage = location.pathname.startsWith('/mi-cuenta');
   const currentLabel = isAccountPage
     ? 'Mi perfil'
@@ -78,7 +86,7 @@ export function AdminLayout() {
 
         {/* Navegación */}
         <nav className="flex-1 space-y-1 px-2 py-2">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const active = item.key === selectedKey;
             return (
               <button

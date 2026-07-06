@@ -7,6 +7,7 @@ import { PageHeader } from '@/shared/components/PageHeader';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, Card, Field, Input, Skeleton } from '@/shared/ui';
+import { PrioritySupportCard } from '@/features/subscriptions/components/PrioritySupportCard';
 import { useMyAccount, useUpdateUser } from '../hooks/useUser';
 import { AvatarUploader } from '../components/AvatarUploader';
 
@@ -134,6 +135,9 @@ export function MyAccountPage() {
           </div>
         ) : null}
       </Card>
+
+      {/* Ventaja Premium: soporte prioritario (visible solo con ese plan). */}
+      <PrioritySupportCard />
     </>
   );
 }

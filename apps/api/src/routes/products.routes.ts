@@ -11,6 +11,7 @@ import { makeCrud } from '../lib/crud';
 import { getPagination, parseBigIntId } from '../lib/http';
 import { requireAuth } from '../middlewares/requireAuth';
 import { withStore } from '../middlewares/withStore';
+import { assertCanAddProduct } from '../services/plan-access.service';
 
 /** Umbral de "stock bajo" para el filtro lowStock y los badges del panel. */
 export const LOW_STOCK_THRESHOLD = 5;
@@ -113,6 +114,9 @@ async function create(
   }
   req.body = { ...req.body, store_id: storeId.toString() };
   try {
+    // Candado del plan: rechaza con 403 si la tienda alcanzó su tope de
+    // productos. Va ANTES de crear; no borra nada retroactivamente.
+    await assertCanAddProduct(storeId);
     await crud.create(req, res);
   } catch (error) {
     next(error);

@@ -10,11 +10,15 @@ import { Text } from '@/ui/Text';
 import { RemoteImage } from '@/ui/RemoteImage';
 import { QuantityStepper } from '@/ui/QuantityStepper';
 import { formatCLP } from '@/shared/lib/format';
+import { colors } from '@/ui/theme';
 import { useCart } from '@/features/cart/cart.store';
+import { activePromotion, promotionBadge, discountedPrice } from '@/features/stores/promotion';
 import type { Product, Store } from '@/features/stores/types';
 
 export function ProductCard({ product, store }: { product: Product; store: Store }) {
   const soldOut = product.stock <= 0;
+  const promo = activePromotion(product);
+  const finalPrice = promo ? discountedPrice(product.price, promo) : null;
   // La qty solo cuenta si el carrito es de ESTA tienda (carrito de una a la vez).
   const qty = useCart((s) => (s.storeId === store.id ? s.items[product.id]?.qty ?? 0 : 0));
   const addItem = useCart((s) => s.addItem);
@@ -52,7 +56,13 @@ export function ProductCard({ product, store }: { product: Product; store: Store
           <Text variant="subtitle" numberOfLines={1} className="flex-shrink">
             {product.name}
           </Text>
-          {product.featured ? (
+          {promo ? (
+            <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: colors.amber }}>
+              <Text variant="caption" className="text-white">
+                {promotionBadge(promo)}
+              </Text>
+            </View>
+          ) : product.featured ? (
             <View className="rounded-full bg-brand-50 px-2 py-0.5">
               <Text variant="caption" className="text-brand-700">
                 Destacado
@@ -68,9 +78,20 @@ export function ProductCard({ product, store }: { product: Product; store: Store
         ) : null}
 
         <View className="mt-1 flex-row items-center justify-between">
-          <Text variant="subtitle" className="text-foreground">
-            {formatCLP(product.price)}
-          </Text>
+          {finalPrice != null ? (
+            <View className="flex-row items-center gap-1.5">
+              <Text variant="caption" className="text-muted-foreground line-through">
+                {formatCLP(product.price)}
+              </Text>
+              <Text variant="subtitle" className="text-foreground">
+                {formatCLP(finalPrice)}
+              </Text>
+            </View>
+          ) : (
+            <Text variant="subtitle" className="text-foreground">
+              {formatCLP(product.price)}
+            </Text>
+          )}
 
           {soldOut ? (
             <Text variant="caption" className="text-destructive">

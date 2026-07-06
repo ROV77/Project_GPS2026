@@ -11,7 +11,7 @@ import { View, Pressable, Linking, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type BottomSheet from '@gorhom/bottom-sheet';
-import { ChevronLeft, Star, BadgeCheck, MapPin, PackageOpen, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, Star, BadgeCheck, MapPin, PackageOpen, ChevronRight, Tag } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
@@ -67,7 +67,16 @@ export default function StoreDetailScreen() {
             keyExtractor={(p: Product) => p.id}
             contentContainerStyle={{ paddingBottom: 96 }}
             showsVerticalScrollIndicator={false}
-            ListHeaderComponent={<StoreHeader store={store} />}
+            ListHeaderComponent={
+              <>
+                <StoreHeader store={store} />
+                {/* Promociones primero: lo primero visible del catálogo. */}
+                <PromotionsSection products={products} store={store} />
+                <View className="px-5 pb-2">
+                  <Text variant="subtitle">Catálogo</Text>
+                </View>
+              </>
+            }
             renderItem={({ item }) => (
               <View className="px-5 pb-3">
                 <ProductCard product={item} store={store} />
@@ -194,10 +203,27 @@ function StoreHeader({ store }: { store: Store }) {
       {whatsappUrl ? (
         <Button label="Contactar por WhatsApp" onPress={() => void Linking.openURL(whatsappUrl)} />
       ) : null}
+    </View>
+  );
+}
 
-      <View className="mt-1">
-        <Text variant="subtitle">Catálogo</Text>
+/**
+ * Sección destacada con las promociones vigentes de la tienda. Va arriba del
+ * catálogo (lo primero visible). Si no hay promos, no renderiza nada.
+ */
+function PromotionsSection({ products, store }: { products: Product[]; store: Store }) {
+  const promoted = products.filter((p) => (p.promotions?.length ?? 0) > 0);
+  if (promoted.length === 0) return null;
+
+  return (
+    <View className="gap-3 px-5 pb-5">
+      <View className="flex-row items-center gap-1.5">
+        <Tag size={16} color={colors.amber} strokeWidth={2.25} />
+        <Text variant="subtitle">Promociones</Text>
       </View>
+      {promoted.map((p) => (
+        <ProductCard key={p.id} product={p} store={store} />
+      ))}
     </View>
   );
 }
