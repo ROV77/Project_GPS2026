@@ -42,12 +42,12 @@ export function Avatar({
           contentFit="cover"
           transition={200}
           cachePolicy="memory-disk"
-          style={{ width: size, height: size, borderRadius: radius }}
+          style={{ width: '100%', height: '100%', borderRadius: radius }}
         />
       ) : (
         <View
           className="items-center justify-center bg-brand-50"
-          style={{ width: size, height: size, borderRadius: radius }}
+          style={{ width: '100%', height: '100%', borderRadius: radius }}
         >
           <User size={size * 0.5} color={colors.brand[700]} strokeWidth={1.75} />
         </View>
@@ -57,8 +57,10 @@ export function Avatar({
         <View
           className="absolute items-center justify-center"
           style={{
-            width: size,
-            height: size,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             borderRadius: radius,
             backgroundColor: 'rgba(15,29,46,0.45)',
           }}

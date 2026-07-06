@@ -17,7 +17,7 @@ export function StoreCard({ store, onPress }: { store: Store; onPress: () => voi
   const meta = [store.category_name, addressShort || store.commune_name].filter(Boolean).join(' · ');
 
   return (
-    <Card onPress={onPress} className="flex-row items-center gap-3">
+    <Card onPress={onPress} elevated className="flex-row items-center gap-3">
       <RemoteImage uri={store.logo_url} size={56} />
 
       <View className="flex-1">

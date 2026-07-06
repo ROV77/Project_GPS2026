@@ -263,6 +263,26 @@ async function main() {
     prisma.payments_states.create({ data: { name: 'rejected' } }),
   ]);
 
+  // ─── Estados de vacantes y postulaciones de repartidores ───────────────────
+  await Promise.all([
+    prisma.delivery_vacancies_states.createMany({
+      data: [
+        { id: 1, name: 'Abierta' },
+        { id: 2, name: 'Pausada' },
+        { id: 3, name: 'Cerrada' },
+      ],
+      skipDuplicates: true,
+    }),
+    prisma.delivery_applications_states.createMany({
+      data: [
+        { id: 1, name: 'Pendiente' },
+        { id: 2, name: 'Aceptada' },
+        { id: 3, name: 'Rechazada' },
+      ],
+      skipDuplicates: true,
+    }),
+  ]);
+
   // ─── Usuarios ─────────────────────────────────────────────────────────────
   const demo = await prisma.users.create({
     data: {
