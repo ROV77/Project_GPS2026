@@ -23,22 +23,22 @@ import imgRepartidor from '@/assets/images/repartidor.jpg';
 
 const benefits = [
   {
-    icon: <Store className="size-10" />,
+    icon: Store,
     title: 'Tu vitrina online',
     text: 'Publica tu catálogo y deja que los vecinos de tu comuna te encuentren.',
   },
   {
-    icon: <LineChart className="size-10" />,
+    icon: LineChart,
     title: 'Vende y mide',
     text: 'Sigue tus visitas y ventas en tiempo real desde un panel simple.',
   },
   {
-    icon: <Megaphone className="size-10" />,
+    icon: Megaphone,
     title: 'Promociones',
     text: 'Crea ofertas para atraer más clientes y fidelizar a los de siempre.',
   },
   {
-    icon: <MapPin className="size-10" />,
+    icon: MapPin,
     title: 'Cerca de ti',
     text: 'Conectamos comercios locales con compradores de su misma zona.',
   },
@@ -126,16 +126,27 @@ export function LandingPage() {
             vecinos que quieren comprar cerca. Gestiona todo desde un solo lugar.
           </p>
         </div>
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {benefits.map((b) => (
-            <Card key={b.title} className="h-full p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-brand-300 cursor-default group">
-              <span className="flex size-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 transition-colors duration-300 group-hover:bg-brand-100 group-hover:text-brand-800">
-                {b.icon}
-              </span>
-              <h3 className="mt-6 text-xl font-bold text-slate-900">{b.title}</h3>
-              <p className="mt-3 text-base leading-relaxed text-slate-500">{b.text}</p>
-            </Card>
-          ))}
+        <div className="mx-auto mt-16 grid max-w-5xl gap-8 sm:grid-cols-2">
+          {benefits.map((b) => {
+            const Icon = b.icon;
+            return (
+              <Card 
+                key={b.title} 
+                className="group relative flex aspect-square cursor-default flex-col justify-end overflow-hidden p-8 transition-all duration-500 hover:-translate-y-2 hover:border-brand-300 hover:shadow-2xl"
+              >
+                {/* Texto por encima */}
+                <div className="relative z-10 max-w-[85%]">
+                  <h3 className="text-2xl font-bold text-slate-900 md:text-3xl">{b.title}</h3>
+                  <p className="mt-4 text-lg leading-relaxed text-slate-600">{b.text}</p>
+                </div>
+
+                {/* Ícono gigante como fondo */}
+                <div className="absolute -bottom-8 -right-8 z-0 text-brand-100/60 transition-transform duration-500 group-hover:scale-110 group-hover:text-brand-200/80">
+                  <Icon className="size-64 sm:size-72" strokeWidth={1.5} />
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </section>
 
