@@ -37,7 +37,7 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
         style.border,
       )}
     >
-      <div className="relative h-28 shrink-0 overflow-hidden">
+      <div className="relative h-44 shrink-0 overflow-hidden">
         {showLogo ? (
           <>
             <CloudinaryImg

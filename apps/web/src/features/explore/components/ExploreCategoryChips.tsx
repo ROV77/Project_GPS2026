@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Store, Croissant, Carrot, ShoppingBasket, Beef, Cake, Wine, LayoutGrid } from 'lucide-react';
 import type { CategoryChipItem } from '../lib/filterStoresByCategory';
 
 interface ExploreCategoryChipsProps {
@@ -41,6 +42,18 @@ export function ExploreCategoryChips({
   );
 }
 
+function getCategoryIcon(label: string) {
+  const l = label.toLowerCase();
+  if (l.includes('panad')) return Croissant;
+  if (l.includes('verdul') || l.includes('frut')) return Carrot;
+  if (l.includes('almac')) return ShoppingBasket;
+  if (l.includes('carni')) return Beef;
+  if (l.includes('pastel')) return Cake;
+  if (l.includes('botill') || l.includes('licor')) return Wine;
+  if (l === 'todas') return LayoutGrid;
+  return Store;
+}
+
 function CategoryChip({
   label,
   count,
@@ -52,22 +65,25 @@ function CategoryChip({
   active: boolean;
   onClick: () => void;
 }) {
+  const Icon = getCategoryIcon(label);
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition',
+        'inline-flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-base font-semibold transition-all hover:scale-[1.02]',
         active
-          ? 'bg-brand-600 text-white shadow-sm'
-          : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+          ? 'bg-brand-600 text-white shadow-md ring-2 ring-brand-600/20'
+          : 'bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50',
       )}
     >
+      <Icon className={cn("size-5", active ? "text-brand-200" : "text-brand-500")} />
       <span>{label}</span>
       <span
         className={cn(
-          'rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
-          active ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600',
+          'rounded-full px-2 py-0.5 text-xs font-bold tabular-nums',
+          active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500',
         )}
       >
         {count}
