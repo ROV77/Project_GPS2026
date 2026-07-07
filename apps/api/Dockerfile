@@ -22,5 +22,11 @@ WORKDIR /repo/apps/api
 ENV NODE_ENV=production
 EXPOSE 3000
 
+# Sin curl/wget en la imagen slim: usa el http nativo de Node para pegarle a
+# /health. `start_period` da margen a `prisma migrate deploy` + el seed antes
+# de contar la primera corrida como fallo.
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
+  CMD node -e "require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+
 RUN chmod +x docker-entrypoint.sh
 ENTRYPOINT ["./docker-entrypoint.sh"]

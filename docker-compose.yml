@@ -10,6 +10,11 @@ services:
       - "host.docker.internal:host-gateway"
     expose:
       - "3000"
+    # Publicado al host (no solo a la red interna de compose) para que el
+    # celular mobile le pegue directo por IP/VPN de la universidad, sin pasar
+    # por el túnel ngrok (que es solo para el panel web).
+    ports:
+      - "3000:3000"
 
   web:
     build:
@@ -21,7 +26,8 @@ services:
     expose:
       - "80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
   # Único punto de entrada público: expone `web` (que a su vez proxea /api al
   # contenedor `api`) por HTTPS, sin necesitar que 80/443 sean alcanzables
