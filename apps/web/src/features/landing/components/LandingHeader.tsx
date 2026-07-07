@@ -17,7 +17,7 @@ export function LandingHeader({ variant = 'light' }: LandingHeaderProps) {
         'sticky top-0 z-50 backdrop-blur-sm',
         isBrand
           ? 'border-b border-white/10 bg-brand-900/95 shadow-md'
-          : 'border-b border-slate-200/80 bg-white/95',
+          : 'border-b border-slate-200/80 bg-white/95 shadow-sm',
       )}
     >
       <div className="flex h-20 w-full items-center justify-between px-5 sm:px-8 md:px-12 lg:px-16">
