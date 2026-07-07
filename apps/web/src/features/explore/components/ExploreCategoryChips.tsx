@@ -59,15 +59,15 @@ function CategoryChip({
       className={cn(
         'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition',
         active
-          ? 'bg-brand-700 text-white shadow-sm ring-1 ring-brand-600/50'
-          : 'bg-white/10 text-slate-200 ring-1 ring-white/10 hover:bg-white/15',
+          ? 'bg-brand-600 text-white shadow-sm'
+          : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
       )}
     >
       <span>{label}</span>
       <span
         className={cn(
           'rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
-          active ? 'bg-white/20 text-white' : 'bg-black/20 text-slate-300',
+          active ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600',
         )}
       >
         {count}

@@ -95,7 +95,7 @@ export function ExplorePage() {
 
   return (
     <ExplorePageShell>
-      <LandingHeader variant="brand" />
+      <LandingHeader />
 
         {/* Hero de ancho completo con borde festoneado (scalloped) mediante CSS Mask */}
         <section
@@ -194,10 +194,10 @@ export function ExplorePage() {
 
             <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
               {stores.length === 0 ? (
-                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/5 px-6 py-12 text-center">
-                  <Store className="mb-3 size-8 text-brand-300" strokeWidth={1.5} />
-                  <p className="font-medium text-slate-100">Ninguna tienda coincide con estos filtros</p>
-                  <p className="mt-1 max-w-sm text-sm text-slate-400">
+                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/50 px-6 py-12 text-center">
+                  <Store className="mb-3 size-8 text-slate-400" strokeWidth={1.5} />
+                  <p className="font-medium text-slate-900">Ninguna tienda coincide con estos filtros</p>
+                  <p className="mt-1 max-w-sm text-sm text-slate-500">
                     Prueba otra categoría o quita la búsqueda por texto.
                   </p>
                 </div>

@@ -32,7 +32,7 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
       to={`/tienda/${store.id}`}
       state={{ fromSearch: backSearch }}
       className={cn(
-        'group flex flex-col overflow-hidden rounded-xl border border-slate-600/50 bg-slate-800/95 shadow-md backdrop-blur-sm transition hover:border-slate-500/70 hover:bg-slate-800 hover:shadow-lg',
+        'group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md',
         EXPLORE_CARD_HEIGHT,
         style.border,
       )}
@@ -66,11 +66,11 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
 
       <div className="flex flex-1 flex-col p-3">
         <div className="flex items-start gap-1.5">
-          <h3 className="line-clamp-2 flex-1 text-sm font-semibold leading-snug text-slate-50 group-hover:text-white">
+          <h3 className="line-clamp-2 flex-1 text-sm font-semibold leading-snug text-slate-900 group-hover:text-brand-700">
             {store.name}
           </h3>
           {store.verified ? (
-            <BadgeCheck className="mt-0.5 size-4 shrink-0 text-sky-400" strokeWidth={2} />
+            <BadgeCheck className="mt-0.5 size-4 shrink-0 text-sky-500" strokeWidth={2} />
           ) : null}
         </div>
 
@@ -86,7 +86,7 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
         ) : null}
 
         {description ? (
-          <p className="mt-1.5 line-clamp-1 text-xs text-slate-400">{description}</p>
+          <p className="mt-1.5 line-clamp-1 text-xs text-slate-500">{description}</p>
         ) : null}
 
         {location ? (
@@ -101,7 +101,7 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
             <span
               className={cn(
                 'font-medium',
-                store.status === 'open' ? 'text-emerald-400' : 'text-amber-400',
+                store.status === 'open' ? 'text-emerald-600' : 'text-amber-600',
               )}
             >
               {statusHint}
@@ -109,7 +109,7 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
           ) : null}
           <span className="inline-flex items-center gap-1">
             <Star className="size-3.5 fill-amber-400 text-amber-400" strokeWidth={0} />
-            <span className="font-medium text-slate-200">
+            <span className="font-medium text-slate-700">
               {rating > 0 ? rating.toFixed(1) : 'Nuevo'}
             </span>
             {store.review_count > 0 ? (
