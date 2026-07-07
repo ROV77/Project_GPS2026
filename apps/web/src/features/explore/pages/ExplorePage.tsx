@@ -251,6 +251,7 @@ export function ExplorePage() {
                     />
                   ))}
                 </div>
+              )}
             </div>
           </>
         )}
