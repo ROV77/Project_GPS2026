@@ -97,9 +97,22 @@ export function ExplorePage() {
     <ExplorePageShell>
       <LandingHeader variant="brand" />
 
-      <main className="mx-auto w-full max-w-[1440px] px-5 py-8 sm:px-8 md:px-12 lg:px-16">
-        {/* Hero con color de marca */}
-        <section className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 px-6 py-8 shadow-lg sm:px-8">
+        {/* Hero de ancho completo con borde festoneado (scalloped) mediante CSS Mask */}
+        <section
+          className="relative mb-8 w-full overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 pt-8 pb-14 shadow-lg"
+          style={{
+            WebkitMaskImage:
+              'linear-gradient(black, black), radial-gradient(circle at 20px 20px, black 19.5px, transparent 20px)',
+            WebkitMaskSize: '100% calc(100% - 20px), 40px 40px',
+            WebkitMaskPosition: 'top, bottom',
+            WebkitMaskRepeat: 'no-repeat, repeat-x',
+            maskImage:
+              'linear-gradient(black, black), radial-gradient(circle at 20px 20px, black 19.5px, transparent 20px)',
+            maskSize: '100% calc(100% - 20px), 40px 40px',
+            maskPosition: 'top, bottom',
+            maskRepeat: 'no-repeat, repeat-x',
+          }}
+        >
           <div
             className="pointer-events-none absolute -right-10 -top-10 size-48 rounded-full bg-amber-400/20 blur-3xl"
             aria-hidden
@@ -109,7 +122,7 @@ export function ExplorePage() {
             aria-hidden
           />
 
-          <div className="relative">
+          <div className="relative mx-auto w-full max-w-[1440px] px-5 sm:px-8 md:px-12 lg:px-16">
             <div className="flex items-center gap-2 text-brand-200">
               <MapPin className="size-4" />
               <span className="text-sm font-medium">Comercios locales cerca de ti</span>
@@ -134,6 +147,7 @@ export function ExplorePage() {
           </div>
         </section>
 
+      <main className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 md:px-12 lg:px-16">
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 rounded-2xl border border-white/60 bg-white/50 py-20 text-muted-foreground backdrop-blur-sm">
             <Loader2 className="size-5 animate-spin text-brand-600" />
