@@ -1,31 +1,21 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExploreSearchBar } from '@/features/explore/components/ExploreSearchBar';
+import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function LandingSearch() {
   const navigate = useNavigate();
-  const [keyword, setKeyword] = useState('');
-  const [regionId, setRegionId] = useState<string | null>(null);
-  const [communeId, setCommuneId] = useState<string | null>(null);
-
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (keyword.trim()) params.set('q', keyword.trim());
-    if (regionId) params.set('region_id', regionId);
-    if (communeId) params.set('commune_id', communeId);
-    const qs = params.toString();
-    navigate(qs ? `/explorar?${qs}` : '/explorar');
-  };
 
   return (
-    <ExploreSearchBar
-      keyword={keyword}
-      onKeywordChange={setKeyword}
-      regionId={regionId}
-      onRegionChange={setRegionId}
-      communeId={communeId}
-      onCommuneChange={setCommuneId}
-      onSubmit={handleSearch}
-    />
+    <div className="flex justify-center">
+      <Button
+        onClick={() => navigate('/explorar')}
+        size="lg"
+        className="h-16 rounded-2xl px-12 text-lg shadow-lg hover:scale-105 transition-transform duration-300"
+        variant="primary"
+        icon={<Search className="size-6" />}
+      >
+        Buscar comercios
+      </Button>
+    </div>
   );
 }
