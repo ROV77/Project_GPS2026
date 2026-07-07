@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, MapPin, Store } from 'lucide-react';
+import { Loader2, MapPin, Store, Smartphone, X } from 'lucide-react';
 import { LandingHeader } from '@/features/landing/components/LandingHeader';
 import { ExploreSearchBar } from '../components/ExploreSearchBar';
 import { ExploreCategoryChips } from '../components/ExploreCategoryChips';
@@ -42,6 +42,15 @@ export function ExplorePage() {
   const [regionId, setRegionId] = useState<string | null>(urlRegionId);
   const [communeId, setCommuneId] = useState<string | null>(urlCommuneId);
   const [categoryId, setCategoryId] = useState<string | null>(urlCategoryId);
+
+  const [showBanner, setShowBanner] = useState(true);
+
+  useEffect(() => {
+    if (showBanner) {
+      const timer = setTimeout(() => setShowBanner(false), 12000); // Se desvanece en 12 segundos
+      return () => clearTimeout(timer);
+    }
+  }, [showBanner]);
 
   const categories = useCatalogOptions('categories');
 
@@ -96,6 +105,28 @@ export function ExplorePage() {
   return (
     <ExplorePageShell>
       <LandingHeader />
+
+      {showBanner && (
+        <div className="animate-in slide-in-from-top-4 fade-in duration-500 bg-brand-50 border-b border-brand-100 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+                <Smartphone className="size-4" />
+              </div>
+              <p className="text-sm font-medium text-brand-900">
+                ¡Pide más rápido y chatea con los locales desde tu celular! <span className="font-semibold underline cursor-pointer hover:text-brand-700">Descarga la app de CaseritApp.</span>
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowBanner(false)}
+              className="shrink-0 rounded-lg p-1.5 text-brand-600 hover:bg-brand-100 transition"
+              aria-label="Cerrar mensaje"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
         {/* Hero de ancho completo con borde festoneado (scalloped) mediante CSS Mask */}
         <section
@@ -192,7 +223,7 @@ export function ExplorePage() {
               categoryLabel={selectedCategoryLabel}
             />
 
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+            <div className="flex flex-col gap-12">
               {stores.length === 0 ? (
                 <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/50 px-6 py-12 text-center">
                   <Store className="mb-3 size-8 text-slate-400" strokeWidth={1.5} />
@@ -202,7 +233,7 @@ export function ExplorePage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+                <div className="grid min-w-0 flex-1 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {stores.map((store) => (
                     <PublicStoreCard
                       key={store.id}

@@ -32,44 +32,39 @@ export function DownloadAppPanel({
   subtitle = 'Catálogo, carrito y WhatsApp — todo en la app.',
 }: DownloadAppPanelProps) {
   return (
-    <aside
-      className={cn(
-        'w-full shrink-0 xl:w-[300px] xl:sticky xl:top-24 xl:self-start',
-        className,
-      )}
-    >
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-800 to-slate-950 px-5 py-5 shadow-xl ring-1 ring-white/10">
+    <div className={cn('w-full', className)}>
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-slate-950 px-8 py-10 shadow-xl sm:px-12 md:flex md:items-center md:justify-between md:py-12">
         <div
-          className="pointer-events-none absolute -right-12 -top-12 size-40 rounded-full bg-amber-400/20 blur-2xl"
+          className="pointer-events-none absolute -right-12 -top-12 size-64 rounded-full bg-amber-400/20 blur-3xl"
           aria-hidden
         />
 
-        <div className="relative space-y-4">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-1 text-[11px] font-semibold text-amber-300 ring-1 ring-amber-400/30">
-            <Sparkles className="size-3" />
+        <div className="relative z-10 space-y-5 md:max-w-md">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-3 py-1.5 text-xs font-semibold text-amber-300 ring-1 ring-amber-400/30">
+            <Sparkles className="size-3.5" />
             Próximamente
           </span>
 
           <div>
-            <h2 className="text-xl font-bold leading-snug text-white">{title}</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-white/70">{subtitle}</p>
+            <h2 className="text-2xl font-bold leading-snug text-white sm:text-3xl">{title}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-white/70 sm:text-base">{subtitle}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 px-1">
-            <AppStoreBadgeButton />
-            <GooglePlayBadgeButton />
+          <div className="flex flex-wrap gap-3">
+            <div className="w-32"><AppStoreBadgeButton /></div>
+            <div className="w-32"><GooglePlayBadgeButton /></div>
           </div>
+        </div>
 
-          {/* Mockup inferior — recortado como en el diseño de referencia */}
-          <div className="relative -mx-5 -mb-5 mt-2 h-[210px] overflow-hidden">
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 origin-bottom scale-[0.62]">
-              <MobilePhoneFrame screenHeight={380} className="w-[240px] drop-shadow-2xl">
-                <StoreAppPreviewContent data={preview} />
-              </MobilePhoneFrame>
-            </div>
+        {/* Mockup inferior/derecho */}
+        <div className="relative -mx-8 -mb-10 mt-8 h-[220px] overflow-hidden md:mx-0 md:-my-12 md:mt-0 md:h-[320px] md:w-[320px] md:shrink-0">
+          <div className="absolute bottom-0 left-1/2 origin-bottom -translate-x-1/2 scale-[0.65] md:bottom-auto md:left-auto md:right-8 md:top-1/2 md:origin-right md:-translate-y-1/2 md:translate-x-0 md:scale-[0.8]">
+            <MobilePhoneFrame screenHeight={380} className="w-[240px] drop-shadow-2xl">
+              <StoreAppPreviewContent data={preview} />
+            </MobilePhoneFrame>
           </div>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }
