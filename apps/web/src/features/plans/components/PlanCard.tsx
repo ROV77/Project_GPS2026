@@ -94,34 +94,28 @@ export function PlanCard({
   const handleCardClick = () => {
     if (isSelected) return;
     if (onSelect) onSelect();
-    
-    // Initial big explosion
-    if (cardRef.current) {
-      const rect = cardRef.current.getBoundingClientRect();
-      const x = (rect.left + rect.width / 2) / window.innerWidth;
-      const y = (rect.top + rect.height / 2) / window.innerHeight;
-
-      confetti({
-        particleCount: 60,
-        spread: 70,
-        origin: { x, y },
-        colors: colors,
-        disableForReducedMotion: true,
-        zIndex: 100,
-      });
-    }
   };
 
   useEffect(() => {
     if (!isSelected) return;
 
-    // Continuous slow particles
+    // Continuous slow particles from edges
     const interval = setInterval(() => {
       if (cardRef.current) {
         const rect = cardRef.current.getBoundingClientRect();
-        // Spread origin across the card width and height slightly
-        const x = (rect.left + (Math.random() * rect.width)) / window.innerWidth;
-        const y = (rect.top + (Math.random() * rect.height)) / window.innerHeight;
+        
+        // Randomly pick an edge (0: top, 1: right, 2: bottom, 3: left)
+        const edge = Math.floor(Math.random() * 4);
+        let px = 0;
+        let py = 0;
+        
+        if (edge === 0) { px = rect.left + Math.random() * rect.width; py = rect.top; }
+        else if (edge === 1) { px = rect.right; py = rect.top + Math.random() * rect.height; }
+        else if (edge === 2) { px = rect.left + Math.random() * rect.width; py = rect.bottom; }
+        else { px = rect.left; py = rect.top + Math.random() * rect.height; }
+
+        const x = px / window.innerWidth;
+        const y = py / window.innerHeight;
 
         confetti({
           particleCount: 1,
@@ -130,11 +124,12 @@ export function PlanCard({
           colors: [colors[Math.floor(Math.random() * colors.length)]],
           disableForReducedMotion: true,
           zIndex: 40,
-          ticks: 200,
-          gravity: 0.1, // very slow fall
-          scalar: 0.8 + Math.random() * 0.4, // variable small size
+          ticks: 150, // shorter life so they fade out smoothly
+          gravity: -0.05, // slightly float up instead of falling fast
+          scalar: 0.6 + Math.random() * 0.5, // smaller, variable size
           shapes: ['circle'],
-          startVelocity: 10,
+          startVelocity: 5, // very gentle start
+          drift: (Math.random() - 0.5) * 0.5, // gentle horizontal drift
         });
       }
     }, 250);
@@ -151,10 +146,10 @@ export function PlanCard({
         isRecommended && !isCurrent && !isSelected && 'z-10 border-brand-700 shadow-md md:scale-[1.02]',
         isCurrent && !isSelected && 'border-emerald-300 bg-emerald-50/30',
         !isRecommended && !isCurrent && !isSelected && 'border-border hover:border-brand-200 hover:shadow-sm',
-        isSelected && 'scale-[1.05] shadow-2xl z-50 ring-4 border-transparent',
-        isSelected && plan.name === 'Pro' && 'ring-brand-500/50 shadow-brand-500/20 bg-brand-50/10',
-        isSelected && plan.name === 'Premium' && 'ring-amber-500/50 shadow-amber-500/20 bg-amber-50/10',
-        isSelected && plan.name !== 'Pro' && plan.name !== 'Premium' && 'ring-slate-400/50',
+        isSelected && 'scale-[1.03] shadow-2xl z-50 ring-4 border-transparent',
+        isSelected && plan.name === 'Pro' && 'ring-brand-500/50 shadow-brand-500/30 bg-brand-50/30',
+        isSelected && plan.name === 'Premium' && 'ring-amber-500/50 shadow-amber-500/30 bg-amber-50/30',
+        isSelected && plan.name !== 'Pro' && plan.name !== 'Premium' && 'ring-slate-400/50 bg-slate-50/30',
       )}
     >
       {isRecommended && !isCurrent ? (
