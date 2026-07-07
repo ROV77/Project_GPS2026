@@ -23,22 +23,22 @@ import imgRepartidor from '@/assets/images/repartidor.jpg';
 
 const benefits = [
   {
-    icon: <Store className="size-6" />,
+    icon: <Store className="size-10" />,
     title: 'Tu vitrina online',
     text: 'Publica tu catálogo y deja que los vecinos de tu comuna te encuentren.',
   },
   {
-    icon: <LineChart className="size-6" />,
+    icon: <LineChart className="size-10" />,
     title: 'Vende y mide',
     text: 'Sigue tus visitas y ventas en tiempo real desde un panel simple.',
   },
   {
-    icon: <Megaphone className="size-6" />,
+    icon: <Megaphone className="size-10" />,
     title: 'Promociones',
     text: 'Crea ofertas para atraer más clientes y fidelizar a los de siempre.',
   },
   {
-    icon: <MapPin className="size-6" />,
+    icon: <MapPin className="size-10" />,
     title: 'Cerca de ti',
     text: 'Conectamos comercios locales con compradores de su misma zona.',
   },
@@ -126,14 +126,14 @@ export function LandingPage() {
             vecinos que quieren comprar cerca. Gestiona todo desde un solo lugar.
           </p>
         </div>
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {benefits.map((b) => (
-            <Card key={b.title} className="h-full">
-              <span className="flex size-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+            <Card key={b.title} className="h-full p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-brand-300 cursor-default group">
+              <span className="flex size-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 transition-colors duration-300 group-hover:bg-brand-100 group-hover:text-brand-800">
                 {b.icon}
               </span>
-              <h3 className="mt-4 font-semibold text-slate-900">{b.title}</h3>
-              <p className="mt-1.5 text-sm text-slate-500">{b.text}</p>
+              <h3 className="mt-6 text-xl font-bold text-slate-900">{b.title}</h3>
+              <p className="mt-3 text-base leading-relaxed text-slate-500">{b.text}</p>
             </Card>
           ))}
         </div>
