@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { useSearchParams } from 'react-router-dom';
 import { Loader2, MapPin, Store, Smartphone, X } from 'lucide-react';
 import { LandingHeader } from '@/features/landing/components/LandingHeader';
