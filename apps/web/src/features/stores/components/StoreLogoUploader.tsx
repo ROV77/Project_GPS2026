@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { uploadImage } from '@/shared/api/uploads';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import { getCroppedBlob } from '@/shared/lib/cropImage';
 import type { Id } from '@/shared/api/types';
 import { useUpdateStore } from '../hooks/useStores';
@@ -78,8 +79,8 @@ export function StoreLogoUploader({ storeId, value, onUploaded }: StoreLogoUploa
   const handleSave = async () => {
     if (!imageSrc || !areaPixels) return;
     try {
-      const blob = await getCroppedBlob(imageSrc, areaPixels);
-      const url = await uploadImage(blob);
+      const blob = await getCroppedBlob(imageSrc, areaPixels, { kind: 'store_logo' });
+      const url = await uploadImage(blob, 'store_logo');
       await update.mutateAsync({ id: storeId, data: { logo_url: url } });
       onUploaded?.(url);
       toast.success('Logo de la tienda actualizado');
@@ -99,7 +100,12 @@ export function StoreLogoUploader({ storeId, value, onUploaded }: StoreLogoUploa
         aria-label="Editar logo de la tienda"
       >
         {value ? (
-          <img src={value} alt="Logo de la tienda" className="size-full object-cover" />
+          <CloudinaryImg
+            src={value}
+            alt="Logo de la tienda"
+            displayWidthPx={112}
+            className="size-full object-cover"
+          />
         ) : (
           <StoreIcon className="size-10" strokeWidth={1.75} />
         )}

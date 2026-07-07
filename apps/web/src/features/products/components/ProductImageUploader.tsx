@@ -1,15 +1,19 @@
 import { useRef, useState, useCallback } from 'react';
 import Cropper, { type Area, type Point } from 'react-easy-crop';
-import { Camera, UploadCloud } from 'lucide-react';
+import { Camera, UploadCloud, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { uploadImage } from '@/shared/api/uploads';
 import { getCroppedBlob } from '@/shared/lib/cropImage';
+import { displayWidth, optimizeCloudinaryUrl } from '@/shared/lib/cloudinaryImage';
 
 interface ProductImageUploaderProps {
   value?: string | null;
   onChange: (url: string) => void;
+  onUploadingChange?: (uploading: boolean) => void;
+  /** Si false, el padre muestra su propio toast (p. ej. al persistir al editar). */
+  showUploadSuccessToast?: boolean;
 }
 
 /**
@@ -26,7 +30,12 @@ interface ProductImageUploaderProps {
  * formulario (react-hook-form) y se guarde junto con el resto de los campos
  * al enviar el Drawer.
  */
-export function ProductImageUploader({ value, onChange }: ProductImageUploaderProps) {
+export function ProductImageUploader({
+  value,
+  onChange,
+  onUploadingChange,
+  showUploadSuccessToast = true,
+}: ProductImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -72,26 +81,38 @@ export function ProductImageUploader({ value, onChange }: ProductImageUploaderPr
   };
 
   const handleSave = async () => {
-    if (!imageSrc || !areaPixels) return;
+    if (!imageSrc) return;
+    if (!areaPixels) {
+      toast.error('Espera a que cargue el recorte o mueve la imagen un poco');
+      return;
+    }
     setUploading(true);
+    onUploadingChange?.(true);
     try {
-      const blob = await getCroppedBlob(imageSrc, areaPixels);
-      const url = await uploadImage(blob);
+      const blob = await getCroppedBlob(imageSrc, areaPixels, { kind: 'product' });
+      const url = await uploadImage(blob, 'product');
       onChange(url);
       setImageSrc(null);
       setAreaPixels(null);
+      if (showUploadSuccessToast) {
+        toast.success('Imagen subida — pulsa Guardar para crear el producto');
+      }
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
     }
   };
 
-  // ─── Paso de recorte: reemplaza el dropzone mientras hay una imagen elegida ───
+  // ─── Paso de recorte: controles superpuestos para que «Usar imagen» sea visible sin scroll ───
   if (imageSrc) {
     return (
-      <div>
-        <div className="relative h-56 w-full overflow-hidden rounded-lg bg-slate-900">
+      <div className="space-y-2">
+        <p className="text-sm text-muted-foreground">
+          Ajusta el recorte y pulsa <span className="font-medium text-foreground">Usar imagen</span>.
+        </p>
+        <div className="relative h-64 w-full overflow-hidden rounded-lg bg-slate-900">
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -102,26 +123,42 @@ export function ProductImageUploader({ value, onChange }: ProductImageUploaderPr
             onZoomChange={setZoom}
             onCropComplete={onCropComplete}
           />
-        </div>
-        <div className="mt-3">
-          <label className="mb-1 block text-sm text-slate-600">Zoom</label>
-          <input
-            type="range"
-            min={1}
-            max={3}
-            step={0.01}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            className="w-full accent-brand-700"
-          />
-        </div>
-        <div className="mt-3 flex justify-end gap-2">
-          <Button type="button" variant="default" onClick={cancelCrop} disabled={uploading}>
-            Cancelar
-          </Button>
-          <Button type="button" variant="primary" onClick={handleSave} loading={uploading}>
-            Usar imagen
-          </Button>
+
+          <button
+            type="button"
+            onClick={cancelCrop}
+            disabled={uploading}
+            className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75 disabled:opacity-50"
+            aria-label="Cancelar recorte"
+          >
+            <X className="size-4" />
+          </button>
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-3 pt-12">
+            <div className="pointer-events-auto space-y-2.5">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-white/90">Zoom</label>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.01}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full accent-white"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSave}
+                loading={uploading}
+                className="w-full shadow-lg"
+              >
+                Usar imagen
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -149,7 +186,11 @@ export function ProductImageUploader({ value, onChange }: ProductImageUploaderPr
       >
         {value ? (
           <>
-            <img src={value} alt="" className="size-full object-cover" />
+            <img
+              src={optimizeCloudinaryUrl(value, { width: displayWidth(160) }) ?? value}
+              alt=""
+              className="size-full object-cover"
+            />
             <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
               <Camera className="size-5" />
               Cambiar imagen

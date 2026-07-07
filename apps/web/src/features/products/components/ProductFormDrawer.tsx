@@ -1,8 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { createProductSchema, type CreateProductInput } from '@caserita/validations';
+import {
+  createProductSchema,
+  updateProductSchema,
+  type CreateProductInput,
+  type UpdateProductInput,
+} from '@caserita/validations';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { applyApiValidationErrors } from '@/shared/lib/form';
 import { Button, CurrencyInput, Drawer, Field, Input, Switch, Textarea } from '@/shared/ui';
@@ -42,12 +47,18 @@ export function ProductFormDrawer({
   const create = useCreateProduct();
   const update = useUpdateProduct();
   const isEdit = Boolean(product);
+  const [imageUploading, setImageUploading] = useState(false);
+  const pendingImageUrl = useRef<string | undefined>(undefined);
+  /** Evita resetear el formulario (y borrar una imagen recién subida) en cada re-render. */
+  const loadedKeyRef = useRef<string | null>(null);
 
   const {
     control,
     handleSubmit,
     reset,
     setError,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<CreateProductInput>({
     // El schema usa .default() en price/stock: el tipo de entrada los hace
@@ -57,10 +68,20 @@ export function ProductFormDrawer({
     defaultValues: emptyDefaults,
   });
 
-  // Al abrir, sincroniza el formulario con la fila editada (o lo limpia en alta).
+  // Solo resetear al abrir el drawer o al cambiar de producto (no en cada refetch).
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      loadedKeyRef.current = null;
+      pendingImageUrl.current = undefined;
+      return;
+    }
+
+    const key = product ? `edit-${product.id}` : `create-${storeId ?? 'pending'}`;
+    if (loadedKeyRef.current === key) return;
+    loadedKeyRef.current = key;
+
     if (product) {
+      pendingImageUrl.current = product.image_url ?? undefined;
       reset({
         store_id: Number(product.store_id),
         name: product.name,
@@ -71,12 +92,13 @@ export function ProductFormDrawer({
         featured: product.featured,
       });
     } else {
-      // Alta: el producto pertenece a la tienda de la cuenta (storeId).
+      pendingImageUrl.current = undefined;
       reset({ ...emptyDefaults, store_id: storeId ? Number(storeId) : undefined });
     }
   }, [open, product, storeId, reset]);
 
   const onSubmit = (values: CreateProductInput) => {
+    const imageUrl = pendingImageUrl.current ?? getValues('image_url') ?? values.image_url;
     const handlers = {
       onSuccess: () => {
         toast.success(isEdit ? 'Producto actualizado' : 'Producto creado');
@@ -88,8 +110,35 @@ export function ProductFormDrawer({
       },
     };
 
-    if (product) update.mutate({ id: product.id, data: values }, handlers);
-    else create.mutate(values, handlers);
+    if (product) {
+      const data = updateProductSchema.parse({
+        ...values,
+        ...(imageUrl ? { image_url: imageUrl } : {}),
+      }) as UpdateProductInput;
+      update.mutate({ id: product.id, data }, handlers);
+    } else {
+      create.mutate(
+        createProductSchema.parse({
+          ...values,
+          ...(imageUrl ? { image_url: imageUrl } : {}),
+        }),
+        handlers,
+      );
+    }
+  };
+
+  const handleImageChange = async (url: string) => {
+    pendingImageUrl.current = url;
+    setValue('image_url', url, { shouldDirty: true, shouldValidate: true });
+
+    // Al editar, persistir de inmediato (mismo patrón que StoreLogoUploader).
+    if (!product) return;
+    try {
+      await update.mutateAsync({ id: product.id, data: { image_url: url } });
+      toast.success('Imagen del producto guardada');
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
   };
 
   return (
@@ -105,6 +154,7 @@ export function ProductFormDrawer({
           <Button
             variant="primary"
             loading={create.isPending || update.isPending}
+            disabled={imageUploading}
             onClick={handleSubmit(onSubmit)}
           >
             Guardar
@@ -162,7 +212,12 @@ export function ProductFormDrawer({
           name="image_url"
           control={control}
           render={({ field }) => (
-            <ProductImageUploader value={field.value} onChange={field.onChange} />
+            <ProductImageUploader
+              value={field.value ?? pendingImageUrl.current}
+              onChange={handleImageChange}
+              onUploadingChange={setImageUploading}
+              showUploadSuccessToast={!isEdit}
+            />
           )}
         />
       </Field>

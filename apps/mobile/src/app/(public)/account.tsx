@@ -17,6 +17,7 @@ import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Avatar } from '@/ui/Avatar';
+import { BrandGradient } from '@/ui/BrandGradient';
 import { colors } from '@/ui/theme';
 import { useSession } from '@/features/auth/session.store';
 import { pickAndUploadAvatar } from '@/features/auth/avatar';
@@ -109,47 +110,43 @@ export default function AccountScreen() {
 
   return (
     <Screen>
-      {/* Header: nombre (autenticado) o "Cuenta" (anónimo) + avatar editable
-          a la derecha. El avatar ahora es más grande y con borde/sombra. */}
-      <View className="flex-row items-center justify-between px-5 pb-5 pt-4">
-        <View className="flex-1 pr-3">
-          {isAuth ? (
-            <>
-              <Text variant="title">{user.name ?? 'Usuario'}</Text>
-              <Text
-                variant="caption"
-                className="mt-1"
-                style={{ color: colors.mutedForeground }}
-              >
-                {user.email}
-              </Text>
-              {user.roles.length > 0 && (
-                <Text
-                  variant="caption"
-                  className="mt-0.5"
-                  style={{ color: colors.mutedForeground }}
-                >
-                  {user.roles.map((r) => ROLE_LABELS[r] ?? r).join(' · ')}
+      {/* Banner de perfil con gradiente de marca: nombre (autenticado) o "Cuenta"
+          (anónimo) + avatar editable a la derecha. */}
+      <BrandGradient
+        style={{ borderRadius: 20, marginHorizontal: 16, marginBottom: 12, padding: 18 }}
+      >
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1 pr-3">
+            {isAuth ? (
+              <>
+                <Text variant="title" style={{ color: colors.white }}>{user.name ?? 'Usuario'}</Text>
+                <Text variant="caption" className="mt-1" style={{ color: '#c7d6ef' }}>
+                  {user.email}
                 </Text>
-              )}
-            </>
-          ) : (
-            <Text variant="title">Cuenta</Text>
+                {user.roles.length > 0 && (
+                  <Text variant="caption" className="mt-0.5" style={{ color: '#bcd0f0' }}>
+                    {user.roles.map((r) => ROLE_LABELS[r] ?? r).join(' · ')}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text variant="title" style={{ color: colors.white }}>Cuenta</Text>
+            )}
+          </View>
+          {isAuth && (
+            <Avatar
+              uri={user.avatar_url}
+              size={72}
+              onPress={onChangeAvatar}
+              loading={avatarLoading}
+            />
           )}
         </View>
-        {isAuth && (
-          <Avatar
-            uri={user.avatar_url}
-            size={72}
-            onPress={onChangeAvatar}
-            loading={avatarLoading}
-          />
-        )}
-      </View>
+      </BrandGradient>
 
       <View className="gap-3 px-5">
         {isAuth ? (
-          <Card>
+          <Card elevated>
             {memberSince(user.created_at) && (
               <Text variant="caption">
                 Miembro desde {memberSince(user.created_at)}
@@ -174,7 +171,7 @@ export default function AccountScreen() {
             </View>
           </Card>
         ) : (
-          <Card>
+          <Card elevated>
             <View className="flex-row items-center gap-3">
               <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-50">
                 <User size={22} color={colors.brand[700]} strokeWidth={2} />
@@ -194,7 +191,7 @@ export default function AccountScreen() {
         )}
 
         {/* Repartidor: suma el rol delivery (con sesión) o lleva a su registro. */}
-        <Card>
+        <Card elevated>
           <View className="flex-row items-center gap-3">
             <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-50">
               <Bike size={22} color={colors.brand[700]} strokeWidth={2} />
@@ -243,7 +240,7 @@ export default function AccountScreen() {
         </Card>
 
         {/* Las tiendas son del web: derivar a caseritapp.cl. */}
-        <Card>
+        <Card elevated>
           <View className="flex-row items-center gap-3">
             <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-50">
               <StoreIcon size={22} color={colors.brand[700]} strokeWidth={2} />

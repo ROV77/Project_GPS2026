@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/shared/lib/format';
+import { displayWidth, optimizeCloudinaryUrl } from '@/shared/lib/cloudinaryImage';
+import { MobilePhoneFrame } from '@/shared/ui/MobilePhoneFrame';
 import { formatStoreAddressShort } from '../lib/formatStoreAddress';
 
 export interface StorePreviewData {
@@ -63,9 +65,10 @@ function PreviewLogo({
   const showImage = logoUrl?.trim() && !failed;
 
   if (showImage) {
+    const src = optimizeCloudinaryUrl(logoUrl, { width: displayWidth(size) });
     return (
       <img
-        src={logoUrl!}
+        src={src}
         alt=""
         className="shrink-0 object-cover bg-muted"
         style={{ width: size, height: size, borderRadius: rounded }}
@@ -256,9 +259,33 @@ function StatusBar() {
   );
 }
 
-export function StoreMobilePreview({ data, className }: StoreMobilePreviewProps) {
+export function StoreAppPreviewContent({ data }: { data: StorePreviewData }) {
   const locationLabel = formatLocationHeader(data.communeName, data.regionName);
 
+  return (
+    <>
+      <StatusBar />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none]">
+          <HomeHeader locationLabel={locationLabel} />
+          <SearchBarMock />
+          <CategoryChipsMock activeCategory={data.categoryName} />
+          <p className="px-3.5 pb-2 pt-0.5 text-[12px] font-semibold text-foreground">
+            Cerca de ti
+          </p>
+          <div className="space-y-2 px-3.5 pb-3">
+            <ListCardPreview data={data} highlighted />
+            <GhostStoreCard />
+            <GhostStoreCard />
+          </div>
+        </div>
+        <TabBarMock />
+      </div>
+    </>
+  );
+}
+
+export function StoreMobilePreview({ data, className }: StoreMobilePreviewProps) {
   return (
     <aside className={cn('w-[280px] shrink-0', className)}>
       <div className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -266,69 +293,9 @@ export function StoreMobilePreview({ data, className }: StoreMobilePreviewProps)
         Vista previa en la app
       </div>
 
-      <div className="relative">
-        <div
-          className="absolute -left-[3px] top-[108px] h-8 w-[3px] rounded-l-sm bg-slate-700"
-          aria-hidden
-        />
-        <div
-          className="absolute -left-[3px] top-[148px] h-12 w-[3px] rounded-l-sm bg-slate-700"
-          aria-hidden
-        />
-        <div
-          className="absolute -left-[3px] top-[204px] h-12 w-[3px] rounded-l-sm bg-slate-700"
-          aria-hidden
-        />
-        <div
-          className="absolute -right-[3px] top-[168px] h-16 w-[3px] rounded-r-sm bg-slate-700"
-          aria-hidden
-        />
-
-        <div
-          className="relative overflow-hidden rounded-[2.75rem] p-[11px] shadow-2xl ring-1 ring-black/20"
-          style={{
-            background: 'linear-gradient(145deg, #3d3d3d 0%, #1a1a1a 40%, #0a0a0a 100%)',
-          }}
-        >
-          <div
-            className="pointer-events-none absolute inset-0 rounded-[2.75rem] opacity-30"
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 40%, transparent 60%, rgba(255,255,255,0.08) 100%)',
-            }}
-            aria-hidden
-          />
-
-          <div className="relative flex h-[600px] flex-col overflow-hidden rounded-[2.1rem] bg-background">
-            <StatusBar />
-
-            {/* Pantalla Home — Explorar */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none]">
-                <HomeHeader locationLabel={locationLabel} />
-                <SearchBarMock />
-                <CategoryChipsMock activeCategory={data.categoryName} />
-
-                <p className="px-3.5 pb-2 pt-0.5 text-[12px] font-semibold text-foreground">
-                  Cerca de ti
-                </p>
-
-                <div className="space-y-2 px-3.5 pb-3">
-                  <ListCardPreview data={data} highlighted />
-                  <GhostStoreCard />
-                  <GhostStoreCard />
-                </div>
-              </div>
-
-              <TabBarMock />
-            </div>
-
-            <div className="flex shrink-0 justify-center bg-card pb-1.5 pt-0.5">
-              <div className="h-1 w-24 rounded-full bg-slate-900/80" aria-hidden />
-            </div>
-          </div>
-        </div>
-      </div>
+      <MobilePhoneFrame screenHeight={600}>
+        <StoreAppPreviewContent data={data} />
+      </MobilePhoneFrame>
 
       <p className="mt-3 text-left text-xs text-muted-foreground">
         Así verán tu tienda en Explorar

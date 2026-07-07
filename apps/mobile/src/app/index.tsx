@@ -4,10 +4,10 @@
  * de movimiento, permanece un momento y luego navega al onboarding.
  */
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, View } from 'react-native';
+import { Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BrandMark } from '@/ui/BrandMark';
-import { colors } from '@/ui/theme';
+import { BrandGradient } from '@/ui/BrandGradient';
 import { hasSeenOnboarding } from '@/shared/lib/onboarding';
 
 // Tiempo mínimo que el logo permanece visible antes de continuar.
@@ -50,13 +50,10 @@ export default function Splash() {
   }, [opacity, translateY, router]);
 
   return (
-    <View
-      className="flex-1 items-center justify-center"
-      style={{ backgroundColor: colors.brand[900] }}
-    >
+    <BrandGradient style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       <Animated.View style={{ opacity, transform: [{ translateY }] }}>
         <BrandMark size={92} glow />
       </Animated.View>
-    </View>
+    </BrandGradient>
   );
 }

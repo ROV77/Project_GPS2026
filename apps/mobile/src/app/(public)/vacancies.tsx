@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { View, FlatList, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Store, Clock, MapPin } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Card } from '@/ui/Card';
 import { Button } from '@/ui/Button';
+import { Logo } from '@/ui/Logo';
 import { colors } from '@/ui/theme';
 import { useVacancies, useApplyToVacancy, useMyApplications } from '@/features/delivery/hooks';
 import { useSession } from '@/features/auth/session.store';
@@ -43,12 +44,12 @@ export default function VacanciesScreen() {
 
   const renderItem = ({ item }: { item: DeliveryVacancy }) => {
     const hasApplied = myApps.some(app => app.vacancy_id === item.id);
-    const locationStr = item.stores?.communes?.name 
-      ? `${item.stores.communes.name}, ${item.stores.regions?.name ?? ''}` 
+    const locationStr = item.stores?.communes?.name
+      ? `${item.stores.communes.name}, ${item.stores.regions?.name ?? ''}`
       : 'Ubicación no especificada';
 
     return (
-      <Card className="mb-4">
+      <Card elevated className="mb-4">
         <View className="flex-row items-center gap-3 mb-2">
           <View className="h-10 w-10 items-center justify-center rounded-full bg-brand-50">
             <Store size={20} color={colors.brand[700]} />
@@ -98,7 +99,8 @@ export default function VacanciesScreen() {
   return (
     <Screen>
       <View className="px-5 pb-4 pt-2 border-b border-gray-100 bg-white mb-2">
-        <Text variant="title" className="text-brand-900">Ofertas de Trabajo</Text>
+        <Logo variant="plain" height={22} />
+        <Text variant="title" className="text-brand-900 mt-3">Ofertas de Trabajo</Text>
         <Text variant="caption" className="text-gray-500 mt-1">Encuentra y postula a nuevas oportunidades</Text>
       </View>
       <FlatList

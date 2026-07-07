@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PublicFooter } from '../components/PublicFooter';
 import { LandingSearch } from '../components/LandingSearch';
 import { LandingHeader } from '../components/LandingHeader';
 
@@ -43,13 +44,42 @@ const benefits = [
   },
 ];
 
-const categories = [
+const categoriesTop = [
   { img: imgHamburguesa, title: 'Comida rápida', tone: 'gold' as const },
   { img: imgSushi, title: 'Restaurantes', tone: 'red' as const },
   { img: imgCallejera, title: 'Comida callejera', tone: 'gold' as const },
+];
+
+const categoriesBottom = [
   { img: imgRopa, title: 'Moda y ropa', tone: 'blue' as const },
   { img: imgRepartidor, title: 'Delivery', tone: 'green' as const },
 ];
+
+function CategoryCard({
+  img,
+  title,
+  tone,
+}: {
+  img: string;
+  title: string;
+  tone: 'gold' | 'red' | 'blue' | 'green';
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5">
+      <img
+        src={img}
+        alt={title}
+        loading="lazy"
+        className="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+      <div className="absolute bottom-4 left-4 flex flex-col items-start gap-2">
+        <Badge tone={tone}>{title}</Badge>
+        <span className="text-lg font-semibold text-white">{title}</span>
+      </div>
+    </div>
+  );
+}
 
 export function LandingPage() {
   return (
@@ -121,27 +151,17 @@ export function LandingPage() {
               zona.
             </p>
           </div>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map((c) => (
-              <div
-                key={c.title}
-                className="group relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5"
-              >
-                <img
-                  src={c.img}
-                  alt={c.title}
-                  loading="lazy"
-                  className="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                <div className="absolute bottom-4 left-4 flex flex-col items-start gap-2">
-                  <Badge tone={c.tone}>{c.title}</Badge>
-                  <span className="text-lg font-semibold text-white">
-                    {c.title}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="mt-12 space-y-5">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {categoriesTop.map((c) => (
+                <CategoryCard key={c.title} {...c} />
+              ))}
+            </div>
+            <div className="mx-auto grid max-w-2xl gap-5 sm:grid-cols-2">
+              {categoriesBottom.map((c) => (
+                <CategoryCard key={c.title} {...c} />
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -168,9 +188,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-400">
-        © {new Date().getFullYear()} CaseritApp — Comercio local, cerca de ti.
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

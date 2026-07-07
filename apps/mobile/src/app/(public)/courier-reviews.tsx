@@ -5,6 +5,7 @@ import { useCourierRatings } from '@/features/delivery/hooks';
 import { Star, ChevronLeft } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { Logo } from '@/ui/Logo';
 import { useRouter } from 'expo-router';
 
 export default function CourierReviewsScreen() {
@@ -33,8 +34,9 @@ export default function CourierReviewsScreen() {
       <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2 rounded-full active:bg-gray-100">
         <ChevronLeft size={24} color="#111827" />
       </TouchableOpacity>
-      <View>
-        <Text variant="title" className="text-brand-900">Mis Reseñas</Text>
+      <View className="flex-1">
+        <Logo variant="plain" height={20} />
+        <Text variant="title" className="text-brand-900 mt-2">Mis Reseñas</Text>
         <Text variant="caption" className="text-gray-500 mt-1">Lo que opinan las tiendas de ti</Text>
       </View>
     </View>

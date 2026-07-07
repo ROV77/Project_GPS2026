@@ -1,12 +1,11 @@
 /**
  * Avatar del usuario: muestra `avatar_url` con expo-image y un fallback de ícono
- * de persona (a diferencia de RemoteImage, cuyo fallback es un ícono de tienda).
- * Si recibe `onPress` se vuelve táctil y muestra un badge de cámara para editar;
- * con `loading` superpone un spinner mientras se sube la nueva foto.
+ * de persona. Si recibe `onPress` se vuelve táctil y muestra un badge de cámara.
  */
 import { View, Pressable, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { User, Camera } from 'lucide-react-native';
+import { displayWidth, optimizeCloudinaryUrl } from '@/lib/cloudinaryImage';
 import { colors } from './theme';
 
 export function Avatar({
@@ -21,8 +20,8 @@ export function Avatar({
   loading?: boolean;
 }) {
   const radius = size / 2;
+  const optimized = optimizeCloudinaryUrl(uri, { width: displayWidth(size) });
 
-  // Borde blanco + sombra suave (elevation para Android, shadow* para iOS).
   const shadowStyle = {
     borderRadius: radius,
     borderWidth: 2,
@@ -37,17 +36,18 @@ export function Avatar({
 
   const inner = (
     <View style={{ width: size, height: size, ...shadowStyle }}>
-      {uri ? (
+      {optimized ? (
         <Image
-          source={uri}
+          source={optimized}
           contentFit="cover"
           transition={200}
-          style={{ width: size, height: size, borderRadius: radius }}
+          cachePolicy="memory-disk"
+          style={{ width: '100%', height: '100%', borderRadius: radius }}
         />
       ) : (
         <View
           className="items-center justify-center bg-brand-50"
-          style={{ width: size, height: size, borderRadius: radius }}
+          style={{ width: '100%', height: '100%', borderRadius: radius }}
         >
           <User size={size * 0.5} color={colors.brand[700]} strokeWidth={1.75} />
         </View>
@@ -57,8 +57,10 @@ export function Avatar({
         <View
           className="absolute items-center justify-center"
           style={{
-            width: size,
-            height: size,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             borderRadius: radius,
             backgroundColor: 'rgba(15,29,46,0.45)',
           }}

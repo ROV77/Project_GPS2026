@@ -10,6 +10,9 @@ import {
 } from '@/components/ui/chart';
 import { useProducts } from '@/features/products/hooks/useProducts';
 import { useMyStore } from '@/features/stores/hooks/useStores';
+import { useCapabilities } from '@/features/subscriptions/hooks/useSubscription';
+import { PlanGate } from '@/features/subscriptions/components/PlanGate';
+import { UpgradeBanner } from '@/features/subscriptions/components/UpgradeBanner';
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { DashboardStatsCards } from '../components/DashboardStatsCards';
 import { FeaturedProductsPanel } from '../components/FeaturedProductsPanel';
@@ -27,8 +30,9 @@ const stockChartConfig = {
 } satisfies ChartConfig;
 
 export function DashboardPage() {
+  const { canViewStats } = useCapabilities();
   const { data: store, isLoading: loadingStore } = useMyStore();
-  const { data: stats, isLoading: loadingStats } = useDashboardStats(store?.id);
+  const { data: stats, isLoading: loadingStats } = useDashboardStats(store?.id, canViewStats);
 
   const { data: topStock, isLoading: loadingStockChart } = useProducts({
     page: 1,
@@ -61,6 +65,15 @@ export function DashboardPage() {
         }
       />
 
+      <PlanGate
+        feature="canViewStats"
+        fallback={
+          <UpgradeBanner
+            title="Estadísticas · plan Pro"
+            description="Mejora a Pro para ver las métricas de tu tienda: productos, stock, reseñas y calificación promedio."
+          />
+        }
+      >
       {loadingKpis ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -160,6 +173,7 @@ export function DashboardPage() {
           </p>
         </div>
       </div>
+      </PlanGate>
     </div>
   );
 }

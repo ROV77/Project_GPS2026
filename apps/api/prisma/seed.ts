@@ -184,6 +184,12 @@ async function main() {
   });
   const findComune = (name: string) => biobioCommunes.find((c) => c.name === name)!;
 
+  // Iquique (Tarapacá): sede de la segunda tienda demo del norte.
+  const tarapaca = await prisma.regions.findFirstOrThrow({ where: { name: 'Tarapacá' } });
+  const iquique = await prisma.communes.findFirstOrThrow({
+    where: { name: 'Iquique', region_id: tarapaca.id },
+  });
+
   // ─── Categorías ───────────────────────────────────────────────────────────
   const categoryNames = [
     'Panadería',
@@ -257,6 +263,26 @@ async function main() {
     prisma.payments_states.create({ data: { name: 'rejected' } }),
   ]);
 
+  // ─── Estados de vacantes y postulaciones de repartidores ───────────────────
+  await Promise.all([
+    prisma.delivery_vacancies_states.createMany({
+      data: [
+        { id: 1, name: 'Abierta' },
+        { id: 2, name: 'Pausada' },
+        { id: 3, name: 'Cerrada' },
+      ],
+      skipDuplicates: true,
+    }),
+    prisma.delivery_applications_states.createMany({
+      data: [
+        { id: 1, name: 'Pendiente' },
+        { id: 2, name: 'Aceptada' },
+        { id: 3, name: 'Rechazada' },
+      ],
+      skipDuplicates: true,
+    }),
+  ]);
+
   // ─── Usuarios ─────────────────────────────────────────────────────────────
   const demo = await prisma.users.create({
     data: {
@@ -276,6 +302,16 @@ async function main() {
       email_verified: true,
     },
   });
+  // Segundo vendedor demo (mismas credenciales/roles que el demo), tienda en Iquique.
+  const demo2 = await prisma.users.create({
+    data: {
+      email: 'demo2@caserita.cl',
+      password_hash,
+      name: 'Vendedor Demo 2',
+      phone: '+56933333333',
+      email_verified: true,
+    },
+  });
   // Clientes (para reseñas)
   const [cliente1, cliente2, cliente3] = await Promise.all([
     prisma.users.create({ data: { email: 'cliente1@caserita.cl', password_hash, name: 'Juan Soto' } }),
@@ -287,6 +323,8 @@ async function main() {
   await Promise.all([
     prisma.user_roles.create({ data: { user_id: demo.id, role_id: adminRole.id } }),
     prisma.user_roles.create({ data: { user_id: demo.id, role_id: sellerRole.id } }),
+    prisma.user_roles.create({ data: { user_id: demo2.id, role_id: adminRole.id } }),
+    prisma.user_roles.create({ data: { user_id: demo2.id, role_id: sellerRole.id } }),
     prisma.user_roles.create({ data: { user_id: rosa.id, role_id: sellerRole.id } }),
     prisma.user_roles.create({ data: { user_id: cliente1.id, role_id: customerRole.id } }),
     prisma.user_roles.create({ data: { user_id: cliente2.id, role_id: customerRole.id } }),
@@ -320,6 +358,22 @@ async function main() {
       verified: false,
       latitude: -33.024500,
       longitude: -71.551800,
+    },
+  });
+  // Tienda del segundo vendedor demo, en Iquique (norte). Verificada, con
+  // coordenadas reales para que aparezca en el mapa.
+  const tiendaDemo2 = await prisma.stores.create({
+    data: {
+      owner_id: demo2.id,
+      name: 'Panadería del Norte',
+      description: 'Pan amasado, pastelería y sopaipillas en pleno Iquique.',
+      category_id: panaderia?.id,
+      region_id: tarapaca.id,
+      commune_id: iquique.id,
+      store_phone: '+56933333333',
+      verified: false, // sin verificación manual: el badge dependerá solo del plan Premium
+      latitude: -20.213300,
+      longitude: -70.152300,
     },
   });
 
@@ -377,7 +431,7 @@ async function main() {
   }
 
   // ─── Productos ────────────────────────────────────────────────────────────
-  await Promise.all([
+  const seededProducts = await Promise.all([
     prisma.products.create({ data: { store_id: tiendaDemo.id, name: 'Marraqueta', description: 'Pan tradicional, kilo.', price: 1800, stock: 50, featured: true } }),
     prisma.products.create({ data: { store_id: tiendaDemo.id, name: 'Hallulla', description: 'Pan de mesa, kilo.', price: 1700, stock: 40, featured: true } }),
     prisma.products.create({ data: { store_id: tiendaDemo.id, name: 'Pan integral', description: 'Pan integral artesanal.', price: 2200, stock: 25 } }),
@@ -389,28 +443,65 @@ async function main() {
     prisma.products.create({ data: { store_id: tiendaRosa.id, name: 'Palta Hass', description: 'Kilo.', price: 3500, stock: 35, featured: true } }),
   ]);
 
-  // ─── Promociones ──────────────────────────────────────────────────────────
+  // ─── Catálogo de la tienda de Iquique (más amplio que el demo original) ────
+  const demo2Products = await Promise.all([
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Marraqueta', description: 'Kilo, recién horneada.', price: 1900, stock: 60, featured: true } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Hallulla', description: 'Kilo, para la once.', price: 1800, stock: 45, featured: true } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Dobladita', description: 'Pan de manteca, bolsa de 6.', price: 1600, stock: 30 } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Pan amasado', description: 'Al horno, unidad grande.', price: 2100, stock: 25 } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Empanada de queso', description: 'Frita, unidad.', price: 1400, stock: 40, featured: true } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Empanada camarón queso', description: 'Frita, unidad.', price: 2200, stock: 20 } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Berlín', description: 'Relleno de manjar.', price: 1300, stock: 25 } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Kuchen de frambuesa', description: 'Porción individual.', price: 2800, stock: 15 } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Alfajor de manjar', description: 'Bañado en chocolate.', price: 900, stock: 50, featured: true } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Sopaipilla', description: 'Unidad, recién frita.', price: 400, stock: 100 } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Pan de pascua', description: 'Kilo, con frutas confitadas.', price: 3500, stock: 12 } }),
+    prisma.products.create({ data: { store_id: tiendaDemo2.id, name: 'Completo italiano', description: 'Palta, tomate y mayo.', price: 2500, stock: 30 } }),
+  ]);
+
+  // ─── Promociones (una por producto, dos modalidades) ──────────────────────
+  const berlin = seededProducts.find((p) => p.name === 'Berlín')!;
+  const palta = seededProducts.find((p) => p.name === 'Palta Hass')!;
+  const sopaipilla = demo2Products.find((p) => p.name === 'Sopaipilla')!;
+  const kuchen = demo2Products.find((p) => p.name === 'Kuchen de frambuesa')!;
   await Promise.all([
+    // Promo por cantidad: 2x1 en Berlines (sin valor numérico).
     prisma.promotions.create({
       data: {
         store_id: tiendaDemo.id,
-        title: '2x1 en Berlines',
-        description: 'Lleva dos berlines por el precio de uno.',
-        discount_type: 'percentage',
-        discount_value: 50,
+        product_id: berlin.id,
+        discount_type: '2x1',
+        is_active: true,
         valid_from: new Date('2026-06-01'),
-        valid_until: new Date('2026-06-30'),
       },
     }),
+    // Descuento porcentual: 20% en Paltas, sin fecha de término.
     prisma.promotions.create({
       data: {
         store_id: tiendaRosa.id,
-        title: 'Descuento en paltas',
-        description: '$500 de descuento por kilo.',
-        discount_type: 'fixed',
-        discount_value: 500,
-        valid_from: new Date('2026-06-10'),
-        valid_until: new Date('2026-06-20'),
+        product_id: palta.id,
+        discount_type: 'percentage',
+        discount_value: 20,
+        is_active: true,
+      },
+    }),
+    // Iquique: 3x2 en sopaipillas.
+    prisma.promotions.create({
+      data: {
+        store_id: tiendaDemo2.id,
+        product_id: sopaipilla.id,
+        discount_type: '3x2',
+        is_active: true,
+      },
+    }),
+    // Iquique: 15% en kuchen de frambuesa.
+    prisma.promotions.create({
+      data: {
+        store_id: tiendaDemo2.id,
+        product_id: kuchen.id,
+        discount_type: 'percentage',
+        discount_value: 15,
+        is_active: true,
       },
     }),
   ]);
@@ -422,6 +513,9 @@ async function main() {
     prisma.reviews.create({ data: { store_id: tiendaDemo.id, customer_id: cliente3.id, rating: 5, comment: 'Las empanadas son excelentes.' } }),
     prisma.reviews.create({ data: { store_id: tiendaRosa.id, customer_id: cliente1.id, rating: 4, comment: 'Verduras siempre frescas.' } }),
     prisma.reviews.create({ data: { store_id: tiendaRosa.id, customer_id: cliente2.id, rating: 3, comment: 'Buena atención.' } }),
+    prisma.reviews.create({ data: { store_id: tiendaDemo2.id, customer_id: cliente1.id, rating: 5, comment: 'Las sopaipillas del norte son otra cosa.' } }),
+    prisma.reviews.create({ data: { store_id: tiendaDemo2.id, customer_id: cliente2.id, rating: 5, comment: 'Excelente pan amasado y buena atención.' } }),
+    prisma.reviews.create({ data: { store_id: tiendaDemo2.id, customer_id: cliente3.id, rating: 4, comment: 'Rico kuchen, volveré.' } }),
   ]);
 
   // ─── Productos para las tiendas del Biobío (2-3 por tienda) ──────────────

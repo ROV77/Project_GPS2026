@@ -1,47 +1,53 @@
-import React from 'react';
-import { View, FlatList, ActivityIndicator, Linking } from 'react-native';
-import { Store, MessageCircle } from 'lucide-react-native';
+import React, { useMemo } from 'react';
+import { View, SectionList, ActivityIndicator, Linking } from 'react-native';
+import { Store, CheckCircle } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Card } from '@/ui/Card';
 import { Button } from '@/ui/Button';
+import { Logo } from '@/ui/Logo';
 import { colors } from '@/ui/theme';
 import { useMyApplications } from '@/features/delivery/hooks';
 import { useSession } from '@/features/auth/session.store';
+import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
 import type { CourierApplication } from '@/features/delivery/types';
+
+const GREEN = '#10b981';
 
 export default function ApplicationsScreen() {
   const user = useSession((s) => s.user);
   const { data, loading, refetch } = useMyApplications(user?.id);
 
-  const openWhatsApp = (phone: string | null) => {
-    if (!phone) return;
-    const cleanPhone = phone.replace(/\D/g, '');
-    const url = `whatsapp://send?phone=${cleanPhone}`;
-    Linking.canOpenURL(url).then(supported => {
-      if (supported) {
-        Linking.openURL(url);
-      } else {
-        Linking.openURL(`https://wa.me/${cleanPhone}`);
-      }
-    });
-  };
+  // "Trabajando" = postulaciones aceptadas (state_id 2). El resto (pendientes,
+  // rechazadas) va en "Mis postulaciones". Solo se muestran secciones no vacías.
+  const sections = useMemo(() => {
+    const activas = data.filter((a) => String(a.state_id) === '2');
+    const postulaciones = data.filter((a) => String(a.state_id) !== '2');
+    return [
+      { title: 'Trabajando', data: activas },
+      { title: 'Mis postulaciones', data: postulaciones },
+    ].filter((s) => s.data.length > 0);
+  }, [data]);
 
   const getStatusText = (stateId: string | number | null) => {
     switch (String(stateId)) {
       case '1': return { text: 'Pendiente', color: colors.amber };
-      case '2': return { text: 'Aceptada', color: '#10b981' };
+      case '2': return { text: 'Aceptada', color: GREEN };
       case '3': return { text: 'Rechazada', color: colors.destructive };
       default: return { text: 'Desconocido', color: colors.mutedForeground };
     }
   };
 
-  const renderItem = ({ item }: { item: CourierApplication }) => {
+  const renderItem = ({ item, section }: { item: CourierApplication; section: { title: string } }) => {
     const store = item.delivery_vacancies?.stores;
     const status = getStatusText(item.state_id);
+    const isActive = section.title === 'Trabajando';
+    const whatsappUrl = store
+      ? buildWhatsAppUrl(store.store_phone, `Hola ${store.name}, soy tu repartidor 👋`)
+      : null;
 
     return (
-      <Card className="mb-4">
+      <Card elevated className="mb-4">
         <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center gap-3 flex-1">
             <View className="h-10 w-10 items-center justify-center rounded-full bg-brand-50">
@@ -59,12 +65,21 @@ export default function ApplicationsScreen() {
           </View>
         </View>
 
-        {String(item.state_id) === '2' && store?.store_phone && (
+        {isActive && (
+          <View className="flex-row items-center gap-2 mb-2">
+            <CheckCircle size={16} color={GREEN} />
+            <Text variant="caption" style={{ color: GREEN, fontWeight: '600' }}>
+              Trabajando aquí
+            </Text>
+          </View>
+        )}
+
+        {isActive && whatsappUrl && (
           <View className="mt-2 pt-3 border-t border-gray-100">
             <Button
-              label="Coordinar con el dueño"
+              label="Contactar por WhatsApp"
               variant="secondary"
-              onPress={() => openWhatsApp(store.store_phone)}
+              onPress={() => void Linking.openURL(whatsappUrl)}
             />
           </View>
         )}
@@ -85,13 +100,18 @@ export default function ApplicationsScreen() {
   return (
     <Screen>
       <View className="px-5 pb-4 pt-2 border-b border-gray-100 bg-white mb-2">
-        <Text variant="title" className="text-brand-900">Mis Postulaciones</Text>
-        <Text variant="caption" className="text-gray-500 mt-1">Revisa el estado de tus solicitudes enviadas</Text>
+        <Logo variant="plain" height={22} />
+        <Text variant="title" className="text-brand-900 mt-3">Mis Postulaciones</Text>
+        <Text variant="caption" className="text-gray-500 mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
       </View>
-      <FlatList
-        data={data}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
+        renderSectionHeader={({ section }) => (
+          <Text variant="subtitle" className="text-brand-900 mb-3">{section.title}</Text>
+        )}
+        stickySectionHeadersEnabled={false}
         contentContainerStyle={{ padding: 20 }}
         refreshing={loading}
         onRefresh={refetch}

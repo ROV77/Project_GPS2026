@@ -17,6 +17,9 @@ import {
   getStoreProducts,
 } from '../controllers/store.controller';
 import { validateQuery, validateBody } from '../middlewares/validate';
+import { requireAuth } from '../middlewares/requireAuth';
+import { withStore } from '../middlewares/withStore';
+import { requireFeature } from '../middlewares/requireFeature';
 import { calculateStoreStatus, getCurrentDayOfWeek } from '../services/store-status.service';
 import {
   findSchedulesByStore,
@@ -65,9 +68,17 @@ storesRouter.get('/search', validateQuery(StoreFiltersSchema), searchStores);
 
 /**
  * GET /stores/:id/stats
- * Métricas agregadas de la tienda para el dashboard.
+ * Métricas agregadas de la tienda para el dashboard. Es una función del plan
+ * Pro: requireFeature('canViewStats') rechaza con 403 a las tiendas en Gratis.
+ * Necesita requireAuth + withStore para resolver el plan de la tienda del usuario.
  */
-storesRouter.get('/:id/stats', getStoreStats);
+storesRouter.get(
+  '/:id/stats',
+  requireAuth,
+  withStore,
+  requireFeature('canViewStats'),
+  getStoreStats,
+);
 
 /**
  * GET /stores/:id/products

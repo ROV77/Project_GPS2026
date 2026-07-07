@@ -17,6 +17,7 @@ import { Store, ShoppingBag, Bike, type LucideIcon } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
+import { Logo } from '@/ui/Logo';
 import { colors } from '@/ui/theme';
 import { markOnboardingSeen } from '@/shared/lib/onboarding';
 
@@ -73,8 +74,9 @@ export default function Onboarding() {
 
   return (
     <Screen edges={{ top: true, bottom: true }}>
-      {/* Saltar */}
-      <View className="flex-row justify-end px-5 pt-2">
+      {/* Logo + Saltar */}
+      <View className="flex-row items-center justify-between px-5 pt-2">
+        <Logo variant="plain" height={22} />
         <Pressable onPress={finish} hitSlop={8}>
           <Text variant="label">Saltar</Text>
         </Pressable>

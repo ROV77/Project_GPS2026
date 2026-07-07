@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { uploadImage } from '@/shared/api/uploads';
+import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import { getCroppedBlob } from '@/shared/lib/cropImage';
 import { getInitials } from '@/shared/lib/format';
 import type { Id } from '@/shared/api/types';
@@ -80,8 +81,8 @@ export function AvatarUploader({ userId, value, name }: AvatarUploaderProps) {
   const handleSave = async () => {
     if (!imageSrc || !areaPixels) return;
     try {
-      const blob = await getCroppedBlob(imageSrc, areaPixels);
-      const url = await uploadImage(blob);
+      const blob = await getCroppedBlob(imageSrc, areaPixels, { kind: 'avatar' });
+      const url = await uploadImage(blob, 'avatar');
       await update.mutateAsync({ id: userId, data: { avatar_url: url } });
       toast.success('Foto de perfil actualizada');
       setOpen(false);
@@ -102,7 +103,12 @@ export function AvatarUploader({ userId, value, name }: AvatarUploaderProps) {
         aria-label="Editar foto de perfil"
       >
         {value ? (
-          <img src={value} alt={name} className="size-full object-cover" />
+          <CloudinaryImg
+            src={value}
+            alt={name}
+            displayWidthPx={112}
+            className="size-full object-cover"
+          />
         ) : (
           initials || <UserIcon className="size-10" />
         )}

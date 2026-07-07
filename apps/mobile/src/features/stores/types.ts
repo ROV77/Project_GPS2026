@@ -39,6 +39,19 @@ export interface Store {
  * `price` llega como string (Decimal serializado) o number; se normaliza al mostrar.
  * El mobile solo lee imágenes (`image_url`), nunca las sube.
  */
+/**
+ * Promoción vigente de un producto, tal como la adjunta GET /api/stores/:id/products
+ * (solo activas y dentro de la ventana de fechas). `discount_value` solo trae número
+ * en 'percentage'; en las promos por cantidad (2x1/3x2) es null.
+ */
+export interface ProductPromotion {
+  id: string;
+  discount_type: 'percentage' | '2x1' | '3x2';
+  discount_value: string | number | null;
+  valid_from: string | null;
+  valid_until: string | null;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -47,6 +60,8 @@ export interface Product {
   stock: number;
   image_url: string | null;
   featured: boolean;
+  /** 0 o 1 promoción vigente (una activa por producto). */
+  promotions?: ProductPromotion[];
 }
 
 export interface Paginated<T> {

@@ -9,9 +9,12 @@ import { DeliveryDashboardPage } from '@/features/delivery/pages/DeliveryDashboa
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { MyStorePage } from '@/features/stores/pages/MyStorePage';
 import { ProductsListPage } from '@/features/products/pages/ProductsListPage';
+import { PromotionsListPage } from '@/features/promotions/pages/PromotionsListPage';
 import { PlansListPage } from '@/features/plans/pages/PlansListPage';
 import { MyAccountPage } from '@/features/user/pages/MyAccountPage';
 import { CouriersPage } from '@/features/couriers/pages/CouriersPage';
+import { ExplorePage } from '@/features/explore/pages/ExplorePage';
+import { PublicStorePage } from '@/features/explore/pages/PublicStorePage';
 
 /**
  * Árbol de rutas. La jerarquía aplica los wrappers en orden:
@@ -21,6 +24,8 @@ import { CouriersPage } from '@/features/couriers/pages/CouriersPage';
  */
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
+  { path: '/explorar', element: <ExplorePage /> },
+  { path: '/tienda/:id', element: <PublicStorePage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/register-repartidor', element: <RegisterCourierPage /> },
@@ -34,6 +39,7 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/mi-tienda', element: <MyStorePage /> },
           { path: '/productos', element: <ProductsListPage /> },
+          { path: '/promociones', element: <PromotionsListPage /> },
           { path: '/repartidores', element: <CouriersPage /> },
           { path: '/planes', element: <PlansListPage /> },
           { path: '/mi-cuenta', element: <MyAccountPage /> },

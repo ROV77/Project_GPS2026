@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import type { CheckoutInput } from '@caserita/validations';
 import { subscriptionsService } from '../services/subscriptions.service';
+import { getPlanCapabilities } from '../services/plan-access.service';
 import { parseBigIntId } from '../lib/http';
 
 export const getMySubscription = async (_req: Request, res: Response) => {
@@ -10,7 +11,10 @@ export const getMySubscription = async (_req: Request, res: Response) => {
     return;
   }
   const data = await subscriptionsService.getCurrentSubscription(storeId);
-  res.json(data);
+  // Adjuntamos las capacidades del plan vigente para que el frontend condicione
+  // la UI (mostrar/ocultar funciones) sin tener que conocer la regla de negocio.
+  const capabilities = getPlanCapabilities(data.plan);
+  res.json({ ...data, capabilities });
 };
 
 export const checkout = async (_req: Request, res: Response) => {

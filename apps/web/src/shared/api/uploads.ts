@@ -1,14 +1,17 @@
 import { api } from './client';
+import type { ImageUploadKind } from '@/shared/lib/cloudinaryImage';
 
 /**
- * Sube una imagen al backend (que la reenvía a Cloudinary) y devuelve la URL.
- * El cliente axios fija Content-Type JSON por defecto; para multipart hay que
- * borrarlo y dejar que axios ponga el boundary correcto.
+ * Sube una imagen al backend (Cloudinary) y devuelve la URL almacenable.
+ * `kind` define carpeta y tamaño máximo en el servidor.
  */
-export async function uploadImage(file: Blob): Promise<string> {
+export async function uploadImage(
+  file: Blob,
+  kind: ImageUploadKind = 'product',
+): Promise<string> {
   const form = new FormData();
-  form.append('file', file, 'logo.jpg');
-  const { data } = await api.post<{ url: string }>('/uploads/image', form, {
+  form.append('file', file, `${kind}.jpg`);
+  const { data } = await api.post<{ url: string }>(`/uploads/image?kind=${kind}`, form, {
     headers: { 'Content-Type': undefined },
   });
   return data.url;

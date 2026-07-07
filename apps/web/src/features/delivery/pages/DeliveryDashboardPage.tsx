@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import logoUrl from '@/assets/icons/logo_caseritapp.png';
+import logoUrl from '@/assets/icons/logo_caseritapp.webp';
 import { useVacancies, useCreateApplication, useApplications, useCourierRatings } from '@/features/couriers/hooks/useCouriers';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { formatDate } from '@/shared/lib/format';

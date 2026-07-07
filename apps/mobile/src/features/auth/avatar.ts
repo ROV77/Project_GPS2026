@@ -20,12 +20,12 @@ export async function pickAndUploadAvatar(): Promise<string | null> {
     mediaTypes: ['images'],
     allowsEditing: true, // recorte/posicionado nativo
     aspect: [1, 1], // avatar cuadrado
-    quality: 0.7, // primera compresión (la API además limita a 1024px)
+    quality: 0.7, // compresión en cliente; la API limita a 256px para avatares
   });
   if (result.canceled) return null;
 
   const uri = result.assets[0].uri;
-  const url = await uploadImage(uri);
+  const url = await uploadImage(uri, 'avatar');
   const { user, store } = await updateMe({ avatar_url: url });
   useSession.getState().setSession(user, store);
   return url;
