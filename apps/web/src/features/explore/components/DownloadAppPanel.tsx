@@ -33,7 +33,7 @@ export function DownloadAppPanel({
 }: DownloadAppPanelProps) {
   return (
     <div className={cn('w-full', className)}>
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-slate-950 px-8 py-10 shadow-xl sm:px-12 md:flex md:items-center md:justify-between md:py-12">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-slate-950 px-6 py-6 shadow-xl sm:px-10 md:flex md:items-center md:justify-between md:py-8">
         <div
           className="pointer-events-none absolute -right-12 -top-12 size-64 rounded-full bg-amber-400/20 blur-3xl"
           aria-hidden
@@ -57,8 +57,8 @@ export function DownloadAppPanel({
         </div>
 
         {/* Mockup inferior/derecho */}
-        <div className="relative -mx-8 -mb-10 mt-8 h-[220px] overflow-hidden md:mx-0 md:-my-12 md:mt-0 md:h-[320px] md:w-[320px] md:shrink-0">
-          <div className="absolute bottom-0 left-1/2 origin-bottom -translate-x-1/2 scale-[0.65] md:bottom-auto md:left-auto md:right-8 md:top-1/2 md:origin-right md:-translate-y-1/2 md:translate-x-0 md:scale-[0.8]">
+        <div className="relative -mx-8 -mb-6 mt-6 h-[160px] overflow-hidden md:mx-0 md:-my-8 md:mt-0 md:h-[220px] md:w-[280px] md:shrink-0">
+          <div className="absolute bottom-0 left-1/2 origin-bottom -translate-x-1/2 scale-[0.5] md:bottom-auto md:left-auto md:right-4 md:top-1/2 md:origin-right md:-translate-y-1/2 md:translate-x-0 md:scale-[0.6]">
             <MobilePhoneFrame screenHeight={380} className="w-[240px] drop-shadow-2xl">
               <StoreAppPreviewContent data={preview} />
             </MobilePhoneFrame>

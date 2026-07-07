@@ -43,14 +43,18 @@ export function ExplorePage() {
   const [communeId, setCommuneId] = useState<string | null>(urlCommuneId);
   const [categoryId, setCategoryId] = useState<string | null>(urlCategoryId);
 
-  const [showBanner, setShowBanner] = useState(true);
+  const [bannerState, setBannerState] = useState<'visible' | 'fading' | 'hidden'>('visible');
 
   useEffect(() => {
-    if (showBanner) {
-      const timer = setTimeout(() => setShowBanner(false), 12000); // Se desvanece en 12 segundos
+    if (bannerState === 'visible') {
+      const timer = setTimeout(() => setBannerState('fading'), 12000); // Inicia desvanecimiento en 12s
       return () => clearTimeout(timer);
     }
-  }, [showBanner]);
+    if (bannerState === 'fading') {
+      const timer = setTimeout(() => setBannerState('hidden'), 1000); // 1 segundo para desvanecerse
+      return () => clearTimeout(timer);
+    }
+  }, [bannerState]);
 
   const categories = useCatalogOptions('categories');
 
@@ -106,8 +110,12 @@ export function ExplorePage() {
     <ExplorePageShell>
       <LandingHeader />
 
-      {showBanner && (
-        <div className="animate-in slide-in-from-top-4 fade-in duration-500 bg-brand-50 border-b border-brand-100 px-4 py-3 sm:px-6 lg:px-8">
+      {bannerState !== 'hidden' && (
+        <div className={cn(
+          "sticky top-20 z-40 bg-brand-50 border-b border-brand-100 px-4 py-3 sm:px-6 lg:px-8 transition-opacity duration-1000 shadow-sm",
+          bannerState === 'fading' ? 'opacity-0 pointer-events-none' : 'opacity-100',
+          "animate-in slide-in-from-top-4 fade-in"
+        )}>
           <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
@@ -118,7 +126,7 @@ export function ExplorePage() {
               </p>
             </div>
             <button 
-              onClick={() => setShowBanner(false)}
+              onClick={() => setBannerState('fading')}
               className="shrink-0 rounded-lg p-1.5 text-brand-600 hover:bg-brand-100 transition"
               aria-label="Cerrar mensaje"
             >
