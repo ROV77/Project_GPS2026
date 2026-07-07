@@ -251,12 +251,11 @@ export function ExplorePage() {
                     />
                   ))}
                 </div>
-              )}
-              <DownloadAppPanel />
             </div>
           </>
         )}
       </main>
+      <DownloadAppPanel />
     </ExplorePageShell>
   );
 }

@@ -70,7 +70,7 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
             {store.name}
           </h3>
           {store.verified ? (
-            <BadgeCheck className="mt-0.5 size-5 shrink-0 text-sky-500 animate-[pulse_3s_ease-in-out_infinite]" strokeWidth={2} />
+            <BadgeCheck className="mt-0.5 size-6 shrink-0 text-sky-500 animate-pulse transition-transform hover:scale-125" strokeWidth={2} />
           ) : null}
         </div>
 
