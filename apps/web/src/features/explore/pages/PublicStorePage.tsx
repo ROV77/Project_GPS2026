@@ -63,7 +63,7 @@ export function PublicStorePage() {
 
   return (
     <ExplorePageShell>
-      <LandingHeader variant="brand" />
+      <LandingHeader />
 
       <main className="mx-auto max-w-6xl px-5 py-6 sm:px-8">
         <Link
@@ -92,7 +92,7 @@ export function PublicStorePage() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-8 xl:flex-row xl:items-start">
+          <div className="flex flex-col gap-8">
             <div className="min-w-0 flex-1 space-y-6">
               <section className="rounded-2xl border border-white/70 bg-white/75 p-6 shadow-sm backdrop-blur-sm">
                 <div className="flex gap-4">
@@ -196,15 +196,17 @@ export function PublicStorePage() {
                 )}
               </section>
             </div>
-
-            <DownloadAppPanel
-              preview={previewData}
-              title={`¿Quieres pedir en ${store.name}?`}
-              subtitle="Catálogo, carrito y WhatsApp — todo en la app."
-            />
           </div>
         )}
       </main>
+      
+      {store && !isLoading && !isError && (
+        <DownloadAppPanel
+          preview={previewData}
+          title={`¿Quieres pedir en ${store.name}?`}
+          subtitle="Catálogo, carrito y WhatsApp — todo en la app."
+        />
+      )}
     </ExplorePageShell>
   );
 }
