@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { BadgeCheck, Check, LineChart, Store } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -51,6 +51,8 @@ function dailyPriceHint(price: number): string | null {
 export interface PlanCardProps {
   plan: Plan;
   isCurrent: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
   isRecommended: boolean;
   isFree: boolean;
   hasActivePaidPlan: boolean;
@@ -65,6 +67,8 @@ export interface PlanCardProps {
 export function PlanCard({
   plan,
   isCurrent,
+  isSelected,
+  onSelect,
   isRecommended,
   isFree,
   hasActivePaidPlan,
@@ -80,17 +84,18 @@ export function PlanCard({
   const price = Number(plan.price);
   const dailyHint = dailyPriceHint(price);
 
-  const [isAnimating, setIsAnimating] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
 
-  const handleCardClick = () => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    
-    let colors = ['#94a3b8', '#64748b'];
-    if (plan.name === 'Pro') colors = ['#2563eb', '#60a5fa', '#3b82f6']; // brand
-    else if (plan.name === 'Premium') colors = ['#d97706', '#fbbf24', '#f59e0b']; // amber
+  // Get brand colors
+  let colors = ['#94a3b8', '#64748b', '#cbd5e1'];
+  if (plan.name === 'Pro') colors = ['#2563eb', '#60a5fa', '#3b82f6', '#93c5fd']; // brand
+  else if (plan.name === 'Premium') colors = ['#d97706', '#fbbf24', '#f59e0b', '#fcd34d']; // amber
 
+  const handleCardClick = () => {
+    if (isSelected) return;
+    if (onSelect) onSelect();
+    
+    // Initial big explosion
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       const x = (rect.left + rect.width / 2) / window.innerWidth;
@@ -105,24 +110,51 @@ export function PlanCard({
         zIndex: 100,
       });
     }
-
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 400);
   };
+
+  useEffect(() => {
+    if (!isSelected) return;
+
+    // Continuous slow particles
+    const interval = setInterval(() => {
+      if (cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect();
+        // Spread origin across the card width and height slightly
+        const x = (rect.left + (Math.random() * rect.width)) / window.innerWidth;
+        const y = (rect.top + (Math.random() * rect.height)) / window.innerHeight;
+
+        confetti({
+          particleCount: 1,
+          spread: 360,
+          origin: { x, y },
+          colors: [colors[Math.floor(Math.random() * colors.length)]],
+          disableForReducedMotion: true,
+          zIndex: 40,
+          ticks: 200,
+          gravity: 0.1, // very slow fall
+          scalar: 0.8 + Math.random() * 0.4, // variable small size
+          shapes: ['circle'],
+          startVelocity: 10,
+        });
+      }
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, [isSelected, colors]);
 
   return (
     <article
       ref={cardRef}
       onClick={handleCardClick}
       className={cn(
-        'relative flex flex-col rounded-xl border bg-card p-6 shadow-xs transition-all duration-300 cursor-pointer',
-        isRecommended && !isCurrent && 'z-10 border-brand-700 shadow-md md:scale-[1.02]',
-        isCurrent && 'border-emerald-300 bg-emerald-50/30',
-        !isRecommended && !isCurrent && 'border-border hover:border-brand-200 hover:shadow-sm',
-        isAnimating && 'scale-[1.08] shadow-2xl z-50 ring-4 border-transparent',
-        isAnimating && plan.name === 'Pro' && 'ring-brand-500/50 shadow-brand-500/20',
-        isAnimating && plan.name === 'Premium' && 'ring-amber-500/50 shadow-amber-500/20',
+        'relative flex flex-col rounded-xl border bg-card p-6 shadow-xs transition-all duration-500 cursor-pointer',
+        isRecommended && !isCurrent && !isSelected && 'z-10 border-brand-700 shadow-md md:scale-[1.02]',
+        isCurrent && !isSelected && 'border-emerald-300 bg-emerald-50/30',
+        !isRecommended && !isCurrent && !isSelected && 'border-border hover:border-brand-200 hover:shadow-sm',
+        isSelected && 'scale-[1.05] shadow-2xl z-50 ring-4 border-transparent',
+        isSelected && plan.name === 'Pro' && 'ring-brand-500/50 shadow-brand-500/20 bg-brand-50/10',
+        isSelected && plan.name === 'Premium' && 'ring-amber-500/50 shadow-amber-500/20 bg-amber-50/10',
+        isSelected && plan.name !== 'Pro' && plan.name !== 'Premium' && 'ring-slate-400/50',
       )}
     >
       {isRecommended && !isCurrent ? (

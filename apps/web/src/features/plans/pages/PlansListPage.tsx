@@ -23,8 +23,11 @@ const STATUS_TOASTS: Record<string, { kind: 'success' | 'info' | 'error'; messag
   failure: { kind: 'error', message: 'El pago no se pudo completar.' },
 };
 
+import { useState } from 'react';
+
 export function PlansListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedPlanId, setSelectedPlanId] = useState<number | string | null>(null);
   const { data, isLoading } = usePlans({ page: 1, limit: 100 });
   const { data: subscription, refetch: refetchSubscription } = useMySubscription();
   const checkout = useCheckout();
@@ -122,6 +125,8 @@ export function PlansListPage() {
                 key={plan.id}
                 plan={plan}
                 isCurrent={plan.id === currentPlanId}
+                isSelected={plan.id === selectedPlanId}
+                onSelect={() => setSelectedPlanId(plan.id)}
                 isRecommended={plan.name === RECOMMENDED_PLAN}
                 isFree={Number(plan.price) === 0}
                 hasActivePaidPlan={hasActivePaidPlan}
