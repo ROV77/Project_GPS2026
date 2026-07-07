@@ -165,12 +165,6 @@ export function LandingPage() {
             Registra tu negocio
             <ArrowRight className="size-5" />
           </Link>
-          <p className="mt-4 text-sm text-slate-300">
-            ¿Repartes pedidos?{' '}
-            <Link to="/register-repartidor" className="font-medium text-white underline">
-              Únete como repartidor
-            </Link>
-          </p>
         </div>
       </section>
 
