@@ -132,7 +132,7 @@ export function LandingPage() {
             return (
               <Card 
                 key={b.title} 
-                className="group relative flex aspect-square cursor-default flex-col justify-end overflow-hidden p-6 transition-all duration-500 hover:-translate-y-2 hover:border-brand-300 hover:shadow-2xl"
+                className="group relative flex aspect-square cursor-default flex-col justify-start overflow-hidden p-6 pt-8 transition-all duration-500 hover:-translate-y-2 hover:border-brand-300 hover:shadow-2xl"
               >
                 {/* Texto por encima */}
                 <div className="relative z-10 max-w-[90%]">
