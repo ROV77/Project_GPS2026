@@ -21,6 +21,7 @@ import { ScheduleEditor } from '../components/ScheduleEditor';
 import { getStoreLocationMetadata } from '../lib/storeMetadata';
 import { resolveCommuneId, resolveRegionId } from '../lib/resolveCatalogLocation';
 import { geocodeCommune } from '../lib/geocoding';
+import { Smartphone } from 'lucide-react';
 import type { StoreLocation } from '../types/location';
 function findOptionLabel(
   options: Array<{ value: string; label: string }>,
@@ -43,6 +44,7 @@ export function MyStorePage() {
   const categories = useCatalogOptions('categories');
   const regions = useCatalogOptions('regions');
   const [manualLocation, setManualLocation] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const {
     control,
@@ -229,10 +231,21 @@ export function MyStorePage() {
       <PageHeader
         title="Mi Tienda"
         subtitle="Datos de tu comercio, visibles para los clientes en la app"
+        extra={
+          <Button
+            type="button"
+            variant={showPreview ? 'primary' : 'outline'}
+            onClick={() => setShowPreview(!showPreview)}
+            className="gap-2"
+          >
+            <Smartphone className="h-4 w-4" />
+            {showPreview ? 'Ocultar vista previa' : 'Vista previa en la app'}
+          </Button>
+        }
       />
 
-      <div className="flex w-full flex-col gap-6 xl:flex-row xl:items-start xl:gap-8">
-        <div className="min-w-0 flex-1 space-y-6">
+      <div className="flex w-full flex-col gap-6 xl:flex-row xl:items-start xl:gap-8 overflow-hidden">
+        <div className="min-w-0 flex-1 space-y-6 transition-all duration-500 ease-in-out">
       <Card>
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-2">
@@ -457,10 +470,18 @@ export function MyStorePage() {
         </div>
 
         {store && (
-          <StoreMobilePreview
-            data={previewData}
-            className="hidden shrink-0 xl:mr-6 xl:block xl:sticky xl:top-6"
-          />
+          <div
+            className={`shrink-0 transition-all duration-500 ease-in-out overflow-hidden ${
+              showPreview ? 'w-[320px] opacity-100' : 'w-0 opacity-0'
+            }`}
+          >
+            <div className="w-[320px]">
+              <StoreMobilePreview
+                data={previewData}
+                className="xl:sticky xl:top-6"
+              />
+            </div>
+          </div>
         )}
       </div>
     </>
