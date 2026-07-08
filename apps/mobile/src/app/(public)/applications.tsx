@@ -132,12 +132,12 @@ export default function ApplicationsScreen() {
 
   return (
     <Screen>
-      <View className="px-5 pb-4 pt-2 border-b border-gray-100 bg-white mb-2">
+      <View className="px-5 pb-4 pt-2 border-b border-border bg-background mb-2">
         <Logo variant="plain" height={22} />
-        <Text variant="title" className="text-brand-900 mt-3">Mis Postulaciones</Text>
-        <Text variant="caption" className="text-gray-500 mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
+        <Text variant="title" className="text-foreground mt-3">Mis Postulaciones</Text>
+        <Text variant="caption" className="text-muted-foreground mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
       </View>
-      <View className="pb-3 border-b border-gray-100 bg-white mb-2">
+      <View className="pb-3 border-b border-border bg-background mb-2">
         <View className="mb-3">
           <CategoryChips categories={statusOptions} selectedId={statusFilter} onSelect={setStatusFilter} />
         </View>
@@ -148,7 +148,7 @@ export default function ApplicationsScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         renderSectionHeader={({ section }) => (
-          <Text variant="subtitle" className="text-brand-900 mb-3">{section.title}</Text>
+          <Text variant="subtitle" className="text-foreground mb-3">{section.title}</Text>
         )}
         stickySectionHeadersEnabled={false}
         contentContainerStyle={{ padding: 20 }}
@@ -156,7 +156,7 @@ export default function ApplicationsScreen() {
         onRefresh={refetch}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-10">
-            <Text variant="body" className="text-gray-500 text-center">
+            <Text variant="body" className="text-muted-foreground text-center">
               No tienes postulaciones recientes.
             </Text>
           </View>

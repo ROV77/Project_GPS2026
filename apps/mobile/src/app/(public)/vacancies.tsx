@@ -93,7 +93,7 @@ export default function VacanciesScreen() {
           <Text variant="caption">{locationStr}</Text>
         </View>
 
-        <Text variant="body" className="mb-4 text-gray-700">
+        <Text variant="body" className="mb-4 text-foreground">
           {item.description ?? 'Sin descripción'}
         </Text>
         <Button
@@ -133,12 +133,12 @@ export default function VacanciesScreen() {
 
   return (
     <Screen>
-      <View className="px-5 pb-4 pt-2 border-b border-gray-100 bg-white mb-2">
+      <View className="px-5 pb-4 pt-2 border-b border-border bg-background mb-2">
         <Logo variant="plain" height={22} />
-        <Text variant="title" className="text-brand-900 mt-3">Ofertas de Trabajo</Text>
-        <Text variant="caption" className="text-gray-500 mt-1">Encuentra y postula a nuevas oportunidades</Text>
+        <Text variant="title" className="text-foreground mt-3">Ofertas de Trabajo</Text>
+        <Text variant="caption" className="text-muted-foreground mt-1">Encuentra y postula a nuevas oportunidades</Text>
       </View>
-      <View className="pb-3 border-b border-gray-100 bg-white mb-2">
+      <View className="pb-3 border-b border-border bg-background mb-2">
         <View className="mb-3">
           <CategoryChips categories={statusOptions} selectedId={statusFilter} onSelect={setStatusFilter} />
         </View>
@@ -153,7 +153,7 @@ export default function VacanciesScreen() {
         onRefresh={() => { refetchVacancies(); refetchMyApps(); }}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-10">
-            <Text variant="body" className="text-gray-500 text-center px-6">
+            <Text variant="body" className="text-muted-foreground text-center px-6">
               No hay ofertas disponibles en este momento.
             </Text>
           </View>

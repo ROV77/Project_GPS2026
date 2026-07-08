@@ -234,11 +234,11 @@ export default function AccountScreen() {
             </View>
           </View>
           {isCourier ? (
-            <View className="pt-4 flex-col gap-4 border-t border-gray-100 mt-4">
+            <View className="pt-4 flex-col gap-4 border-t border-border mt-4">
               <View className="flex-row items-center justify-between">
-                <Text variant="body" className="font-medium text-gray-700">Mi Calificación</Text>
+                <Text variant="body" className="font-medium text-foreground">Mi Calificación</Text>
                 <TouchableOpacity 
-                  className="flex-row items-center gap-1 bg-brand-50 px-3 py-1.5 rounded-lg active:bg-brand-100 transition-colors"
+                  className="flex-row items-center gap-1 bg-muted px-3 py-1.5 rounded-lg active:opacity-80 transition-colors"
                   onPress={() => router.push('/courier-reviews')}
                 >
                   <Star size={20} color={colors.amber} fill={average > 0 ? colors.amber : 'transparent'} />
