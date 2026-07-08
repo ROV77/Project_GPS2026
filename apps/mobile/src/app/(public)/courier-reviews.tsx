@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useSession } from '@/features/auth/session.store';
 import { useCourierRatings } from '@/features/delivery/hooks';
@@ -9,6 +9,7 @@ import { Card } from '@/ui/Card';
 import { Logo } from '@/ui/Logo';
 import { useRouter } from 'expo-router';
 import { useThemeColors } from '@/ui/theme';
+import { CategoryChips } from '@/components/CategoryChips';
 
 export default function CourierReviewsScreen() {
   const { user } = useSession();
@@ -16,6 +17,28 @@ export default function CourierReviewsScreen() {
   const colors = useThemeColors();
 
   const { data: reviews, loading: isLoading, error: isError } = useCourierRatings(String(user?.id));
+  const [filter, setFilter] = useState<string | null>(null);
+
+  const filterOptions = [
+    { id: null, name: 'Todas' },
+    { id: 'recientes', name: 'Más recientes' },
+    { id: 'mejores', name: 'Mejor valoradas' },
+    { id: 'peores', name: 'Peor valoradas' },
+  ];
+
+  const processedReviews = useMemo(() => {
+    if (!reviews) return [];
+    const copy = [...reviews];
+    
+    if (filter === 'recientes') {
+      copy.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else if (filter === 'mejores') {
+      copy.sort((a, b) => (b.stars || 0) - (a.stars || 0));
+    } else if (filter === 'peores') {
+      copy.sort((a, b) => (a.stars || 0) - (b.stars || 0));
+    }
+    return copy;
+  }, [reviews, filter]);
 
   const renderStars = (rating: number) => {
     return (
@@ -81,10 +104,13 @@ export default function CourierReviewsScreen() {
   return (
     <Screen>
       {header}
+      <View className="pb-3 border-b border-border bg-background mb-2">
+        <CategoryChips categories={filterOptions} selectedId={filter} onSelect={setFilter} />
+      </View>
       <FlatList
-        data={reviews}
+        data={processedReviews}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={{ padding: 16, gap: 16 }}
+        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}
         renderItem={({ item }) => (
           <Card elevated>
             <View className="flex-row items-start justify-between mb-2">
