@@ -4,7 +4,8 @@
  */
 import { Pressable, ActivityIndicator } from 'react-native';
 import { Text } from './Text';
-import { colors, fonts } from './theme';
+import { fonts, useThemeColors } from './theme';
+import { useThemeStore } from './themeStore';
 
 export function Button({
   label,
@@ -19,8 +20,12 @@ export function Button({
   loading?: boolean;
   disabled?: boolean;
 }) {
+  const colors = useThemeColors();
+  const { theme } = useThemeStore();
   const isPrimary = variant === 'primary';
   const isDisabled = disabled || loading;
+  const secondaryColor = theme === 'dark' ? colors.brand[400] : colors.brand[700];
+
   return (
     <Pressable
       onPress={onPress}
@@ -37,12 +42,12 @@ export function Button({
       })}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? colors.white : colors.brand[700]} />
+        <ActivityIndicator color={isPrimary ? colors.white : secondaryColor} />
       ) : (
         <Text
           style={{
             fontFamily: fonts.semibold,
-            color: isPrimary ? colors.white : colors.brand[700],
+            color: isPrimary ? colors.white : secondaryColor,
           }}
         >
           {label}

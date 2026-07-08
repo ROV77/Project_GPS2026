@@ -4,13 +4,14 @@
  */
 import type { ReactNode } from 'react';
 import { View, TextInput, type TextInputProps } from 'react-native';
-import { colors, fonts } from './theme';
+import { fonts, useThemeColors } from './theme';
 
 export interface InputProps extends TextInputProps {
   icon?: ReactNode;
 }
 
 export function Input({ icon, ...rest }: InputProps) {
+  const colors = useThemeColors();
   return (
     <View className="h-14 flex-row items-center gap-3 rounded-xl border border-border bg-card px-4">
       {icon}
