@@ -59,7 +59,7 @@ export default function ApplicationsScreen() {
       { title: 'Trabajando', data: activas },
       { title: 'Mis postulaciones', data: postulaciones },
     ].filter((s) => s.data.length > 0);
-  }, [data]);
+  }, [data, locationFilter, statusFilter]);
 
   const getStatusText = (stateId: string | number | null) => {
     switch (String(stateId)) {
