@@ -4,7 +4,7 @@
  */
 import { ScrollView, Pressable } from 'react-native';
 import { Text } from '@/ui/Text';
-import { colors, fonts } from '@/ui/theme';
+import { fonts, useThemeColors } from '@/ui/theme';
 
 export interface Category {
   id: string | null; // null = "Todos"
@@ -20,6 +20,7 @@ export function CategoryChips({
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
+  const colors = useThemeColors();
   return (
     <ScrollView
       horizontal
@@ -32,15 +33,22 @@ export function CategoryChips({
           <Pressable
             key={cat.id ?? 'all'}
             onPress={() => onSelect(cat.id)}
-            className={`h-9 items-center justify-center rounded-full px-4 ${
-              active ? 'bg-brand-700' : 'bg-brand-50'
-            }`}
+            style={{
+              height: 36,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 9999,
+              paddingHorizontal: 16,
+              backgroundColor: active ? colors.card : colors.brand[700],
+              borderWidth: active ? 1 : 0,
+              borderColor: active ? colors.brand[500] : 'transparent',
+            }}
           >
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 13,
-                color: active ? colors.white : colors.brand[700],
+                color: active ? colors.brand[500] : colors.white,
               }}
             >
               {cat.name}
