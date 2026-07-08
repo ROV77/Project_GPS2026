@@ -20,12 +20,10 @@
  * (onRegionChangeComplete) — más espacio real para explorar sin estorbos.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ActivityIndicator, Linking, Platform, Pressable, Keyboard } from 'react-native';
+import { View, ActivityIndicator, Linking, Pressable, Keyboard } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import * as Location from 'expo-location';
-import ClusteredMapView from 'react-native-map-clustering';
-import { UrlTile } from 'react-native-maps';
 import type BottomSheet from '@gorhom/bottom-sheet';
 import { AlertTriangle } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
@@ -34,8 +32,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { colors } from '@/ui/theme';
 import { useStores } from '@/features/stores/hooks';
-import { StoreMarker } from '@/components/StoreMarker';
-import { ClusterMarker } from '@/components/ClusterMarker';
+import { LeafletMap, type LeafletMapHandle } from '@/components/LeafletMap';
 import { StoreDetailSheet } from '@/components/StoreDetailSheet';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
@@ -68,20 +65,10 @@ export default function MapScreen() {
 
   const params = useLocalSearchParams<{ focusId?: string; focusLat?: string; focusLng?: string }>();
   const sheetRef = useRef<BottomSheet>(null);
-  // Instancia real del MapView (react-native-map-clustering la reenvía por `mapRef`).
-  // ponytail: `any` — los tipos de la lib declaran mapRef como Ref<MapView>, pero
-  // en runtime entrega la instancia (con animateToRegion). Ver ClusteredMapView.js.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mapViewRef = useRef<any>(null);
+  // Handle imperativo del mapa Leaflet (WebView): expone flyTo. Ver LeafletMap.tsx.
+  const mapViewRef = useRef<LeafletMapHandle>(null);
   // Último focusId procesado (viene del detalle de tienda) para no repetir.
   const handledFocus = useRef<string | null>(null);
-  // react-native-map-clustering fija sus valores por defecto (mapRef,
-  // clusteringEnabled, onMarkersChange, onClusterPress, superClusterRef) vía
-  // `Component.defaultProps`, mecanismo que React 19 ya no soporta en
-  // componentes de función/forwardRef. Sin pasarlos explícitos, quedan
-  // `undefined`: `mapRef` revienta al montar/desmontar y `clusteringEnabled`
-  // (falsy) desactiva el clustering en silencio. Se pasan todos a mano.
-  const superClusterRef = useRef(null);
   const filtersHeight = useSharedValue(FILTERS_HEIGHT);
 
   const filtersStyle = useAnimatedStyle(() => ({
@@ -118,10 +105,7 @@ export default function MapScreen() {
     const latitude = Number(store.latitude);
     const longitude = Number(store.longitude);
     if (Number.isNaN(latitude) || Number.isNaN(longitude)) return;
-    mapViewRef.current?.animateToRegion(
-      { latitude, longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
-      600,
-    );
+    mapViewRef.current?.flyTo(latitude, longitude);
     setSelectedId(store.id);
     sheetRef.current?.snapToIndex(1);
     Keyboard.dismiss();
@@ -294,63 +278,21 @@ export default function MapScreen() {
           </View>
         ) : (
           <View style={{ flex: 1 }}>
-            <ClusteredMapView
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              mapRef={(map: any) => { mapViewRef.current = map; }}
-              superClusterRef={superClusterRef}
-              clusteringEnabled
-              onMarkersChange={() => {}}
-              onClusterPress={() => {}}
-              // Burbuja de cluster propia (ver ClusterMarker.tsx): la del
-              // ClusterMarker interno de la librería anida un halo
-              // position:absolute que en Android (Fabric) a veces se
-              // snapshotea a medio layout y sale recortado/glitcheado.
-              renderCluster={(cluster) => (
-                <ClusterMarker
-                  key={`cluster-${cluster.id}`}
-                  onPress={cluster.onPress}
-                  geometry={cluster.geometry}
-                  properties={cluster.properties}
-                />
-              )}
-              initialRegion={region}
-              onPress={handleMapPress}
-              onPanDrag={handlePanDrag}
-              onRegionChangeComplete={handleRegionChangeComplete}
-              showsUserLocation={perm === 'granted'}
-              showsMyLocationButton={perm === 'granted'}
-              showsPointsOfInterest={false}
-              showsBuildings={false}
-              showsTraffic={false}
-              mapType={Platform.OS === 'android' ? 'none' : 'standard'}
-              style={{ flex: 1 }}
-              radius={60}
-              minPoints={3}
-              maxZoom={20}
-              minZoom={1}
-              extent={512}
-              nodeSize={64}
-              spiralEnabled={false}
-              clusterColor={colors.brand[700]}
-              clusterTextColor={colors.white}
-              edgePadding={{ top: 50, left: 50, right: 50, bottom: 50 }}
-            >
-              <UrlTile
-                urlTemplate="https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
-                maximumZ={19}
-                flipY={false}
-                tileSize={256}
-              />
-              {filteredStores.map((s) => (
-                <StoreMarker
-                  key={s.id}
-                  store={s}
-                  coordinate={{ latitude: Number(s.latitude), longitude: Number(s.longitude) }}
-                  selected={s.id === selectedId}
-                  onPress={handleMarkerPress}
-                />
-              ))}
-            </ClusteredMapView>
+            <LeafletMap
+              ref={mapViewRef}
+              region={region}
+              stores={filteredStores}
+              selectedId={selectedId}
+              userLocation={
+                perm === 'granted'
+                  ? { latitude: region.latitude, longitude: region.longitude }
+                  : null
+              }
+              onMarkerPress={handleMarkerPress}
+              onMapPress={handleMapPress}
+              onPanStart={handlePanDrag}
+              onMoveEnd={handleRegionChangeComplete}
+            />
             <View
               style={{
                 position: 'absolute',
