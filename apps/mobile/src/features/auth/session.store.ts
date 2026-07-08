@@ -48,6 +48,14 @@ export const useSession = create<SessionState & { becomeCourier: () => Promise<v
     }
     try {
       const { user, store } = await getMe();
+      // Salvaguarda: si el perfil hidratado resulta ser de tienda (rol `seller`),
+      // no se le permite usar la app mobile. Se borra el token y se queda
+      // anónimo (fuerza a logearse de nuevo, donde el flujo de login ya bloquea).
+      if (user.roles.includes('seller')) {
+        await deleteToken();
+        set({ user: null, store: null, status: 'anonymous' });
+        return;
+      }
       set({ user, store, status: 'authenticated' });
     } catch {
       await deleteToken();

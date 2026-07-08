@@ -34,7 +34,16 @@ export default function Login() {
     setError(null);
     setLoading(true);
     try {
-      const { token } = await loginRequest(mail, password);
+      const { token, user } = await loginRequest(mail, password);
+      // La app mobile es para clientes y repartidores. Las cuentas de tienda
+      // (rol `seller`) administran su negocio desde el panel web: no tienen
+      // cabida acá, así que se bloquea el acceso antes de guardar el token.
+      if (user.roles.includes('seller')) {
+        setError(
+          'Esta cuenta es para administrar una tienda. Usa el panel web en https://146.83.194.168:8448 para ingresar.',
+        );
+        return;
+      }
       await signIn(token);
       router.replace('/(public)/account');
     } catch (e) {

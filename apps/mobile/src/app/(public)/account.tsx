@@ -25,7 +25,10 @@ import { getApiErrorMessage } from '@/shared/api/errors';
 import { useCourierRatings } from '@/features/delivery/hooks';
 import { Skeleton } from '@/ui/Skeleton';
 
-const WEB_URL = 'https://caseritapp.cl';
+// URL del panel web de tiendas (servidor de la U). Deriva acá el botón
+// "Créalo en caseritapp.cl" para que las cuentas de tienda NO se gestionen
+// desde el mobile (ver también login.tsx: bloquea el rol `seller`).
+const WEB_URL = 'https://146.83.194.168:8448/login';
 
 const ROLE_LABELS: Record<string, string> = {
   customer: 'Cliente',
