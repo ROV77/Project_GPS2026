@@ -15,7 +15,7 @@ import { View, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapPin, Search as SearchIcon } from 'lucide-react-native';
+import { MapPin, Search as SearchIcon, Trophy } from 'lucide-react-native';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate, Extrapolation } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Screen } from '@/ui/Screen';
@@ -191,7 +191,12 @@ export default function HomeScreen() {
             {/* Netflix-style Home Sections (Only visible if no filter applied) */}
             {!isFiltering && !loading && !error && (
               <View className="pb-8 mt-2">
-                <StoreCarousel title="Las mejores valoradas 🏆" stores={topRated} autoScroll={true} />
+                <StoreCarousel 
+                  title="Las mejores valoradas" 
+                  icon={<Trophy size={20} color={colors.amber} strokeWidth={2.5} />}
+                  stores={topRated} 
+                  autoScroll={true} 
+                />
                 {categorizedStores.map((cat) => (
                   <StoreCarousel key={cat.name} title={cat.name} stores={cat.stores} />
                 ))}

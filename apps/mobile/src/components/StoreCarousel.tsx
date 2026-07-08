@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View, FlatList, Pressable, type ViewToken } from 'react-native';
+import { View, FlatList, type ViewToken } from 'react-native';
+import type { ReactNode } from 'react';
 import { StoreCard } from './StoreCard';
 import { Text } from '@/ui/Text';
 import type { Store } from '@/features/stores/types';
@@ -8,11 +9,12 @@ import { runOnJS, runOnUI, scrollTo, useAnimatedRef, useSharedValue } from 'reac
 
 interface StoreCarouselProps {
   title: string;
+  icon?: ReactNode;
   stores: Store[];
   autoScroll?: boolean;
 }
 
-export function StoreCarousel({ title, stores, autoScroll = false }: StoreCarouselProps) {
+export function StoreCarousel({ title, icon, stores, autoScroll = false }: StoreCarouselProps) {
   const router = useRouter();
   const listRef = useAnimatedRef<FlatList<Store>>();
   const [isInteracting, setIsInteracting] = useState(false);
@@ -60,7 +62,8 @@ export function StoreCarousel({ title, stores, autoScroll = false }: StoreCarous
 
   return (
     <View className="mb-6">
-      <View className="px-5 mb-3">
+      <View className="px-5 mb-3 flex-row items-center gap-2">
+        {icon}
         <Text variant="subtitle" className="text-lg font-bold">{title}</Text>
       </View>
       <FlatList
