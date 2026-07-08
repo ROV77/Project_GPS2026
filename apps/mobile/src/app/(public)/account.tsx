@@ -9,13 +9,12 @@
  * deriva al web (caseritapp.cl) para crear/configurar un negocio.
  */
 import { useState } from 'react';
-import { View, ActivityIndicator, Alert, Linking, TouchableOpacity, Switch } from 'react-native';
+import { View, ActivityIndicator, Alert, Linking, TouchableOpacity, Switch, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike, User, Phone, Store as StoreIcon, Star, ChevronRight, Moon } from 'lucide-react-native';
+import { Bike, User, Phone, Store as StoreIcon, Star, ChevronRight, Moon, Calendar, LogOut } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
 import { Avatar } from '@/ui/Avatar';
 import { BrandGradient } from '@/ui/BrandGradient';
 import { useThemeColors } from '@/ui/theme';
@@ -39,7 +38,6 @@ const MONTHS = [
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
 ];
 
-/** "septiembre 2025" sin depender de Intl (limitado en Hermes). */
 function memberSince(iso: string | null): string | null {
   if (!iso) return null;
   const d = new Date(iso);
@@ -114,187 +112,190 @@ export default function AccountScreen() {
 
   return (
     <Screen>
-      {/* Banner de perfil con gradiente de marca: nombre (autenticado) o "Cuenta"
-          (anónimo) + avatar editable a la derecha. */}
-      <BrandGradient
-        style={{ borderRadius: 20, marginHorizontal: 16, marginBottom: 12, padding: 18 }}
-      >
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1 pr-3">
-            {isAuth ? (
-              <>
-                <Text variant="title" style={{ color: colors.white }}>{user.name ?? 'Usuario'}</Text>
-                <Text variant="caption" className="mt-1" style={{ color: '#c7d6ef' }}>
-                  {user.email}
-                </Text>
-                {user.roles.length > 0 && (
-                  <Text variant="caption" className="mt-0.5" style={{ color: '#bcd0f0' }}>
-                    {user.roles.map((r) => ROLE_LABELS[r] ?? r).join(' · ')}
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <BrandGradient
+          style={{ borderRadius: 20, marginHorizontal: 16, marginTop: 8, marginBottom: 24, padding: 20 }}
+        >
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 pr-3">
+              {isAuth ? (
+                <>
+                  <Text variant="title" style={{ color: colors.white }}>{user.name ?? 'Usuario'}</Text>
+                  <Text variant="caption" className="mt-1" style={{ color: '#c7d6ef' }}>
+                    {user.email}
                   </Text>
-                )}
-              </>
-            ) : (
-              <Text variant="title" style={{ color: colors.white }}>Cuenta</Text>
+                  {user.roles.length > 0 && (
+                    <Text variant="caption" className="mt-0.5" style={{ color: '#bcd0f0' }}>
+                      {user.roles.map((r) => ROLE_LABELS[r] ?? r).join(' · ')}
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <Text variant="title" style={{ color: colors.white }}>Cuenta</Text>
+              )}
+            </View>
+            {isAuth && (
+              <Avatar
+                uri={user.avatar_url}
+                size={72}
+                onPress={onChangeAvatar}
+                loading={avatarLoading}
+              />
             )}
           </View>
-          {isAuth && (
-            <Avatar
-              uri={user.avatar_url}
-              size={72}
-              onPress={onChangeAvatar}
-              loading={avatarLoading}
-            />
-          )}
-        </View>
-      </BrandGradient>
+        </BrandGradient>
 
-      <View className="gap-3 px-5">
-        <Card elevated>
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-3">
-              <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-50">
-                <Moon size={22} color={colors.brand[700]} strokeWidth={2} />
+        <View className="gap-6 px-4">
+          {!isAuth && (
+            <View className="bg-card rounded-2xl border border-border p-5 gap-4 shadow-sm">
+              <View className="flex-row items-center gap-4">
+                <View className="h-12 w-12 items-center justify-center rounded-full bg-brand-500">
+                  <User size={24} color={colors.white} />
+                </View>
+                <View className="flex-1">
+                  <Text variant="subtitle" className="text-foreground">Inicia sesión</Text>
+                  <Text variant="caption" className="text-muted-foreground mt-0.5">
+                    Accede a tu cuenta para ver tu información y postular.
+                  </Text>
+                </View>
               </View>
-              <View>
-                <Text variant="subtitle">Modo oscuro</Text>
-                <Text variant="caption" className="mt-0.5">
-                  Alternar tema claro/oscuro
-                </Text>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Button label="Iniciar sesión" onPress={() => router.push('/login')} />
+                </View>
+                <View className="flex-1">
+                  <Button label="Crear cuenta" variant="secondary" onPress={() => router.push('/register')} />
+                </View>
               </View>
             </View>
-            <Switch 
-              value={theme === 'dark'}
-              onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
-              trackColor={{ false: colors.border, true: colors.brand[500] }}
-              thumbColor={colors.white}
-            />
-          </View>
-        </Card>
+          )}
 
-        {isAuth ? (
-          <Card elevated>
-            {memberSince(user.created_at) && (
-              <Text variant="caption">
-                Miembro desde {memberSince(user.created_at)}
-              </Text>
-            )}
-
-            {user.phone && (
-              <View className="mt-3 flex-row items-center gap-2">
-                <Phone size={16} color={colors.mutedForeground} strokeWidth={2} />
-                <Text variant="body">{user.phone}</Text>
+          {/* Configuración */}
+          <View className="gap-2">
+            <Text variant="caption" className="px-2 text-muted-foreground uppercase font-bold tracking-wider">Configuración</Text>
+            <View className="bg-card rounded-2xl border border-border overflow-hidden">
+              <View className="flex-row items-center justify-between p-4 border-b border-border">
+                <View className="flex-row items-center gap-3">
+                  <Moon size={20} color={colors.foreground} />
+                  <Text variant="body" className="text-foreground">Modo oscuro</Text>
+                </View>
+                <Switch 
+                  value={theme === 'dark'}
+                  onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
+                  trackColor={{ false: colors.border, true: colors.brand[500] }}
+                  thumbColor={colors.white}
+                />
               </View>
-            )}
+              
+              {isAuth && user?.phone && (
+                <View className="flex-row items-center p-4 border-b border-border gap-3">
+                  <Phone size={20} color={colors.foreground} />
+                  <Text variant="body" className="text-foreground flex-1">{user.phone}</Text>
+                </View>
+              )}
 
-            <View className="mt-4">
+              {isAuth && memberSince(user?.created_at) && (
+                <View className="flex-row items-center p-4 gap-3">
+                  <Calendar size={20} color={colors.mutedForeground} />
+                  <Text variant="body" className="text-muted-foreground flex-1">
+                    Miembro desde {memberSince(user.created_at)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Repartidor */}
+          <View className="gap-2">
+            <Text variant="caption" className="px-2 text-muted-foreground uppercase font-bold tracking-wider">Repartidor</Text>
+            <View className="bg-card rounded-2xl border border-border p-4 gap-4">
+              <View className="flex-row items-center gap-4">
+                <View className="h-12 w-12 bg-brand-500 rounded-full items-center justify-center">
+                  <Bike size={24} color={colors.white} />
+                </View>
+                <View className="flex-1">
+                  <Text variant="subtitle" className="text-foreground">
+                    {isCourier ? 'Perfil de Repartidor' : '¿Quieres ser repartidor?'}
+                  </Text>
+                  <Text variant="caption" className="text-muted-foreground mt-0.5">
+                    {isCourier
+                      ? 'Gestiona tus ofertas desde la pestaña dedicada.'
+                      : 'Postula a las tiendas y reparte en tu zona.'}
+                  </Text>
+                </View>
+              </View>
+
+              {isCourier ? (
+                <>
+                  <TouchableOpacity 
+                    className="flex-row items-center justify-between bg-muted rounded-xl p-4 mt-2 active:opacity-80"
+                    onPress={() => router.push('/courier-reviews')}
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <Star size={20} color={colors.amber} fill={average > 0 ? colors.amber : 'transparent'} />
+                      <Text variant="body" className="font-medium text-foreground">Mis Reseñas</Text>
+                    </View>
+                    <View className="flex-row items-center gap-2">
+                      <Text variant="subtitle" className="text-foreground">
+                        {ratingsLoading ? '...' : (average > 0 ? average.toFixed(1) : 'S/N')}
+                      </Text>
+                      <ChevronRight size={16} color={colors.mutedForeground} />
+                    </View>
+                  </TouchableOpacity>
+                  <Button 
+                    label="Dejar de ser repartidor" 
+                    variant="secondary" 
+                    onPress={onQuitCourier}
+                    loading={quitting}
+                  />
+                </>
+              ) : (
+                <Button
+                  label="Soy repartidor"
+                  onPress={() => router.push('/courier-onboarding')}
+                />
+              )}
+            </View>
+          </View>
+
+          {/* Tiendas */}
+          <View className="gap-2">
+            <Text variant="caption" className="px-2 text-muted-foreground uppercase font-bold tracking-wider">Negocios</Text>
+            <View className="bg-card rounded-2xl border border-border p-4 gap-4">
+              <View className="flex-row items-center gap-4">
+                <View className="h-12 w-12 bg-brand-500 rounded-full items-center justify-center">
+                  <StoreIcon size={24} color={colors.white} />
+                </View>
+                <View className="flex-1">
+                  <Text variant="subtitle" className="text-foreground">¿Tienes un negocio?</Text>
+                  <Text variant="caption" className="text-muted-foreground mt-0.5">
+                    Crea y administra tu tienda web.
+                  </Text>
+                </View>
+              </View>
               <Button
-                label="Cerrar sesión"
+                label="Ir a caseritapp.cl"
                 variant="secondary"
                 onPress={() => {
-                  void logout();
+                  void Linking.openURL(WEB_URL);
                 }}
               />
             </View>
-          </Card>
-        ) : (
-          <Card elevated>
-            <View className="flex-row items-center gap-3">
-              <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-50">
-                <User size={22} color={colors.brand[700]} strokeWidth={2} />
-              </View>
-              <View className="flex-1">
-                <Text variant="subtitle">Inicia sesión</Text>
-                <Text variant="caption" className="mt-0.5">
-                  Accede a tu cuenta para ver tu información.
-                </Text>
-              </View>
-            </View>
-            <View className="gap-2 pt-4">
-              <Button label="Iniciar sesión" onPress={() => router.push('/login')} />
-              <Button label="Crear cuenta" variant="secondary" onPress={() => router.push('/register')} />
-            </View>
-          </Card>
-        )}
-
-        {/* Repartidor: suma el rol delivery (con sesión) o lleva a su registro. */}
-        <Card elevated>
-          <View className="flex-row items-center gap-3">
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-50">
-              <Bike size={22} color={colors.brand[700]} strokeWidth={2} />
-            </View>
-            <View className="flex-1">
-              <Text variant="subtitle">
-                {isCourier ? 'Perfil de Repartidor' : '¿Quieres ser repartidor?'}
-              </Text>
-              <Text variant="caption" className="mt-0.5">
-                {isCourier
-                  ? 'Gestiona tus ofertas desde la pestaña dedicada.'
-                  : 'Postula a las tiendas y reparte en tu zona.'}
-              </Text>
-            </View>
           </View>
-          {isCourier ? (
-            <View className="pt-4 flex-col gap-4 border-t border-border mt-4">
-              <View className="flex-row items-center justify-between">
-                <Text variant="body" className="font-medium text-foreground">Mi Calificación</Text>
-                <TouchableOpacity 
-                  className="flex-row items-center gap-1 bg-muted px-3 py-1.5 rounded-lg active:opacity-80 transition-colors"
-                  onPress={() => router.push('/courier-reviews')}
-                >
-                  <Star size={20} color={colors.amber} fill={average > 0 ? colors.amber : 'transparent'} />
-                  <Text variant="subtitle">
-                    {ratingsLoading ? '...' : (average > 0 ? average.toFixed(1) : 'S/N')}
-                  </Text>
-                  <ChevronRight size={16} color={colors.brand[700]} />
-                </TouchableOpacity>
-              </View>
-              <Button 
-                label="Ya no quiero ser repartidor" 
-                variant="secondary" 
-                onPress={onQuitCourier}
-                loading={quitting}
-              />
-            </View>
-          ) : (
-            <View className="pt-4">
-              <Button
-                label="Soy repartidor"
-                onPress={() => router.push('/courier-onboarding')}
-              />
-            </View>
+
+          {/* Cerrar sesión */}
+          {isAuth && (
+            <TouchableOpacity 
+              onPress={logout} 
+              className="mt-2 flex-row items-center justify-center gap-2 p-4 active:opacity-70"
+            >
+              <LogOut size={20} color={colors.destructive} />
+              <Text variant="subtitle" className="text-destructive">Cerrar sesión</Text>
+            </TouchableOpacity>
           )}
-        </Card>
 
-        {/* Las tiendas son del web: derivar a caseritapp.cl. */}
-        <Card elevated>
-          <View className="flex-row items-center gap-3">
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-50">
-              <StoreIcon size={22} color={colors.brand[700]} strokeWidth={2} />
-            </View>
-            <View className="flex-1">
-              <Text variant="subtitle">¿Tienes un negocio?</Text>
-              <Text variant="caption" className="mt-0.5">
-                Crea y administra tu tienda desde el sitio web.
-              </Text>
-            </View>
-          </View>
-          <View className="pt-4">
-            <Button
-              label="Créalo en caseritapp.cl"
-              variant="secondary"
-              onPress={() => {
-                void Linking.openURL(WEB_URL);
-              }}
-            />
-          </View>
-        </Card>
-
-        {!isAuth && (
-          <Text variant="caption" className="px-1">
-            Explorar tiendas y catálogos no requiere cuenta.
-          </Text>
-        )}
-      </View>
+        </View>
+      </ScrollView>
     </Screen>
   );
 }
