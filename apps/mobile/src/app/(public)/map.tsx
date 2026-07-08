@@ -297,6 +297,8 @@ export default function MapScreen() {
               )}
               initialRegion={region}
               onPress={handleMapPress}
+              onRegionChangeComplete={() => {}}
+              onPanDrag={() => {}}
               showsUserLocation={perm === 'granted'}
               showsMyLocationButton={perm === 'granted'}
               showsPointsOfInterest={false}
