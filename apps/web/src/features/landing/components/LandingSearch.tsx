@@ -9,9 +9,9 @@ export function LandingSearch() {
     <div className="flex justify-center">
       <Button
         onClick={() => navigate('/explorar')}
-        size="lg"
+        size="md"
         className="h-16 rounded-2xl px-12 text-lg shadow-lg hover:scale-105 transition-transform duration-300"
-        variant="primary"
+        variant="default"
         icon={<Search className="size-6" />}
       >
         Buscar comercios

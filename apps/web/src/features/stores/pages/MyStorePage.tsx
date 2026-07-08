@@ -234,7 +234,7 @@ export function MyStorePage() {
         extra={
           <Button
             type="button"
-            variant={showPreview ? 'primary' : 'outline'}
+            variant={showPreview ? 'primary' : 'default'}
             onClick={() => setShowPreview(!showPreview)}
             className="gap-2"
           >

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ExternalLink } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import logoUrl from '@/assets/icons/logo_caseritapp3.webp';
 

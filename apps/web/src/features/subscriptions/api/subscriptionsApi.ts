@@ -12,5 +12,11 @@ export const subscriptionsApi = {
   checkout: (data: CheckoutInput) =>
     api.post<CheckoutResult>('/subscriptions/checkout', data).then((r) => r.data),
 
+  /** Reconcilia el pago al volver del checkout (payment_id de la URL de MercadoPago). */
+  confirm: (paymentId: string) =>
+    api
+      .post<Subscription>('/subscriptions/confirm', { payment_id: paymentId })
+      .then((r) => r.data),
+
   cancel: () => api.post<Subscription>('/subscriptions/cancel').then((r) => r.data),
 };

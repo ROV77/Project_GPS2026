@@ -20,23 +20,19 @@
  * (onRegionChangeComplete) — más espacio real para explorar sin estorbos.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, ActivityIndicator, Linking, Platform, Pressable, Keyboard } from 'react-native';
+import { View, ActivityIndicator, Linking, Pressable, Keyboard } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import * as Location from 'expo-location';
-import ClusteredMapView from 'react-native-map-clustering';
-import { UrlTile } from 'react-native-maps';
 import type BottomSheet from '@gorhom/bottom-sheet';
 import { AlertTriangle } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
-import { useThemeColors, colors } from '@/ui/theme';
-import { useThemeStore } from '@/ui/themeStore';
+import { colors } from '@/ui/theme';
 import { useStores } from '@/features/stores/hooks';
-import { StoreMarker } from '@/components/StoreMarker';
-import { ClusterMarker } from '@/components/ClusterMarker';
+import { LeafletMap, type LeafletMapHandle } from '@/components/LeafletMap';
 import { StoreDetailSheet } from '@/components/StoreDetailSheet';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
@@ -50,18 +46,12 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.25,
 };
 
-const CARTO_URL_LIGHT = 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
-const CARTO_URL_DARK = 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
-
 // Altura del bloque SearchBar + CategoryChips (fija por diseño, ver componentes).
 const FILTERS_HEIGHT = 108;
 
 type PermState = 'undetermined' | 'granted' | 'denied';
 
 export default function MapScreen() {
-  const colors = useThemeColors();
-  const { theme } = useThemeStore();
-  const insets = useSafeAreaInsets();
   // ponytail: carga total de tiendas de una vez; si algún día superan ~500,
   // crear endpoint nearby con bounding box en la API.
   const { stores, loading, error, reload } = useStores({ limit: 500 });
@@ -75,20 +65,26 @@ export default function MapScreen() {
 
   const params = useLocalSearchParams<{ focusId?: string; focusLat?: string; focusLng?: string }>();
   const sheetRef = useRef<BottomSheet>(null);
-  // Instancia real del MapView (react-native-map-clustering la reenvía por `mapRef`).
-  // ponytail: `any` — los tipos de la lib declaran mapRef como Ref<MapView>, pero
-  // en runtime entrega la instancia (con animateToRegion). Ver ClusteredMapView.js.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mapViewRef = useRef<any>(null);
+  // Handle imperativo del mapa Leaflet (WebView): expone flyTo. Ver LeafletMap.tsx.
+  const mapViewRef = useRef<LeafletMapHandle>(null);
   // Último focusId procesado (viene del detalle de tienda) para no repetir.
   const handledFocus = useRef<string | null>(null);
-  // react-native-map-clustering fija sus valores por defecto (mapRef,
-  // clusteringEnabled, onMarkersChange, onClusterPress, superClusterRef) vía
-  // `Component.defaultProps`, mecanismo que React 19 ya no soporta en
-  // componentes de función/forwardRef. Sin pasarlos explícitos, quedan
-  // `undefined`: `mapRef` revienta al montar/desmontar y `clusteringEnabled`
-  // (falsy) desactiva el clustering en silencio. Se pasan todos a mano.
-  const superClusterRef = useRef(null);
+  const filtersHeight = useSharedValue(FILTERS_HEIGHT);
+
+  const filtersStyle = useAnimatedStyle(() => ({
+    height: filtersHeight.value,
+    overflow: 'hidden',
+  }));
+
+  // Arrastrar el mapa colapsa el buscador/chips para dar más espacio.
+  const handlePanDrag = useCallback(() => {
+    filtersHeight.value = withTiming(0, { duration: 180 });
+  }, [filtersHeight]);
+
+  // Al soltar el gesto, el buscador/chips reaparecen tras una pausa breve.
+  const handleRegionChangeComplete = useCallback(() => {
+    filtersHeight.value = withDelay(400, withTiming(FILTERS_HEIGHT, { duration: 220 }));
+  }, [filtersHeight]);
 
   // Tocar un marker selecciona la tienda y abre el sheet — sin mover el mapa
   // ni depender de ningún otro componente (evita el rebote del carrusel).
@@ -109,10 +105,7 @@ export default function MapScreen() {
     const latitude = Number(store.latitude);
     const longitude = Number(store.longitude);
     if (Number.isNaN(latitude) || Number.isNaN(longitude)) return;
-    mapViewRef.current?.animateToRegion(
-      { latitude, longitude, latitudeDelta: 0.02, longitudeDelta: 0.02 },
-      600,
-    );
+    mapViewRef.current?.flyTo(latitude, longitude);
     setSelectedId(store.id);
     sheetRef.current?.snapToIndex(1);
     Keyboard.dismiss();
@@ -226,31 +219,34 @@ export default function MapScreen() {
   };
 
   return (
-    <View className="flex-1 bg-background relative">
-      {/* Error state if needed */}
-      {error && (
-        <View style={{ position: 'absolute', top: insets.top + 130, left: 20, right: 20, zIndex: 40 }} className="items-center">
-          <Card elevated className="w-full items-center">
-            <Text variant="subtitle" style={{ color: colors.destructive }}>Error al cargar tiendas</Text>
-            <View className="mt-3 w-full">
+    <Screen>
+      {/* Título + estado de carga/error (siempre visible, no colapsa) */}
+      <View className="px-5 pb-2 pt-3">
+        <Text variant="title">Mapa de tiendas</Text>
+        {error && (
+          <>
+            <Text variant="caption" className="mt-1" style={{ color: colors.destructive }}>
+              Error al cargar tiendas
+            </Text>
+            <View className="mt-2">
               <Button label="Reintentar" variant="secondary" onPress={reload} />
             </View>
-          </Card>
-        </View>
-      )}
+          </>
+        )}
+      </View>
 
-      {/* Buscador + chips de categoría */}
-      <View style={{ position: 'absolute', top: Math.max(insets.top, 16), left: 0, right: 0, zIndex: 20 }}>
-        <View>
+      {/* Buscador + chips de categoría: se colapsan mientras se arrastra el mapa.
+          El desplegable de resultados va fuera del área que colapsa (overflow) y
+          se posiciona bajo el buscador. */}
+      <View style={{ zIndex: 20 }}>
+        <Animated.View style={filtersStyle}>
           <View className="px-5 pb-3">
-            <View style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 }}>
-              <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar aquí" />
-            </View>
+            <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar tiendas en el mapa" />
           </View>
           <View className="pb-3">
             <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
           </View>
-        </View>
+        </Animated.View>
 
         {searchMatches.length > 0 && (
           <View style={{ position: 'absolute', top: 54, left: 20, right: 20, zIndex: 30 }}>
@@ -274,7 +270,7 @@ export default function MapScreen() {
         )}
       </View>
 
-      <View className="flex-1 bg-card">
+      <View className="mx-5 flex-1 overflow-hidden rounded-2xl border bg-card" style={{ borderColor: colors.border }}>
         {locating ? (
           <View className="flex-1 items-center justify-center gap-3">
             <ActivityIndicator color={colors.brand[700]} />
@@ -282,63 +278,21 @@ export default function MapScreen() {
           </View>
         ) : (
           <View style={{ flex: 1 }}>
-            <ClusteredMapView
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              mapRef={(map: any) => { mapViewRef.current = map; }}
-              superClusterRef={superClusterRef}
-              clusteringEnabled
-              onMarkersChange={() => {}}
-              onClusterPress={() => {}}
-              // Burbuja de cluster propia (ver ClusterMarker.tsx): la del
-              // ClusterMarker interno de la librería anida un halo
-              // position:absolute que en Android (Fabric) a veces se
-              // snapshotea a medio layout y sale recortado/glitcheado.
-              renderCluster={(cluster) => (
-                <ClusterMarker
-                  key={`cluster-${cluster.id}`}
-                  onPress={cluster.onPress}
-                  geometry={cluster.geometry}
-                  properties={cluster.properties}
-                />
-              )}
-              initialRegion={region}
-              onPress={handleMapPress}
-              onRegionChangeComplete={() => {}}
-              onPanDrag={() => {}}
-              showsUserLocation={perm === 'granted'}
-              showsMyLocationButton={perm === 'granted'}
-              showsPointsOfInterest={false}
-              showsBuildings={false}
-              showsTraffic={false}
-              mapType={Platform.OS === 'android' ? 'none' : 'standard'}
-              style={{ flex: 1 }}
-              radius={60}
-              minPoints={3}
-              maxZoom={20}
-              minZoom={1}
-              extent={512}
-              nodeSize={64}
-              spiralEnabled={false}
-              clusterColor={colors.brand[700]}
-              clusterTextColor={colors.white}
-              edgePadding={{ top: 50, left: 50, right: 50, bottom: 50 }}
-            >
-              <UrlTile
-                urlTemplate={theme === 'dark' ? CARTO_URL_DARK : CARTO_URL_LIGHT}
-                maximumZ={19}
-                flipY={false}
-                tileSize={256}
-              />
-              {filteredStores.map((s) => (
-                <StoreMarker
-                  key={s.id}
-                  store={s}
-                  coordinate={{ latitude: Number(s.latitude), longitude: Number(s.longitude) }}
-                  selected={s.id === selectedId}
-                  onPress={handleMarkerPress}
-                />
-              ))}
-            </ClusteredMapView>
+            <LeafletMap
+              ref={mapViewRef}
+              region={region}
+              stores={filteredStores}
+              selectedId={selectedId}
+              userLocation={
+                perm === 'granted'
+                  ? { latitude: region.latitude, longitude: region.longitude }
+                  : null
+              }
+              onMarkerPress={handleMarkerPress}
+              onMapPress={handleMapPress}
+              onPanStart={handlePanDrag}
+              onMoveEnd={handleRegionChangeComplete}
+            />
             <View
               style={{
                 position: 'absolute',
@@ -357,7 +311,7 @@ export default function MapScreen() {
             <View
               style={{
                 position: 'absolute',
-                top: insets.top + 130, // Just below the search area
+                top: 6,
                 right: 8,
                 backgroundColor: 'rgba(255,255,255,0.75)',
                 borderRadius: 4,
@@ -366,7 +320,7 @@ export default function MapScreen() {
               }}
             >
               <Text variant="caption" style={{ fontSize: 9, color: colors.mutedForeground }}>
-                &copy; CARTO &copy; OSM
+                &copy; CARTO &copy; OpenStreetMap
               </Text>
             </View>
           </View>
@@ -398,6 +352,6 @@ export default function MapScreen() {
       )}
 
       <StoreDetailSheet ref={sheetRef} store={selectedStore} onClose={() => setSelectedId(null)} />
-    </View>
+    </Screen>
   );
 }

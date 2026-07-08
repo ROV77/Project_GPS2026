@@ -45,6 +45,13 @@ export default function StoreDetailScreen() {
   const { store, products, loading, error, reload } = useStoreDetail(id, initialStore);
   const cartRef = useRef<BottomSheet>(null);
 
+  // Carrito acotado a esta tienda: solo when hay items mostramos OrderBar y
+  // montamos CartSheet. Antes estos se renderizaban siempre (con index={-1} el
+  // CartSheet colapsa su contenido pero el contenedor inline de @gorhom
+  // bottom-sheet igual dibujaba una franja visible al pie — "la barra vacía").
+  const itemCount = useCart((s) => (s.storeId === store?.id ? Object.keys(s.items).length : 0));
+  const cartActive = itemCount > 0;
+
   return (
     <Screen>
       {/* Header con botón volver (consistente con el resto de la app) */}
@@ -85,8 +92,8 @@ export default function StoreDetailScreen() {
             )}
             ListEmptyComponent={loading ? <CatalogSkeleton /> : <CatalogEmpty />}
           />
-          <OrderBar store={store} onPress={() => cartRef.current?.expand()} />
-          <CartSheet ref={cartRef} store={store} />
+          {cartActive && <OrderBar store={store} onPress={() => cartRef.current?.expand()} />}
+          {cartActive && <CartSheet ref={cartRef} store={store} />}
         </>
       ) : error ? (
         <ErrorState onRetry={reload} />

@@ -144,6 +144,30 @@ const CHILE_REGIONS: Array<{ region: string; communes: string[] }> = [
 ];
 
 async function main() {
+  // Los estados de suscripción/pago y los roles son catálogo base: deben existir
+  // siempre, aunque la BD ya tenga datos de un seed anterior (versiones previas
+  // no creaban estas tablas). Se insertan de forma idempotente (skipDuplicates)
+  // ANTES del guard de skip para que nunca falten.
+  await Promise.all([
+    prisma.subscriptions_states.createMany({
+      data: [
+        { name: 'pending' },
+        { name: 'active' },
+        { name: 'expired' },
+        { name: 'canceled' },
+      ],
+      skipDuplicates: true,
+    }),
+    prisma.payments_states.createMany({
+      data: [
+        { name: 'pending' },
+        { name: 'approved' },
+        { name: 'rejected' },
+      ],
+      skipDuplicates: true,
+    }),
+  ]);
+
   const existing = await prisma.categories.count();
   if (existing > 0) {
     console.log('La base ya tiene datos; se omite el seed.');
@@ -252,17 +276,8 @@ async function main() {
     }),
   ]);
 
-  // ─── Estados de suscripción y de pago ──────────────────────────────────────
-  await Promise.all([
-    prisma.subscriptions_states.create({ data: { name: 'pending' } }),
-    prisma.subscriptions_states.create({ data: { name: 'active' } }),
-    prisma.subscriptions_states.create({ data: { name: 'expired' } }),
-    prisma.subscriptions_states.create({ data: { name: 'canceled' } }),
-    prisma.payments_states.create({ data: { name: 'pending' } }),
-    prisma.payments_states.create({ data: { name: 'approved' } }),
-    prisma.payments_states.create({ data: { name: 'rejected' } }),
-  ]);
-
+  // Estados de suscripción y de pago: ya asegurados idempotente al inicio de
+  // main() (ver createMas con skipDuplicates arriba), antes del guard de skip.
   // ─── Estados de vacantes y postulaciones de repartidores ───────────────────
   await Promise.all([
     prisma.delivery_vacancies_states.createMany({
