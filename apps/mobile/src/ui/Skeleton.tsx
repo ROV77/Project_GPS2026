@@ -1,18 +1,19 @@
 import React, { useEffect } from 'react';
-import { ViewStyle, StyleProp } from 'react-native';
+import { ViewStyle, StyleProp, DimensionValue } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
   withSequence,
+  cancelAnimation,
 } from 'react-native-reanimated';
 
 interface SkeletonProps {
   className?: string;
   style?: StyleProp<ViewStyle>;
-  width?: number | string;
-  height?: number | string;
+  width?: DimensionValue;
+  height?: DimensionValue;
   borderRadius?: number;
 }
 
@@ -28,6 +29,7 @@ export function Skeleton({ className, style, width, height, borderRadius = 8 }: 
       -1, // Loop indefinitely
       true // Reverse direction
     );
+    return () => cancelAnimation(opacity);
   }, [opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
