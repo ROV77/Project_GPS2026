@@ -4,7 +4,7 @@
  */
 import { View, TextInput } from 'react-native';
 import { Search } from 'lucide-react-native';
-import { colors, fonts } from '@/ui/theme';
+import { useThemeColors, fonts } from '@/ui/theme';
 
 export function SearchBar({
   value,
@@ -15,17 +15,22 @@ export function SearchBar({
   onChangeText: (t: string) => void;
   placeholder?: string;
 }) {
+  const colors = useThemeColors();
   return (
-    <View className="h-12 flex-row items-center gap-2 rounded-lg border border-border bg-card px-3">
-      <Search size={20} color={colors.mutedForeground} strokeWidth={2} />
+    <View className="h-12 flex-row items-center gap-2 rounded-xl border border-border bg-card px-4">
+      <Search size={22} color={colors.brand[400]} strokeWidth={2.5} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.mutedForeground}
         returnKeyType="search"
-        className="flex-1"
-        style={{ fontFamily: fonts.regular, fontSize: 15, color: colors.foreground }}
+        className="flex-1 text-brand-700 dark:text-white"
+        style={{ 
+          fontFamily: fonts.semibold, 
+          fontSize: 16 
+        }}
+        selectionColor={colors.brand[400]}
       />
     </View>
   );

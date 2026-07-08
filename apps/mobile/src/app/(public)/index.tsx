@@ -38,15 +38,12 @@ import { Skeleton } from '@/ui/Skeleton';
 const COMPACT_FROM = 80;
 const COMPACT_TO = 140;
 
-// Sombra del buscador flotante (monta sobre el gradiente del hero).
 const FLOAT_SHADOW = {
   shadowColor: '#0f1d2e',
   shadowOpacity: 0.18,
   shadowRadius: 16,
   shadowOffset: { width: 0, height: 8 },
   elevation: 8,
-  borderRadius: 10,
-  backgroundColor: colors.card,
 } as const;
 
 export default function HomeScreen() {
