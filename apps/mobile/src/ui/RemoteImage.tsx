@@ -34,10 +34,10 @@ export function RemoteImage({
   if (showFallback) {
     return (
       <View
-        className={`items-center justify-center bg-brand-50 ${className || ''}`}
+        className={`items-center justify-center bg-muted ${className || ''}`}
         style={[{ width: imgWidth, height: imgHeight, borderRadius: rounded }, style]}
       >
-        <StoreIcon size={typeof imgWidth === 'number' ? imgWidth * 0.4 : 24} color={colors.brand[700]} strokeWidth={1.75} />
+        <StoreIcon size={typeof imgWidth === 'number' ? imgWidth * 0.4 : 24} color={colors.mutedForeground} strokeWidth={1.75} />
       </View>
     );
   }

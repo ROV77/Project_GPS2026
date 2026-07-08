@@ -19,7 +19,7 @@ export function StoreCard({ store, onPress }: { store: Store; onPress: () => voi
 
   return (
     <Card onPress={onPress} elevated className="overflow-hidden p-0 border-0">
-      <View className="h-[120px] w-full bg-brand-50">
+      <View className="h-[120px] w-full bg-muted">
         <RemoteImage
           uri={store.logo_url}
           rounded={0}
