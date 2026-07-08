@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
+import { LayoutAnimation, Platform, UIManager } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type Theme = 'light' | 'dark';
 
@@ -12,6 +17,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>((set) => ({
   theme: 'light',
   setTheme: (theme) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     set({ theme });
     SecureStore.setItemAsync('app_theme', theme).catch(console.error);
   },
