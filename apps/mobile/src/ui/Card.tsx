@@ -27,7 +27,7 @@ export function Card({
   className?: string;
   elevated?: boolean;
 }) {
-  const base = `rounded-2xl border border-border bg-card p-4 ${className ?? ''}`;
+  const base = `rounded-2xl border border-border bg-card p-4 transition-colors duration-500 ${className ?? ''}`;
   const shadow = elevated ? ELEVATED : undefined;
   if (onPress) {
     return (

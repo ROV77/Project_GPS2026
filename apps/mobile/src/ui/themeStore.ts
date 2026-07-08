@@ -10,20 +10,15 @@ export type Theme = 'light' | 'dark';
 
 export interface ThemeTransition {
   active: boolean;
-  x: number;
-  y: number;
+  oldTheme: Theme;
   nextTheme: Theme;
 }
 
 interface ThemeState {
   theme: Theme;
   transition: ThemeTransition | null;
-  // triggerTransition inicia la animación circular
-  triggerTransition: (x: number, y: number, nextTheme: Theme) => void;
-  // commitTheme es llamado por el _layout cuando el círculo cubre la pantalla
-  commitTheme: () => void;
-  // fallback original o sin transición
-  setTheme: (theme: Theme) => void;
+  triggerTransition: (nextTheme: Theme) => void;
+  clearTransition: () => void;
   loadTheme: () => Promise<void>;
 }
 
@@ -31,23 +26,20 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   theme: 'light',
   transition: null,
   
-  triggerTransition: (x, y, nextTheme) => {
-    set({ transition: { active: true, x, y, nextTheme } });
+  triggerTransition: (nextTheme) => {
+    const oldTheme = get().theme;
+    if (oldTheme === nextTheme) return;
+    
+    // Inicia la animación y cambia el tema de inmediato para Tailwind crossfade
+    set({ 
+      theme: nextTheme,
+      transition: { active: true, oldTheme, nextTheme } 
+    });
+    SecureStore.setItemAsync('app_theme', nextTheme).catch(console.error);
   },
 
-  commitTheme: () => {
-    const state = get();
-    if (state.transition?.active) {
-      const next = state.transition.nextTheme;
-      set({ theme: next, transition: null });
-      SecureStore.setItemAsync('app_theme', next).catch(console.error);
-    }
-  },
-
-  setTheme: (theme) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    set({ theme });
-    SecureStore.setItemAsync('app_theme', theme).catch(console.error);
+  clearTransition: () => {
+    set({ transition: null });
   },
   
   loadTheme: async () => {

@@ -62,9 +62,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-        {/* Cada grupo de rutas maneja su propio header; aquí solo el contenedor. */}
-        <Stack screenOptions={{ headerShown: false }} />
         <ThemeTransitionOverlay />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }} />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
