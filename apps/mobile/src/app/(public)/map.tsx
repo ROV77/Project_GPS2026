@@ -206,7 +206,7 @@ export default function MapScreen() {
   };
 
   return (
-    <Screen edges={['top']}>
+    <Screen edges={{ top: true, bottom: false }}>
       {/* Mapa en fondo absoluto cubriendo todo */}
       <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
         {locating ? (
@@ -258,7 +258,7 @@ export default function MapScreen() {
               <Text variant="caption" style={{ color: colors.destructive }}>
                 Error al cargar tiendas
               </Text>
-              <Button label="Reintentar" variant="secondary" size="sm" onPress={reload} />
+              <Button label="Reintentar" variant="secondary" onPress={reload} />
             </Card>
           </View>
         )}
