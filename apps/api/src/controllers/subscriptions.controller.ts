@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import type { CheckoutInput } from '@caserita/validations';
+import type { CheckoutInput, ConfirmInput } from '@caserita/validations';
 import { subscriptionsService } from '../services/subscriptions.service';
 import { getPlanCapabilities } from '../services/plan-access.service';
 import { parseBigIntId } from '../lib/http';
@@ -31,6 +31,24 @@ export const checkout = async (_req: Request, res: Response) => {
   }
   const data = await subscriptionsService.startCheckout(storeId, planId);
   res.status(201).json(data);
+};
+
+/**
+ * Confirma el pago al volver del Checkout Pro. El frontend llama esto con el
+ * `payment_id` que MercadoPago adjunta a la URL de retorno, para activar el
+ * plan en el acto sin depender de que el webhook haya llegado. Devuelve la
+ * suscripción vigente (con capacidades), igual que GET /me.
+ */
+export const confirmCheckout = async (_req: Request, res: Response) => {
+  const storeId = res.locals.storeId as bigint | null;
+  if (!storeId) {
+    res.status(400).json({ error: 'No tienes una tienda asociada' });
+    return;
+  }
+  const { payment_id } = res.locals.body as ConfirmInput;
+  const data = await subscriptionsService.confirmCheckout(storeId, payment_id);
+  const capabilities = getPlanCapabilities(data.plan);
+  res.json({ ...data, capabilities });
 };
 
 export const cancelSubscription = async (_req: Request, res: Response) => {

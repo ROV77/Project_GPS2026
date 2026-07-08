@@ -9,6 +9,7 @@ import { usePlans } from '../hooks/usePlans';
 import {
   useMySubscription,
   useCheckout,
+  useConfirmCheckout,
   useCancelSubscription,
 } from '@/features/subscriptions/hooks/useSubscription';
 import type { Plan } from '../types';
@@ -28,21 +29,38 @@ export function PlansListPage() {
   const { data, isLoading } = usePlans({ page: 1, limit: 100 });
   const { data: subscription, refetch: refetchSubscription } = useMySubscription();
   const checkout = useCheckout();
+  const confirm = useConfirmCheckout();
   const cancel = useCancelSubscription();
 
   useEffect(() => {
     const status = searchParams.get('status');
     if (!status) return;
 
-    const info = STATUS_TOASTS[status];
-    if (info?.kind === 'success') toast.success(info.message);
-    else if (info?.kind === 'error') toast.error(info.message);
-    else if (info) toast(info.message);
+    // MercadoPago adjunta el id del pago a la URL de retorno (payment_id, o
+    // collection_id en integraciones antiguas). Con él confirmamos el pago en
+    // el acto en vez de esperar el webhook, que en sandbox puede tardar o no
+    // llegar; si no viene, caemos al comportamiento antiguo (toast + refetch).
+    const paymentId = searchParams.get('payment_id') ?? searchParams.get('collection_id');
 
-    refetchSubscription();
-    const next = new URLSearchParams(searchParams);
-    next.delete('status');
-    setSearchParams(next, { replace: true });
+    if (status === 'success' && paymentId) {
+      confirm.mutate(paymentId, {
+        onSuccess: (data) =>
+          toast.success(`¡Pago aprobado! Tu plan ${data.plan.name} ya está activo.`),
+        onError: () => {
+          toast(STATUS_TOASTS.pending.message);
+          refetchSubscription();
+        },
+      });
+    } else {
+      const info = STATUS_TOASTS[status];
+      if (info?.kind === 'success') toast.success(info.message);
+      else if (info?.kind === 'error') toast.error(info.message);
+      else if (info) toast(info.message);
+      refetchSubscription();
+    }
+
+    // Limpia los params que agrega MercadoPago (status, payment_id, etc.).
+    setSearchParams(new URLSearchParams(), { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
