@@ -28,6 +28,7 @@ import { colors } from '@/ui/theme';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
 import { StoreCard } from '@/components/StoreCard';
+import { StoreCarousel } from '@/components/StoreCarousel';
 import { useStores } from '@/features/stores/hooks';
 import type { Store } from '@/features/stores/types';
 
@@ -100,6 +101,24 @@ export default function HomeScreen() {
     });
   }, [stores, search, category]);
 
+  // Derived sections for the Netflix-style layout
+  const topRated = useMemo(() => {
+    return [...stores].sort((a, b) => Number(b.avg_rating) - Number(a.avg_rating)).slice(0, 10);
+  }, [stores]);
+
+  const categorizedStores = useMemo(() => {
+    const map = new Map<string, Store[]>();
+    for (const s of stores) {
+      if (!s.category_name) continue;
+      if (!map.has(s.category_name)) map.set(s.category_name, []);
+      map.get(s.category_name)!.push(s);
+    }
+    // Only return categories with at least 1 store
+    return Array.from(map.entries()).map(([name, list]) => ({ name, stores: list }));
+  }, [stores]);
+
+  const isFiltering = search.trim().length > 0 || category !== null;
+
   return (
     <Screen edges={{ top: false }}>
       {/* Barra de estado: texto claro sobre el hero navy, oscuro sobre la barra compacta. */}
@@ -128,7 +147,7 @@ export default function HomeScreen() {
         ref={listRef}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        data={loading ? [] : filtered}
+        data={loading ? [] : (isFiltering ? filtered : [])}
         keyExtractor={(s: Store) => s.id}
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
@@ -169,12 +188,22 @@ export default function HomeScreen() {
               <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
             </View>
 
-            {/* Sección */}
-            {!loading && !error ? (
-              <View className="px-5 pb-2">
-                <Text variant="subtitle">Cerca de ti</Text>
+            {/* Netflix-style Home Sections (Only visible if no filter applied) */}
+            {!isFiltering && !loading && !error && (
+              <View className="pb-8 mt-2">
+                <StoreCarousel title="Las mejores valoradas 🏆" stores={topRated} autoScroll={true} />
+                {categorizedStores.map((cat) => (
+                  <StoreCarousel key={cat.name} title={cat.name} stores={cat.stores} />
+                ))}
               </View>
-            ) : null}
+            )}
+
+            {/* Título de Resultados de Búsqueda/Filtro */}
+            {isFiltering && !loading && !error && (
+              <View className="px-5 pb-4 mt-2">
+                <Text variant="subtitle">Resultados ({filtered.length})</Text>
+              </View>
+            )}
           </View>
         }
         renderItem={({ item }) => (

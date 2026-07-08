@@ -17,10 +17,16 @@ export function StoreCard({ store, onPress }: { store: Store; onPress: () => voi
   const meta = [store.category_name, addressShort || store.commune_name].filter(Boolean).join(' · ');
 
   return (
-    <Card onPress={onPress} elevated className="flex-row items-center gap-3">
-      <RemoteImage uri={store.logo_url} size={56} />
+    <Card onPress={onPress} elevated className="overflow-hidden p-0 border-0">
+      <View className="h-[120px] w-full bg-brand-50">
+        <RemoteImage
+          uri={store.logo_url}
+          rounded={0}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </View>
 
-      <View className="flex-1">
+      <View className="p-3">
         <View className="flex-row items-center gap-1">
           <Text variant="subtitle" numberOfLines={1} className="flex-shrink">
             {store.name}
@@ -38,7 +44,7 @@ export function StoreCard({ store, onPress }: { store: Store; onPress: () => voi
 
         <View className="mt-1 flex-row items-center gap-1">
           <Star size={14} color={colors.amber} fill={colors.amber} strokeWidth={0} />
-          <Text variant="caption" className="text-foreground">
+          <Text variant="caption" className="text-foreground font-medium">
             {rating > 0 ? rating.toFixed(1) : 'Nuevo'}
           </Text>
           {store.review_count > 0 ? (
