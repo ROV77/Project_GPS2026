@@ -13,8 +13,10 @@
     --destructive: #dc2626;
     --amber: #f59e0b;
   }
+}
 
-  .dark {
+@media (prefers-color-scheme: dark) {
+  :root {
     --background: #0f172a;
     --foreground: #f8fafc;
     --card: #1e293b;
