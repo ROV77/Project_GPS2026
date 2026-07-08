@@ -17,7 +17,7 @@ import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { RemoteImage } from '@/ui/RemoteImage';
-import { colors } from '@/ui/theme';
+import { useThemeColors, colors } from '@/ui/theme';
 import { getCategoryStyle } from '@/features/stores/categoryStyle';
 import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
 import { formatCLP } from '@/shared/lib/format';
@@ -28,6 +28,7 @@ import { CartSheet } from '@/components/CartSheet';
 import type { Product, Store } from '@/features/stores/types';
 
 export default function StoreDetailScreen() {
+  const colors = useThemeColors();
   const { id, store: storeParam } = useLocalSearchParams<{ id: string; store?: string }>();
   const router = useRouter();
 
@@ -139,6 +140,7 @@ function OrderBar({ store, onPress }: { store: Store; onPress: () => void }) {
 
 /** Ficha superior: logo, nombre, categoría, rating, ubicación, descripción y CTA. */
 function StoreHeader({ store }: { store: Store }) {
+  const colors = useThemeColors();
   const router = useRouter();
   const style = getCategoryStyle(store.category_name);
   const rating = Number(store.avg_rating) || 0;
@@ -232,6 +234,7 @@ function StoreHeader({ store }: { store: Store }) {
  * catálogo (lo primero visible). Si no hay promos, no renderiza nada.
  */
 function PromotionsSection({ products, store }: { products: Product[]; store: Store }) {
+  const colors = useThemeColors();
   const promoted = products.filter((p) => (p.promotions?.length ?? 0) > 0);
   if (promoted.length === 0) return null;
 
@@ -250,6 +253,7 @@ function PromotionsSection({ products, store }: { products: Product[]; store: St
 
 /** Skeletons del catálogo mientras carga (coherente con la Home). */
 function CatalogSkeleton() {
+  const colors = useThemeColors();
   return (
     <View className="gap-3 px-5">
       {[0, 1, 2].map((i) => (
@@ -267,6 +271,7 @@ function CatalogSkeleton() {
 }
 
 function CatalogEmpty() {
+  const colors = useThemeColors();
   return (
     <View className="items-center gap-2 px-8 pt-8">
       <PackageOpen size={40} color={colors.mutedForeground} strokeWidth={1.5} />
@@ -282,6 +287,7 @@ function CatalogEmpty() {
 
 /** Placeholder de la ficha cuando se entra por deep-link (sin params) y aún carga. */
 function StoreHeaderSkeleton() {
+  const colors = useThemeColors();
   return (
     <View className="gap-3 px-5 pt-2">
       <View className="flex-row items-center gap-3">

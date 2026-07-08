@@ -1,12 +1,15 @@
 import { Tabs } from 'expo-router';
 import { Compass, Map as MapIcon, User, Bike, ClipboardList } from 'lucide-react-native';
-import { colors, fonts } from '@/ui/theme';
+import { fonts, useThemeColors } from '@/ui/theme';
+import { useThemeStore } from '@/ui/themeStore';
 import { useSession } from '@/features/auth/session.store';
 import { AnimatedTabIcon } from '@/components/AnimatedTabIcon';
 
 // Navegación principal del cliente: 3 pestañas. Activo en navy de marca,
 // inactivo en muted. Fondo blanco con borde superior fino (look limpio y plano).
 export default function PublicLayout() {
+  const colors = useThemeColors();
+  const { theme } = useThemeStore();
   // Sin sesión, la pestaña Cuenta muestra un aviso "!" para invitar a entrar.
   const status = useSession((s) => s.status);
   const user = useSession((s) => s.user);
@@ -17,8 +20,8 @@ export default function PublicLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.brand[700],
-        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarActiveTintColor: theme === 'dark' ? colors.brand[400] : colors.brand[700],
+        tabBarInactiveTintColor: theme === 'dark' ? '#cbd5e1' : colors.mutedForeground,
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,

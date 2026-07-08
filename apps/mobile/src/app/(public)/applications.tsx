@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, SectionList, ActivityIndicator, Linking } from 'react-native';
 import { Store, CheckCircle } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
@@ -6,28 +6,62 @@ import { Text } from '@/ui/Text';
 import { Card } from '@/ui/Card';
 import { Button } from '@/ui/Button';
 import { Logo } from '@/ui/Logo';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 import { useMyApplications } from '@/features/delivery/hooks';
 import { useSession } from '@/features/auth/session.store';
 import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
 import type { CourierApplication } from '@/features/delivery/types';
+import { CategoryChips, type Category } from '@/components/CategoryChips';
+import { Skeleton } from '@/ui/Skeleton';
 
 const GREEN = '#10b981';
 
 export default function ApplicationsScreen() {
+  const colors = useThemeColors();
   const user = useSession((s) => s.user);
   const { data, loading, refetch } = useMyApplications(user?.id);
+
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [locationFilter, setLocationFilter] = useState<string | null>(null);
+
+  const locationOptions = useMemo<Category[]>(() => {
+    const locations = Array.from(
+      new Set(
+        data
+          .map(a => a.delivery_vacancies?.stores?.communes?.name)
+          .filter((n): n is string => !!n)
+      )
+    ).sort();
+    return [{ id: null, name: 'Todas' }, ...locations.map(n => ({ id: n, name: n }))];
+  }, [data]);
+
+  const statusOptions: Category[] = [
+    { id: null, name: 'Todas' },
+    { id: 'nuevas', name: 'Nuevas (Pendientes)' },
+    { id: 'aceptadas', name: 'Aceptadas (Trabajando)' },
+  ];
 
   // "Trabajando" = postulaciones aceptadas (state_id 2). El resto (pendientes,
   // rechazadas) va en "Mis postulaciones". Solo se muestran secciones no vacías.
   const sections = useMemo(() => {
-    const activas = data.filter((a) => String(a.state_id) === '2');
-    const postulaciones = data.filter((a) => String(a.state_id) !== '2');
+    const filteredData = data.filter(a => {
+      // Location filter
+      if (locationFilter && a.delivery_vacancies?.stores?.communes?.name !== locationFilter) return false;
+      
+      // Status filter
+      if (statusFilter === 'nuevas' && String(a.state_id) !== '1') return false;
+      if (statusFilter === 'aceptadas' && String(a.state_id) !== '2') return false;
+
+      return true;
+    });
+
+    const activas = filteredData.filter((a) => String(a.state_id) === '2');
+    const postulaciones = filteredData.filter((a) => String(a.state_id) !== '2');
     return [
       { title: 'Trabajando', data: activas },
       { title: 'Mis postulaciones', data: postulaciones },
     ].filter((s) => s.data.length > 0);
-  }, [data]);
+  }, [data, locationFilter, statusFilter]);
 
   const getStatusText = (stateId: string | number | null) => {
     switch (String(stateId)) {
@@ -90,8 +124,28 @@ export default function ApplicationsScreen() {
   if (loading && data.length === 0) {
     return (
       <Screen>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.brand[700]} />
+        <View className="px-5 pb-4 pt-2 border-b border-border bg-background mb-2">
+          <Logo variant="border" height={22} />
+          <Text variant="title" className="text-foreground mt-3">Mis Postulaciones</Text>
+          <Text variant="caption" className="text-muted-foreground mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
+        </View>
+        <View className="px-4 py-4 gap-4">
+          <Skeleton width="40%" height={20} className="mb-2" />
+          {[1, 2].map((i) => (
+            <Card key={i} elevated className="mb-2">
+              <View className="flex-row items-center justify-between mb-3">
+                <View className="flex-row items-center gap-3 flex-1">
+                  <Skeleton width={40} height={40} borderRadius={20} />
+                  <View className="flex-1 gap-2">
+                    <Skeleton width="70%" height={16} />
+                    <Skeleton width="40%" height={12} />
+                  </View>
+                </View>
+                <Skeleton width={60} height={20} borderRadius={6} />
+              </View>
+              <Skeleton width="100%" height={48} borderRadius={8} className="mt-2" />
+            </Card>
+          ))}
         </View>
       </Screen>
     );
@@ -99,17 +153,23 @@ export default function ApplicationsScreen() {
 
   return (
     <Screen>
-      <View className="px-5 pb-4 pt-2 border-b border-gray-100 bg-white mb-2">
-        <Logo variant="plain" height={22} />
-        <Text variant="title" className="text-brand-900 mt-3">Mis Postulaciones</Text>
-        <Text variant="caption" className="text-gray-500 mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
+      <View className="px-5 pb-4 pt-2 border-b border-border bg-background mb-2">
+        <Logo variant="border" height={22} />
+        <Text variant="title" className="text-foreground mt-3">Mis Postulaciones</Text>
+        <Text variant="caption" className="text-muted-foreground mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
+      </View>
+      <View className="pb-3 border-b border-border bg-background mb-2">
+        <View className="mb-3">
+          <CategoryChips categories={statusOptions} selectedId={statusFilter} onSelect={setStatusFilter} />
+        </View>
+        <CategoryChips categories={locationOptions} selectedId={locationFilter} onSelect={setLocationFilter} />
       </View>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         renderSectionHeader={({ section }) => (
-          <Text variant="subtitle" className="text-brand-900 mb-3">{section.title}</Text>
+          <Text variant="subtitle" className="text-foreground mb-3">{section.title}</Text>
         )}
         stickySectionHeadersEnabled={false}
         contentContainerStyle={{ padding: 20 }}
@@ -117,7 +177,7 @@ export default function ApplicationsScreen() {
         onRefresh={refetch}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-10">
-            <Text variant="body" className="text-gray-500 text-center">
+            <Text variant="body" className="text-muted-foreground text-center">
               No tienes postulaciones recientes.
             </Text>
           </View>

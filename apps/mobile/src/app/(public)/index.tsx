@@ -15,7 +15,7 @@ import { View, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapPin, Search as SearchIcon } from 'lucide-react-native';
+import { MapPin, Search as SearchIcon, Trophy, BadgeCheck } from 'lucide-react-native';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate, Extrapolation } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Screen } from '@/ui/Screen';
@@ -24,29 +24,30 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Logo } from '@/ui/Logo';
 import { BrandGradient } from '@/ui/BrandGradient';
-import { colors } from '@/ui/theme';
+import { useThemeColors, colors } from '@/ui/theme';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
 import { StoreCard } from '@/components/StoreCard';
+import { StoreCarousel } from '@/components/StoreCarousel';
+import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { useStores } from '@/features/stores/hooks';
 import type { Store } from '@/features/stores/types';
+import { Skeleton } from '@/ui/Skeleton';
 
 // Umbral de scroll (px) en el que la barra compacta reemplaza al header grande.
 const COMPACT_FROM = 80;
 const COMPACT_TO = 140;
 
-// Sombra del buscador flotante (monta sobre el gradiente del hero).
 const FLOAT_SHADOW = {
   shadowColor: '#0f1d2e',
   shadowOpacity: 0.18,
   shadowRadius: 16,
   shadowOffset: { width: 0, height: 8 },
   elevation: 8,
-  borderRadius: 10,
-  backgroundColor: colors.card,
 } as const;
 
 export default function HomeScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { stores, loading, refreshing, error, reload, refresh } = useStores({ limit: 50 });
@@ -100,6 +101,24 @@ export default function HomeScreen() {
     });
   }, [stores, search, category]);
 
+  // Derived sections for the Netflix-style layout
+  const verifiedStores = useMemo(() => {
+    return stores.filter((s) => s.verified === true);
+  }, [stores]);
+
+  const categorizedStores = useMemo(() => {
+    const map = new Map<string, Store[]>();
+    for (const s of stores) {
+      if (!s.category_name) continue;
+      if (!map.has(s.category_name)) map.set(s.category_name, []);
+      map.get(s.category_name)!.push(s);
+    }
+    // Only return categories with at least 1 store
+    return Array.from(map.entries()).map(([name, list]) => ({ name, stores: list }));
+  }, [stores]);
+
+  const isFiltering = search.trim().length > 0 || category !== null;
+
   return (
     <Screen edges={{ top: false }}>
       {/* Barra de estado: texto claro sobre el hero navy, oscuro sobre la barra compacta. */}
@@ -128,7 +147,7 @@ export default function HomeScreen() {
         ref={listRef}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
-        data={loading ? [] : filtered}
+        data={loading ? [] : (isFiltering ? filtered : [])}
         keyExtractor={(s: Store) => s.id}
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
@@ -169,12 +188,29 @@ export default function HomeScreen() {
               <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
             </View>
 
-            {/* Sección */}
-            {!loading && !error ? (
-              <View className="px-5 pb-2">
-                <Text variant="subtitle">Cerca de ti</Text>
+            {/* Netflix-style Home Sections (Only visible if no filter applied) */}
+            {!isFiltering && !loading && !error && (
+              <View className="pb-8 mt-2">
+                {verifiedStores.length > 0 && (
+                  <StoreCarousel 
+                    title="Tiendas verificadas" 
+                    icon={<VerifiedBadge size={22} />}
+                    stores={verifiedStores} 
+                    autoScroll={true} 
+                  />
+                )}
+                {categorizedStores.map((cat) => (
+                  <StoreCarousel key={cat.name} title={cat.name} stores={cat.stores} />
+                ))}
               </View>
-            ) : null}
+            )}
+
+            {/* Título de Resultados de Búsqueda/Filtro */}
+            {isFiltering && !loading && !error && (
+              <View className="px-5 pb-4 mt-2">
+                <Text variant="subtitle">Resultados ({filtered.length})</Text>
+              </View>
+            )}
           </View>
         }
         renderItem={({ item }) => (
@@ -208,13 +244,13 @@ export default function HomeScreen() {
  *  Reutiliza <Card> para no duplicar el estilo de superficie de StoreCard. */
 function SkeletonList() {
   return (
-    <View className="gap-3 px-5">
+    <View className="gap-3 px-5 mt-4">
       {[0, 1, 2, 3, 4].map((i) => (
-        <Card key={i} className="h-[88px] flex-row items-center gap-3">
-          <View className="h-14 w-14 rounded-xl bg-muted" />
+        <Card key={i} className="h-[88px] flex-row items-center gap-3 border border-border">
+          <Skeleton width={56} height={56} borderRadius={12} />
           <View className="flex-1 gap-2">
-            <View className="h-4 w-2/3 rounded bg-muted" />
-            <View className="h-3 w-1/3 rounded bg-muted" />
+            <Skeleton width="66%" height={16} />
+            <Skeleton width="33%" height={12} />
           </View>
         </Card>
       ))}
@@ -223,6 +259,7 @@ function SkeletonList() {
 }
 
 function EmptyState() {
+  const colors = useThemeColors();
   return (
     <View className="items-center gap-2 px-8 pt-16">
       <MapPin size={40} color={colors.mutedForeground} strokeWidth={1.5} />

@@ -299,8 +299,8 @@ export async function findPublicStoreProducts(storeId: bigint) {
         where: {
           is_active: true,
           AND: [
-            { OR: [{ valid_from: null }, { valid_from: { lte: now } }] },
-            { OR: [{ valid_until: null }, { valid_until: { gte: now } }] },
+            { OR: [{ valid_from: { equals: null } }, { valid_from: { lte: now } }] },
+            { OR: [{ valid_until: { equals: null } }, { valid_until: { gte: now } }] },
           ],
         },
         select: {

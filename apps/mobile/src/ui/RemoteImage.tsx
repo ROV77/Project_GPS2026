@@ -8,28 +8,36 @@ import { View } from 'react-native';
 import { Image } from 'expo-image';
 import { Store as StoreIcon } from 'lucide-react-native';
 import { displayWidth, optimizeCloudinaryUrl } from '@/lib/cloudinaryImage';
+import { type ImageProps } from 'expo-image';
 import { colors } from './theme';
 
 export function RemoteImage({
   uri,
-  size = 56,
+  size,
   rounded = 12,
+  style,
+  className,
+  ...props
 }: {
   uri?: string | null;
   size?: number;
   rounded?: number;
-}) {
+  style?: any;
+  className?: string;
+} & Partial<ImageProps>) {
   const [failed, setFailed] = useState(false);
-  const optimized = optimizeCloudinaryUrl(uri, { width: displayWidth(size) });
+  const imgWidth = size ?? (style?.width || 56);
+  const imgHeight = size ?? (style?.height || 56);
+  const optimized = optimizeCloudinaryUrl(uri, { width: displayWidth(typeof imgWidth === 'number' ? imgWidth : 300) });
   const showFallback = !optimized || failed;
 
   if (showFallback) {
     return (
       <View
-        className="items-center justify-center bg-brand-50"
-        style={{ width: size, height: size, borderRadius: rounded }}
+        className={`items-center justify-center bg-muted ${className || ''}`}
+        style={[{ width: imgWidth, height: imgHeight, borderRadius: rounded }, style]}
       >
-        <StoreIcon size={size * 0.4} color={colors.brand[700]} strokeWidth={1.75} />
+        <StoreIcon size={typeof imgWidth === 'number' ? imgWidth * 0.4 : 24} color={colors.mutedForeground} strokeWidth={1.75} />
       </View>
     );
   }
@@ -41,7 +49,9 @@ export function RemoteImage({
       contentFit="cover"
       transition={200}
       cachePolicy="memory-disk"
-      style={{ width: size, height: size, borderRadius: rounded }}
+      className={className}
+      style={[{ width: imgWidth, height: imgHeight, borderRadius: rounded }, style]}
+      {...props}
     />
   );
 }

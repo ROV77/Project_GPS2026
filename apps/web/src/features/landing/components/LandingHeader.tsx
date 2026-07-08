@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ExternalLink } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import logoUrl from '@/assets/icons/logo_caseritapp3.webp';
 
@@ -17,7 +17,7 @@ export function LandingHeader({ variant = 'light' }: LandingHeaderProps) {
         'sticky top-0 z-50 backdrop-blur-sm',
         isBrand
           ? 'border-b border-white/10 bg-brand-900/95 shadow-md'
-          : 'border-b border-slate-200/80 bg-white/95',
+          : 'border-b border-slate-200/80 bg-white/95 shadow-sm',
       )}
     >
       <div className="flex h-20 w-full items-center justify-between px-5 sm:px-8 md:px-12 lg:px-16">
@@ -26,18 +26,6 @@ export function LandingHeader({ variant = 'light' }: LandingHeaderProps) {
         </Link>
 
         <nav className="ml-auto flex items-center gap-2 sm:gap-3 md:gap-4">
-          <Link
-            to="/register-repartidor"
-            className={cn(
-              'hidden items-center gap-1 rounded-lg px-2 py-2 text-sm font-medium transition md:inline-flex',
-              isBrand
-                ? 'text-white/90 hover:bg-white/10'
-                : 'text-slate-900 hover:bg-slate-100',
-            )}
-          >
-            Soy repartidor
-            <ExternalLink className="size-3.5 opacity-70" />
-          </Link>
           <Link
             to="/login"
             className={cn(

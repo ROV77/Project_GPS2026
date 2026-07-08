@@ -23,22 +23,22 @@ import imgRepartidor from '@/assets/images/repartidor.jpg';
 
 const benefits = [
   {
-    icon: <Store className="size-6" />,
+    icon: Store,
     title: 'Tu vitrina online',
     text: 'Publica tu catálogo y deja que los vecinos de tu comuna te encuentren.',
   },
   {
-    icon: <LineChart className="size-6" />,
+    icon: LineChart,
     title: 'Vende y mide',
     text: 'Sigue tus visitas y ventas en tiempo real desde un panel simple.',
   },
   {
-    icon: <Megaphone className="size-6" />,
+    icon: Megaphone,
     title: 'Promociones',
     text: 'Crea ofertas para atraer más clientes y fidelizar a los de siempre.',
   },
   {
-    icon: <MapPin className="size-6" />,
+    icon: MapPin,
     title: 'Cerca de ti',
     text: 'Conectamos comercios locales con compradores de su misma zona.',
   },
@@ -126,16 +126,27 @@ export function LandingPage() {
             vecinos que quieren comprar cerca. Gestiona todo desde un solo lugar.
           </p>
         </div>
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {benefits.map((b) => (
-            <Card key={b.title} className="h-full">
-              <span className="flex size-12 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
-                {b.icon}
-              </span>
-              <h3 className="mt-4 font-semibold text-slate-900">{b.title}</h3>
-              <p className="mt-1.5 text-sm text-slate-500">{b.text}</p>
-            </Card>
-          ))}
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {benefits.map((b) => {
+            const Icon = b.icon;
+            return (
+              <Card 
+                key={b.title} 
+                className="group relative flex aspect-square cursor-default flex-col justify-start overflow-hidden p-6 pt-8 transition-all duration-500 hover:-translate-y-2 hover:border-brand-300 hover:shadow-2xl"
+              >
+                {/* Texto por encima */}
+                <div className="relative z-10 max-w-[90%]">
+                  <h3 className="text-xl font-bold text-slate-900 leading-tight">{b.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{b.text}</p>
+                </div>
+
+                {/* Ícono gigante como fondo */}
+                <div className="absolute -bottom-6 -right-6 z-0 text-brand-100/60 transition-transform duration-500 group-hover:scale-110 group-hover:text-brand-200/80">
+                  <Icon className="size-36 lg:size-40" strokeWidth={1.5} />
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </section>
 
@@ -185,12 +196,6 @@ export function LandingPage() {
             Registra tu negocio
             <ArrowRight className="size-5" />
           </Link>
-          <p className="mt-4 text-sm text-slate-300">
-            ¿Repartes pedidos?{' '}
-            <Link to="/register-repartidor" className="font-medium text-white underline">
-              Únete como repartidor
-            </Link>
-          </p>
         </div>
       </section>
 

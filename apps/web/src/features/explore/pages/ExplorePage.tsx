@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, MapPin, Store } from 'lucide-react';
+import { Loader2, MapPin, Store, Smartphone, X } from 'lucide-react';
 import { LandingHeader } from '@/features/landing/components/LandingHeader';
 import { ExploreSearchBar } from '../components/ExploreSearchBar';
 import { ExploreCategoryChips } from '../components/ExploreCategoryChips';
@@ -42,6 +43,19 @@ export function ExplorePage() {
   const [regionId, setRegionId] = useState<string | null>(urlRegionId);
   const [communeId, setCommuneId] = useState<string | null>(urlCommuneId);
   const [categoryId, setCategoryId] = useState<string | null>(urlCategoryId);
+
+  const [bannerState, setBannerState] = useState<'visible' | 'fading' | 'hidden'>('visible');
+
+  useEffect(() => {
+    if (bannerState === 'visible') {
+      const timer = setTimeout(() => setBannerState('fading'), 12000); // Inicia desvanecimiento en 12s
+      return () => clearTimeout(timer);
+    }
+    if (bannerState === 'fading') {
+      const timer = setTimeout(() => setBannerState('hidden'), 1000); // 1 segundo para desvanecerse
+      return () => clearTimeout(timer);
+    }
+  }, [bannerState]);
 
   const categories = useCatalogOptions('categories');
 
@@ -95,11 +109,50 @@ export function ExplorePage() {
 
   return (
     <ExplorePageShell>
-      <LandingHeader variant="brand" />
+      <LandingHeader />
 
-      <main className="mx-auto w-full max-w-[1440px] px-5 py-8 sm:px-8 md:px-12 lg:px-16">
-        {/* Hero con color de marca */}
-        <section className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 px-6 py-8 shadow-lg sm:px-8">
+      {bannerState !== 'hidden' && (
+        <div className={cn(
+          "sticky top-20 z-40 bg-brand-50 border-b border-brand-100 px-4 py-3 sm:px-6 lg:px-8 transition-opacity duration-1000 shadow-sm",
+          bannerState === 'fading' ? 'opacity-0 pointer-events-none' : 'opacity-100',
+          "animate-in slide-in-from-top-4 fade-in"
+        )}>
+          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+                <Smartphone className="size-4" />
+              </div>
+              <p className="text-sm font-medium text-brand-900">
+                ¡Pide más rápido y chatea con los locales desde tu celular! <span className="font-semibold underline cursor-pointer hover:text-brand-700">Descarga la app de CaseritApp.</span>
+              </p>
+            </div>
+            <button 
+              onClick={() => setBannerState('fading')}
+              className="shrink-0 rounded-lg p-1.5 text-brand-600 hover:bg-brand-100 transition"
+              aria-label="Cerrar mensaje"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+        {/* Hero de ancho completo con borde festoneado (scalloped) mediante CSS Mask */}
+        <section
+          className="relative mb-8 w-full overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 pt-8 pb-14 shadow-lg"
+          style={{
+            WebkitMaskImage:
+              'linear-gradient(black, black), radial-gradient(circle at 20px 20px, black 19.5px, transparent 20px)',
+            WebkitMaskSize: '100% calc(100% - 20px), 40px 40px',
+            WebkitMaskPosition: 'top, bottom',
+            WebkitMaskRepeat: 'no-repeat, repeat-x',
+            maskImage:
+              'linear-gradient(black, black), radial-gradient(circle at 20px 20px, black 19.5px, transparent 20px)',
+            maskSize: '100% calc(100% - 20px), 40px 40px',
+            maskPosition: 'top, bottom',
+            maskRepeat: 'no-repeat, repeat-x',
+          }}
+        >
           <div
             className="pointer-events-none absolute -right-10 -top-10 size-48 rounded-full bg-amber-400/20 blur-3xl"
             aria-hidden
@@ -109,7 +162,7 @@ export function ExplorePage() {
             aria-hidden
           />
 
-          <div className="relative">
+          <div className="relative mx-auto w-full max-w-[1440px] px-5 sm:px-8 md:px-12 lg:px-16">
             <div className="flex items-center gap-2 text-brand-200">
               <MapPin className="size-4" />
               <span className="text-sm font-medium">Comercios locales cerca de ti</span>
@@ -134,6 +187,7 @@ export function ExplorePage() {
           </div>
         </section>
 
+      <main className="mx-auto w-full max-w-[1440px] px-5 sm:px-8 md:px-12 lg:px-16">
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 rounded-2xl border border-white/60 bg-white/50 py-20 text-muted-foreground backdrop-blur-sm">
             <Loader2 className="size-5 animate-spin text-brand-600" />
@@ -178,17 +232,17 @@ export function ExplorePage() {
               categoryLabel={selectedCategoryLabel}
             />
 
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+            <div className="flex flex-col gap-12">
               {stores.length === 0 ? (
-                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-white/5 px-6 py-12 text-center">
-                  <Store className="mb-3 size-8 text-brand-300" strokeWidth={1.5} />
-                  <p className="font-medium text-slate-100">Ninguna tienda coincide con estos filtros</p>
-                  <p className="mt-1 max-w-sm text-sm text-slate-400">
+                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/50 px-6 py-12 text-center">
+                  <Store className="mb-3 size-8 text-slate-400" strokeWidth={1.5} />
+                  <p className="font-medium text-slate-900">Ninguna tienda coincide con estos filtros</p>
+                  <p className="mt-1 max-w-sm text-sm text-slate-500">
                     Prueba otra categoría o quita la búsqueda por texto.
                   </p>
                 </div>
               ) : (
-                <div className="grid min-w-0 flex-1 grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+                <div className="grid min-w-0 flex-1 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {stores.map((store) => (
                     <PublicStoreCard
                       key={store.id}
@@ -198,11 +252,11 @@ export function ExplorePage() {
                   ))}
                 </div>
               )}
-              <DownloadAppPanel />
             </div>
           </>
         )}
       </main>
+      <DownloadAppPanel />
     </ExplorePageShell>
   );
 }

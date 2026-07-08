@@ -16,7 +16,7 @@ import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { RemoteImage } from '@/ui/RemoteImage';
 import { QuantityStepper } from '@/ui/QuantityStepper';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 import { formatCLP } from '@/shared/lib/format';
 import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
 import { useCart, cartTotal } from '@/features/cart/cart.store';
@@ -27,6 +27,7 @@ export const CartSheet = forwardRef<BottomSheet, { store: Store }>(function Cart
   { store },
   ref,
 ) {
+  const colors = useThemeColors();
   const active = useCart((s) => s.storeId === store.id);
   const items = useCart((s) => s.items);
   const increment = useCart((s) => s.increment);

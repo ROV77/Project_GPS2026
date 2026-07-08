@@ -32,12 +32,12 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
       to={`/tienda/${store.id}`}
       state={{ fromSearch: backSearch }}
       className={cn(
-        'group flex flex-col overflow-hidden rounded-xl border border-slate-600/50 bg-slate-800/95 shadow-md backdrop-blur-sm transition hover:border-slate-500/70 hover:bg-slate-800 hover:shadow-lg',
+        'group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-md',
         EXPLORE_CARD_HEIGHT,
         style.border,
       )}
     >
-      <div className="relative h-28 shrink-0 overflow-hidden">
+      <div className="relative h-44 shrink-0 overflow-hidden">
         {showLogo ? (
           <>
             <CloudinaryImg
@@ -64,13 +64,13 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
         </Badge>
       </div>
 
-      <div className="flex flex-1 flex-col p-3">
+      <div className="flex flex-1 flex-col p-3 pb-4">
         <div className="flex items-start gap-1.5">
-          <h3 className="line-clamp-2 flex-1 text-sm font-semibold leading-snug text-slate-50 group-hover:text-white">
+          <h3 className="line-clamp-2 flex-1 text-sm font-semibold leading-snug text-slate-900 group-hover:text-brand-700">
             {store.name}
           </h3>
           {store.verified ? (
-            <BadgeCheck className="mt-0.5 size-4 shrink-0 text-sky-400" strokeWidth={2} />
+            <BadgeCheck className="mt-0.5 size-6 shrink-0 text-sky-500 animate-pulse transition-transform hover:scale-125" strokeWidth={2} />
           ) : null}
         </div>
 
@@ -86,7 +86,7 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
         ) : null}
 
         {description ? (
-          <p className="mt-1.5 line-clamp-1 text-xs text-slate-400">{description}</p>
+          <p className="mt-1.5 line-clamp-1 text-xs text-slate-500">{description}</p>
         ) : null}
 
         {location ? (
@@ -96,24 +96,24 @@ export function PublicStoreCard({ store, searchQuery = '' }: PublicStoreCardProp
           </p>
         ) : null}
 
-        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-2 text-xs">
+        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-3 text-sm">
           {statusHint ? (
             <span
               className={cn(
                 'font-medium',
-                store.status === 'open' ? 'text-emerald-400' : 'text-amber-400',
+                store.status === 'open' ? 'text-emerald-600' : 'text-amber-600',
               )}
             >
               {statusHint}
             </span>
           ) : null}
-          <span className="inline-flex items-center gap-1">
-            <Star className="size-3.5 fill-amber-400 text-amber-400" strokeWidth={0} />
-            <span className="font-medium text-slate-200">
+          <span className="inline-flex items-center gap-1.5">
+            <Star className="size-4 fill-amber-400 text-amber-400" strokeWidth={0} />
+            <span className="font-bold text-slate-800 text-base">
               {rating > 0 ? rating.toFixed(1) : 'Nuevo'}
             </span>
             {store.review_count > 0 ? (
-              <span className="text-slate-500">· {store.review_count} reseñas</span>
+              <span className="text-slate-500 font-medium">· {store.review_count} reseñas</span>
             ) : null}
           </span>
         </div>

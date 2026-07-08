@@ -3,7 +3,7 @@
  * lucide, tintColor de la TabBar, placeholders, etc.). Espejo de la paleta de
  * tailwind.config.js y de apps/web/src/index.css (fuente de verdad).
  */
-export const colors = {
+export const lightColors = {
   brand: {
     50: '#eff4fb',
     100: '#dbe6f4',
@@ -24,6 +24,27 @@ export const colors = {
   white: '#ffffff',
 } as const;
 
+export const darkColors = {
+  brand: lightColors.brand,
+  background: '#0f172a',
+  foreground: '#f8fafc',
+  card: '#1e293b',
+  muted: '#334155',
+  mutedForeground: '#94a3b8',
+  border: '#334155',
+  destructive: '#ef4444',
+  amber: '#fbbf24',
+  white: '#ffffff',
+} as const;
+
+export const colors = lightColors; // Fallback para archivos no-React (ej: categoryStyle.ts)
+
+import { useColorScheme } from 'nativewind';
+
+export function useThemeColors() {
+  const { colorScheme } = useColorScheme();
+  return colorScheme === 'dark' ? darkColors : lightColors;
+}
 /** Familias de Inter cargadas en el root layout (ver app/_layout.tsx). */
 export const fonts = {
   regular: 'Inter_400Regular',

@@ -10,12 +10,13 @@ import { Text } from '@/ui/Text';
 import { RemoteImage } from '@/ui/RemoteImage';
 import { QuantityStepper } from '@/ui/QuantityStepper';
 import { formatCLP } from '@/shared/lib/format';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 import { useCart } from '@/features/cart/cart.store';
 import { activePromotion, promotionBadge, discountedPrice } from '@/features/stores/promotion';
 import type { Product, Store } from '@/features/stores/types';
 
 export function ProductCard({ product, store }: { product: Product; store: Store }) {
+  const colors = useThemeColors();
   const soldOut = product.stock <= 0;
   const promo = activePromotion(product);
   const finalPrice = promo ? discountedPrice(product.price, promo) : null;

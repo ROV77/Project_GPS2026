@@ -4,6 +4,7 @@
 module.exports = {
   content: ['./src/**/*.{ts,tsx}'],
   presets: [require('nativewind/preset')],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -19,15 +20,15 @@ module.exports = {
           800: '#1a3050', // pressed / hover
           900: '#0f1d2e', // superficies oscuras / splash
         },
-        // Tokens semánticos (neutros slate), espejo del web.
-        background: '#f8fafc',
-        foreground: '#0f172a',
-        card: '#ffffff',
-        muted: '#f1f5f9',
-        'muted-foreground': '#64748b',
-        border: '#e2e8f0',
-        destructive: '#dc2626',
-        amber: '#f59e0b', // estrellas de rating
+        // Tokens semánticos (neutros slate), usando CSS variables para modo oscuro
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        card: 'var(--card)',
+        muted: 'var(--muted)',
+        'muted-foreground': 'var(--muted-foreground)',
+        border: 'var(--border)',
+        destructive: 'var(--destructive)',
+        amber: 'var(--amber)', // estrellas de rating
       },
       fontFamily: {
         sans: ['Inter_400Regular'],

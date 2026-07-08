@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { BadgeCheck, Check, LineChart, Store } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 import { Badge, Button, ConfirmPopover } from '@/shared/ui';
 import { formatCLP } from '@/shared/lib/format';
@@ -49,6 +51,8 @@ function dailyPriceHint(price: number): string | null {
 export interface PlanCardProps {
   plan: Plan;
   isCurrent: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
   isRecommended: boolean;
   isFree: boolean;
   hasActivePaidPlan: boolean;
@@ -63,6 +67,8 @@ export interface PlanCardProps {
 export function PlanCard({
   plan,
   isCurrent,
+  isSelected,
+  onSelect,
   isRecommended,
   isFree,
   hasActivePaidPlan,
@@ -78,13 +84,72 @@ export function PlanCard({
   const price = Number(plan.price);
   const dailyHint = dailyPriceHint(price);
 
+  const cardRef = useRef<HTMLElement>(null);
+
+  // Get brand colors
+  let colors = ['#94a3b8', '#64748b', '#cbd5e1'];
+  if (plan.name === 'Pro') colors = ['#2563eb', '#60a5fa', '#3b82f6', '#93c5fd']; // brand
+  else if (plan.name === 'Premium') colors = ['#d97706', '#fbbf24', '#f59e0b', '#fcd34d']; // amber
+
+  const handleCardClick = () => {
+    if (isSelected) return;
+    if (onSelect) onSelect();
+  };
+
+  useEffect(() => {
+    if (!isSelected) return;
+
+    // Continuous slow particles from edges
+    const interval = setInterval(() => {
+      if (cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect();
+        
+        // Randomly pick an edge (0: top, 1: right, 2: bottom, 3: left)
+        const edge = Math.floor(Math.random() * 4);
+        let px = 0;
+        let py = 0;
+        
+        if (edge === 0) { px = rect.left + Math.random() * rect.width; py = rect.top; }
+        else if (edge === 1) { px = rect.right; py = rect.top + Math.random() * rect.height; }
+        else if (edge === 2) { px = rect.left + Math.random() * rect.width; py = rect.bottom; }
+        else { px = rect.left; py = rect.top + Math.random() * rect.height; }
+
+        const x = px / window.innerWidth;
+        const y = py / window.innerHeight;
+
+        confetti({
+          particleCount: 1,
+          spread: 360,
+          origin: { x, y },
+          colors: [colors[Math.floor(Math.random() * colors.length)]],
+          disableForReducedMotion: true,
+          zIndex: 40,
+          ticks: 150, // shorter life so they fade out smoothly
+          gravity: -0.05, // slightly float up instead of falling fast
+          scalar: 0.6 + Math.random() * 0.5, // smaller, variable size
+          shapes: ['circle'],
+          startVelocity: 5, // very gentle start
+          drift: (Math.random() - 0.5) * 0.5, // gentle horizontal drift
+        });
+      }
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, [isSelected, colors]);
+
   return (
     <article
+      ref={cardRef}
+      onClick={handleCardClick}
       className={cn(
-        'relative flex flex-col rounded-xl border bg-card p-6 shadow-xs transition',
-        isRecommended && !isCurrent && 'z-10 border-brand-700 shadow-md md:scale-[1.02]',
-        isCurrent && 'border-emerald-300 bg-emerald-50/30',
-        !isRecommended && !isCurrent && 'border-border hover:border-brand-200 hover:shadow-sm',
+        'relative flex flex-col rounded-xl border bg-card p-6 shadow-xs transition-all duration-500 cursor-pointer',
+        isRecommended && !isCurrent && !isSelected && 'z-10 border-brand-700 shadow-md md:scale-[1.02]',
+        isCurrent && !isSelected && 'border-emerald-300 bg-emerald-50/30',
+        !isRecommended && !isCurrent && !isSelected && 'border-border hover:border-brand-200 hover:shadow-sm',
+        isSelected && 'scale-[1.03] shadow-2xl z-50 ring-4 border-transparent',
+        isSelected && plan.name === 'Pro' && 'ring-brand-500/50 shadow-brand-500/30 bg-brand-50/30',
+        isSelected && plan.name === 'Premium' && 'ring-amber-500/50 shadow-amber-500/30 bg-amber-50/30',
+        isSelected && plan.name !== 'Pro' && plan.name !== 'Premium' && 'ring-slate-400/50 bg-slate-50/30',
       )}
     >
       {isRecommended && !isCurrent ? (

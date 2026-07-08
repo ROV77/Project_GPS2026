@@ -21,6 +21,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { colors } from '@/ui/theme';
 import { getCategoryMarkerSvg } from '@/features/stores/categoryStyle';
 import type { Store } from '@/features/stores/types';
+import { useColorScheme } from 'nativewind';
 
 export interface LeafletMapHandle {
   flyTo: (lat: number, lng: number) => void;
@@ -60,10 +61,13 @@ function zoomFromDelta(latitudeDelta: number): number {
 
 // HTML del mapa. Estático salvo el centro/zoom inicial y los colores de marca;
 // las tiendas se inyectan luego vía setStores (tras el handshake 'ready').
-function buildHtml(region: Region): string {
+function buildHtml(region: Region, isDark: boolean): string {
   const zoom = zoomFromDelta(region.latitudeDelta);
   const brand = colors.brand[700];
   const brandDark = colors.brand[900];
+  // El usuario solicitó mantener siempre el mapa en modo claro
+  const bg = '#f8fafc';
+  const tileUrl = 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -74,8 +78,8 @@ function buildHtml(region: Region): string {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
-  html, body, #map { margin: 0; height: 100%; width: 100%; background: #f8fafc; }
-  .leaflet-container { background: #f8fafc; }
+  html, body, #map { margin: 0; height: 100%; width: 100%; background: ${bg}; transition: background 0.3s; }
+  .leaflet-container { background: ${bg}; transition: background 0.3s; }
   /* Pin de tienda: círculo de color, borde blanco, sombra, ícono al centro. */
   .pin { width: 28px; height: 28px; border-radius: 14px; border: 2px solid #fff;
     box-shadow: 0 1px 2px rgba(0,0,0,0.3); display: flex; align-items: center;
@@ -99,7 +103,18 @@ function buildHtml(region: Region): string {
   var post = function (o) { window.ReactNativeWebView.postMessage(JSON.stringify(o)); };
   var map = L.map('map', { zoomControl: false, attributionControl: false })
     .setView([${region.latitude}, ${region.longitude}], ${zoom});
-  L.tileLayer('https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  var tileLayer = L.tileLayer('${tileUrl}', { maxZoom: 19 }).addTo(map);
+
+  window.setTheme = function (dark) {
+    // Mantenemos siempre el tileLayer claro según solicitud
+    var newUrl = 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+    tileLayer.setUrl(newUrl);
+    var bg = '#f8fafc';
+    document.body.style.background = bg;
+    document.getElementById('map').style.background = bg;
+    var lc = document.querySelector('.leaflet-container');
+    if (lc) lc.style.background = bg;
+  };
 
   var sizeFor = function (n) { return n >= 25 ? 48 : n >= 10 ? 42 : n >= 4 ? 38 : 34; };
   var cluster = L.markerClusterGroup({
@@ -172,11 +187,13 @@ export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMa
   { region, stores, selectedId, userLocation, onMarkerPress, onMapPress, onPanStart, onMoveEnd },
   ref,
 ) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const webRef = useRef<WebView>(null);
   const [ready, setReady] = useState(false);
   // HTML se construye una sola vez con el centro inicial; después no se recrea
   // (recrearlo recargaría el WebView). Los updates van por inyección.
-  const html = useMemo(() => buildHtml(region), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const html = useMemo(() => buildHtml(region, isDark), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const markers = useMemo<MarkerData[]>(
     () =>
@@ -211,6 +228,10 @@ export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMa
         : `window.setUser(null,null)`,
     );
   }, [ready, userLocation, inject]);
+
+  useEffect(() => {
+    if (ready) inject(`window.setTheme(${isDark})`);
+  }, [ready, isDark, inject]);
 
   useImperativeHandle(ref, () => ({
     flyTo: (lat, lng) => inject(`window.flyTo(${lat},${lng})`),

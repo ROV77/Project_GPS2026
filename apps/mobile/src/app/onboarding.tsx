@@ -18,7 +18,7 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { Logo } from '@/ui/Logo';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 import { markOnboardingSeen } from '@/shared/lib/onboarding';
 
 interface Slide {
@@ -46,6 +46,7 @@ const SLIDES: Slide[] = [
 ];
 
 export default function Onboarding() {
+  const colors = useThemeColors();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);

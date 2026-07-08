@@ -22,7 +22,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, ActivityIndicator, Linking, Pressable, Keyboard } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import type BottomSheet from '@gorhom/bottom-sheet';
 import { AlertTriangle } from 'lucide-react-native';
@@ -46,12 +46,12 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.25,
 };
 
-// Altura del bloque SearchBar + CategoryChips (fija por diseño, ver componentes).
-const FILTERS_HEIGHT = 108;
+// Punto por defecto si el usuario no otorga permiso o la geolocalización falla.
 
 type PermState = 'undetermined' | 'granted' | 'denied';
 
 export default function MapScreen() {
+  const insets = useSafeAreaInsets();
   // ponytail: carga total de tiendas de una vez; si algún día superan ~500,
   // crear endpoint nearby con bounding box en la API.
   const { stores, loading, error, reload } = useStores({ limit: 500 });
@@ -69,22 +69,9 @@ export default function MapScreen() {
   const mapViewRef = useRef<LeafletMapHandle>(null);
   // Último focusId procesado (viene del detalle de tienda) para no repetir.
   const handledFocus = useRef<string | null>(null);
-  const filtersHeight = useSharedValue(FILTERS_HEIGHT);
-
-  const filtersStyle = useAnimatedStyle(() => ({
-    height: filtersHeight.value,
-    overflow: 'hidden',
-  }));
-
-  // Arrastrar el mapa colapsa el buscador/chips para dar más espacio.
-  const handlePanDrag = useCallback(() => {
-    filtersHeight.value = withTiming(0, { duration: 180 });
-  }, [filtersHeight]);
-
-  // Al soltar el gesto, el buscador/chips reaparecen tras una pausa breve.
-  const handleRegionChangeComplete = useCallback(() => {
-    filtersHeight.value = withDelay(400, withTiming(FILTERS_HEIGHT, { duration: 220 }));
-  }, [filtersHeight]);
+  // El buscador ya no colapsa, así que eliminamos las funciones de animación.
+  const handlePanDrag = useCallback(() => {}, []);
+  const handleRegionChangeComplete = useCallback(() => {}, []);
 
   // Tocar un marker selecciona la tienda y abre el sheet — sin mover el mapa
   // ni depender de ningún otro componente (evita el rebote del carrusel).
@@ -219,60 +206,11 @@ export default function MapScreen() {
   };
 
   return (
-    <Screen>
-      {/* Título + estado de carga/error (siempre visible, no colapsa) */}
-      <View className="px-5 pb-2 pt-3">
-        <Text variant="title">Mapa de tiendas</Text>
-        {error && (
-          <>
-            <Text variant="caption" className="mt-1" style={{ color: colors.destructive }}>
-              Error al cargar tiendas
-            </Text>
-            <View className="mt-2">
-              <Button label="Reintentar" variant="secondary" onPress={reload} />
-            </View>
-          </>
-        )}
-      </View>
-
-      {/* Buscador + chips de categoría: se colapsan mientras se arrastra el mapa.
-          El desplegable de resultados va fuera del área que colapsa (overflow) y
-          se posiciona bajo el buscador. */}
-      <View style={{ zIndex: 20 }}>
-        <Animated.View style={filtersStyle}>
-          <View className="px-5 pb-3">
-            <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar tiendas en el mapa" />
-          </View>
-          <View className="pb-3">
-            <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
-          </View>
-        </Animated.View>
-
-        {searchMatches.length > 0 && (
-          <View style={{ position: 'absolute', top: 54, left: 20, right: 20, zIndex: 30 }}>
-            <Card elevated className="p-0 overflow-hidden">
-              {searchMatches.map((s, i) => {
-                const meta = [s.category_name, s.commune_name].filter(Boolean).join(' · ');
-                return (
-                  <Pressable
-                    key={s.id}
-                    onPress={() => focusStore(s)}
-                    className="px-4 py-3 active:bg-muted"
-                    style={i > 0 ? { borderTopWidth: 1, borderTopColor: colors.border } : undefined}
-                  >
-                    <Text variant="body" numberOfLines={1}>{s.name}</Text>
-                    {meta ? <Text variant="caption" numberOfLines={1}>{meta}</Text> : null}
-                  </Pressable>
-                );
-              })}
-            </Card>
-          </View>
-        )}
-      </View>
-
-      <View className="mx-5 flex-1 overflow-hidden rounded-2xl border bg-card" style={{ borderColor: colors.border }}>
+    <Screen edges={{ top: true, bottom: false }}>
+      {/* Mapa en fondo absoluto cubriendo todo */}
+      <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}>
         {locating ? (
-          <View className="flex-1 items-center justify-center gap-3">
+          <View className="flex-1 items-center justify-center gap-3 bg-card">
             <ActivityIndicator color={colors.brand[700]} />
             <Text variant="caption">Detectando tu ubicación…</Text>
           </View>
@@ -296,36 +234,67 @@ export default function MapScreen() {
             <View
               style={{
                 position: 'absolute',
-                top: 6,
-                left: 8,
+                bottom: 16,
+                left: 16,
                 backgroundColor: 'rgba(255,255,255,0.85)',
-                borderRadius: 4,
-                paddingHorizontal: 6,
-                paddingVertical: 2,
+                borderRadius: 8,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
               }}
             >
-              <Text variant="caption" style={{ fontSize: 10, color: colors.mutedForeground }}>
+              <Text variant="caption" style={{ fontSize: 11, color: colors.mutedForeground }}>
                 {loading ? 'Cargando…' : `${filteredStores.length} tiendas`}
-              </Text>
-            </View>
-            <View
-              style={{
-                position: 'absolute',
-                top: 6,
-                right: 8,
-                backgroundColor: 'rgba(255,255,255,0.75)',
-                borderRadius: 4,
-                paddingHorizontal: 4,
-                paddingVertical: 1,
-              }}
-            >
-              <Text variant="caption" style={{ fontSize: 9, color: colors.mutedForeground }}>
-                &copy; CARTO &copy; OpenStreetMap
               </Text>
             </View>
           </View>
         )}
       </View>
+
+      {/* Controles superpuestos (Buscador, Categorías, Título) */}
+      <View style={{ zIndex: 20, paddingTop: insets.top + 10 }}>
+        {error && (
+          <View className="px-5 pb-3">
+            <Card className="flex-row items-center justify-between border-destructive p-3">
+              <Text variant="caption" style={{ color: colors.destructive }}>
+                Error al cargar tiendas
+              </Text>
+              <Button label="Reintentar" variant="secondary" onPress={reload} />
+            </Card>
+          </View>
+        )}
+
+        <View className="px-5 pb-3 pt-1">
+          <View style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5 }}>
+            <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar tiendas en el mapa" />
+          </View>
+        </View>
+        <View className="pb-2">
+          <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
+        </View>
+
+        {searchMatches.length > 0 && (
+          <View style={{ position: 'absolute', top: 68, left: 20, right: 20, zIndex: 30 }}>
+            <Card elevated className="p-0 overflow-hidden">
+              {searchMatches.map((s, i) => {
+                const meta = [s.category_name, s.commune_name].filter(Boolean).join(' · ');
+                return (
+                  <Pressable
+                    key={s.id}
+                    onPress={() => focusStore(s)}
+                    className="px-4 py-3 active:bg-muted"
+                    style={i > 0 ? { borderTopWidth: 1, borderTopColor: colors.border } : undefined}
+                  >
+                    <Text variant="body" numberOfLines={1}>{s.name}</Text>
+                    {meta ? <Text variant="caption" numberOfLines={1}>{meta}</Text> : null}
+                  </Pressable>
+                );
+              })}
+            </Card>
+          </View>
+        )}
+      </View>
+
+
 
       {perm === 'denied' && !locating && (
         <View className="mx-5 mt-3">
