@@ -32,6 +32,7 @@ import { StoreCarousel } from '@/components/StoreCarousel';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { useStores } from '@/features/stores/hooks';
 import type { Store } from '@/features/stores/types';
+import { Skeleton } from '@/ui/Skeleton';
 
 // Umbral de scroll (px) en el que la barra compacta reemplaza al header grande.
 const COMPACT_FROM = 80;
@@ -245,15 +246,14 @@ export default function HomeScreen() {
 /** Placeholders de carga: rectángulos neutros, no spinner a pantalla completa.
  *  Reutiliza <Card> para no duplicar el estilo de superficie de StoreCard. */
 function SkeletonList() {
-  const colors = useThemeColors();
   return (
-    <View className="gap-3 px-5">
+    <View className="gap-3 px-5 mt-4">
       {[0, 1, 2, 3, 4].map((i) => (
-        <Card key={i} className="h-[88px] flex-row items-center gap-3">
-          <View className="h-14 w-14 rounded-xl bg-muted" />
+        <Card key={i} className="h-[88px] flex-row items-center gap-3 border border-border">
+          <Skeleton width={56} height={56} borderRadius={12} />
           <View className="flex-1 gap-2">
-            <View className="h-4 w-2/3 rounded bg-muted" />
-            <View className="h-3 w-1/3 rounded bg-muted" />
+            <Skeleton width="66%" height={16} />
+            <Skeleton width="33%" height={12} />
           </View>
         </Card>
       ))}

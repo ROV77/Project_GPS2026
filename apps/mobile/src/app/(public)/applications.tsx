@@ -12,6 +12,7 @@ import { useSession } from '@/features/auth/session.store';
 import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
 import type { CourierApplication } from '@/features/delivery/types';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
+import { Skeleton } from '@/ui/Skeleton';
 
 const GREEN = '#10b981';
 
@@ -123,8 +124,28 @@ export default function ApplicationsScreen() {
   if (loading && data.length === 0) {
     return (
       <Screen>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.brand[700]} />
+        <View className="px-5 pb-4 pt-2 border-b border-border bg-background mb-2">
+          <Logo variant="border" height={22} />
+          <Text variant="title" className="text-foreground mt-3">Mis Postulaciones</Text>
+          <Text variant="caption" className="text-muted-foreground mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
+        </View>
+        <View className="px-4 py-4 gap-4">
+          <Skeleton width="40%" height={20} className="mb-2" />
+          {[1, 2].map((i) => (
+            <Card key={i} elevated className="mb-2">
+              <View className="flex-row items-center justify-between mb-3">
+                <View className="flex-row items-center gap-3 flex-1">
+                  <Skeleton width={40} height={40} borderRadius={20} />
+                  <View className="flex-1 gap-2">
+                    <Skeleton width="70%" height={16} />
+                    <Skeleton width="40%" height={12} />
+                  </View>
+                </View>
+                <Skeleton width={60} height={20} borderRadius={6} />
+              </View>
+              <Skeleton width="100%" height={48} borderRadius={8} className="mt-2" />
+            </Card>
+          ))}
         </View>
       </Screen>
     );

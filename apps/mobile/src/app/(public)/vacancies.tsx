@@ -11,6 +11,7 @@ import { useVacancies, useApplyToVacancy, useMyApplications } from '@/features/d
 import { useSession } from '@/features/auth/session.store';
 import type { DeliveryVacancy } from '@/features/delivery/types';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
+import { Skeleton } from '@/ui/Skeleton';
 
 export default function VacanciesScreen() {
   const colors = useThemeColors();
@@ -110,8 +111,27 @@ export default function VacanciesScreen() {
   if (loading && vacancies.length === 0) {
     return (
       <Screen>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.brand[700]} />
+        <View className="px-5 pb-4 pt-2 border-b border-border bg-background mb-2">
+          <Logo variant="border" height={22} />
+          <Text variant="title" className="text-foreground mt-3">Ofertas de Trabajo</Text>
+          <Text variant="caption" className="text-muted-foreground mt-1">Encuentra y postula a nuevas oportunidades</Text>
+        </View>
+        <View className="px-4 py-4 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} elevated className="mb-2">
+              <View className="flex-row items-center gap-3 mb-4">
+                <Skeleton width={40} height={40} borderRadius={20} />
+                <View className="flex-1 gap-2">
+                  <Skeleton width="60%" height={16} />
+                  <Skeleton width="40%" height={12} />
+                </View>
+              </View>
+              <Skeleton width="30%" height={12} className="mb-3" />
+              <Skeleton width="100%" height={14} className="mb-2" />
+              <Skeleton width="80%" height={14} className="mb-6" />
+              <Skeleton width="100%" height={48} borderRadius={8} />
+            </Card>
+          ))}
         </View>
       </Screen>
     );

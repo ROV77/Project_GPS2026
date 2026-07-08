@@ -23,6 +23,7 @@ import { useSession } from '@/features/auth/session.store';
 import { pickAndUploadAvatar } from '@/features/auth/avatar';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { useCourierRatings } from '@/features/delivery/hooks';
+import { Skeleton } from '@/ui/Skeleton';
 
 const WEB_URL = 'https://caseritapp.cl';
 
@@ -103,9 +104,35 @@ export default function AccountScreen() {
   if (status === 'loading') {
     return (
       <Screen>
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.brand[700]} />
-        </View>
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          <BrandGradient
+            style={{ borderRadius: 20, marginHorizontal: 16, marginTop: 8, marginBottom: 24, padding: 20 }}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 pr-3 gap-2">
+                <Skeleton width="60%" height={24} className="bg-white/20" />
+                <Skeleton width="80%" height={14} className="bg-white/20" />
+                <Skeleton width="40%" height={14} className="bg-white/20" />
+              </View>
+              <Skeleton width={72} height={72} borderRadius={36} className="bg-white/20" />
+            </View>
+          </BrandGradient>
+          <View className="gap-6 px-4">
+            <View className="gap-2">
+              <Skeleton width={100} height={14} />
+              <View className="bg-card rounded-2xl border border-border p-4 gap-4">
+                <View className="flex-row items-center gap-4">
+                  <Skeleton width={48} height={48} borderRadius={24} />
+                  <View className="flex-1 gap-2">
+                    <Skeleton width="50%" height={18} />
+                    <Skeleton width="80%" height={12} />
+                  </View>
+                </View>
+                <Skeleton width="100%" height={48} borderRadius={8} />
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       </Screen>
     );
   }

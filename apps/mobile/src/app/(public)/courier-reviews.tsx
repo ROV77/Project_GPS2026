@@ -10,6 +10,7 @@ import { Logo } from '@/ui/Logo';
 import { useRouter } from 'expo-router';
 import { useThemeColors } from '@/ui/theme';
 import { CategoryChips } from '@/components/CategoryChips';
+import { Skeleton } from '@/ui/Skeleton';
 
 export default function CourierReviewsScreen() {
   const { user } = useSession();
@@ -72,8 +73,20 @@ export default function CourierReviewsScreen() {
     return (
       <Screen>
         {header}
-        <View className="flex-1 items-center justify-center p-5 bg-background">
-          <ActivityIndicator size="large" color={colors.brand[500]} />
+        <View className="flex-1 bg-background px-4 py-4 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} elevated>
+              <View className="flex-row items-center justify-between mb-3">
+                <Skeleton width="40%" height={16} />
+                <Skeleton width={80} height={16} />
+              </View>
+              <Skeleton width="100%" height={14} className="mb-2" />
+              <Skeleton width="60%" height={14} className="mb-4" />
+              <View className="items-end">
+                <Skeleton width="20%" height={12} />
+              </View>
+            </Card>
+          ))}
         </View>
       </Screen>
     );
