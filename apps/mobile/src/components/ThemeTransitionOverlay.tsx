@@ -47,6 +47,11 @@ export function ThemeTransitionOverlay() {
     }
   }, [transition, activeTransition, commitTheme, scale, opacity]);
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
   if (!activeTransition?.active) return null;
 
   // The background color of the expanding circle matches the *next* theme
@@ -77,10 +82,7 @@ export function ThemeTransitionOverlay() {
             borderRadius: MAX_RADIUS,
             backgroundColor,
           },
-          useAnimatedStyle(() => ({
-            transform: [{ scale: scale.value }],
-            opacity: opacity.value,
-          })),
+          animatedStyle,
         ]}
       />
     </View>
