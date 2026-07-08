@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { queryClient } from '@/app/queryClient';
 
 /**
  * Estado de sesión (global → vive en zustand, no en TanStack Query).
@@ -33,8 +34,17 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
-      setSession: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
+      // Limpia la cache de React Query al entrar una nueva sesión: sin esto, los
+      // datos del usuario anterior (perfil, tienda, suscripción) quedan cacheados
+      // y se muestran hasta que vence staleTime o se recarga la página.
+      setSession: (token, user) => {
+        queryClient.clear();
+        set({ token, user });
+      },
+      logout: () => {
+        queryClient.clear();
+        set({ token: null, user: null });
+      },
     }),
     {
       name: 'caserita-auth',
