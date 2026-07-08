@@ -134,7 +134,7 @@ export default function VacanciesScreen() {
   return (
     <Screen>
       <View className="px-5 pb-4 pt-2 border-b border-border bg-background mb-2">
-        <Logo variant="plain" height={22} />
+        <Logo variant="border" height={22} />
         <Text variant="title" className="text-foreground mt-3">Ofertas de Trabajo</Text>
         <Text variant="caption" className="text-muted-foreground mt-1">Encuentra y postula a nuevas oportunidades</Text>
       </View>

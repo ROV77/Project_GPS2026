@@ -61,7 +61,7 @@ export default function CourierReviewsScreen() {
         <ChevronLeft size={24} color={colors.foreground} />
       </TouchableOpacity>
       <View className="flex-1">
-        <Logo variant="plain" height={20} />
+        <Logo variant="border" height={20} />
         <Text variant="title" className="text-foreground mt-2">Mis Reseñas</Text>
         <Text variant="caption" className="text-muted-foreground mt-1">Lo que opinan las tiendas de ti</Text>
       </View>
