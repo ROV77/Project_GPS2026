@@ -15,7 +15,7 @@ import { View, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MapPin, Search as SearchIcon, Trophy } from 'lucide-react-native';
+import { MapPin, Search as SearchIcon, Trophy, BadgeCheck } from 'lucide-react-native';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, interpolate, Extrapolation } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Screen } from '@/ui/Screen';
@@ -29,6 +29,7 @@ import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
 import { StoreCard } from '@/components/StoreCard';
 import { StoreCarousel } from '@/components/StoreCarousel';
+import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { useStores } from '@/features/stores/hooks';
 import type { Store } from '@/features/stores/types';
 
@@ -102,8 +103,8 @@ export default function HomeScreen() {
   }, [stores, search, category]);
 
   // Derived sections for the Netflix-style layout
-  const topRated = useMemo(() => {
-    return [...stores].sort((a, b) => Number(b.avg_rating) - Number(a.avg_rating)).slice(0, 10);
+  const verifiedStores = useMemo(() => {
+    return stores.filter((s) => s.verified === true);
   }, [stores]);
 
   const categorizedStores = useMemo(() => {
@@ -191,12 +192,14 @@ export default function HomeScreen() {
             {/* Netflix-style Home Sections (Only visible if no filter applied) */}
             {!isFiltering && !loading && !error && (
               <View className="pb-8 mt-2">
-                <StoreCarousel 
-                  title="Las mejores valoradas" 
-                  icon={<Trophy size={20} color={colors.amber} strokeWidth={2.5} />}
-                  stores={topRated} 
-                  autoScroll={true} 
-                />
+                {verifiedStores.length > 0 && (
+                  <StoreCarousel 
+                    title="Tiendas verificadas" 
+                    icon={<VerifiedBadge size={22} />}
+                    stores={verifiedStores} 
+                    autoScroll={true} 
+                  />
+                )}
                 {categorizedStores.map((cat) => (
                   <StoreCarousel key={cat.name} title={cat.name} stores={cat.stores} />
                 ))}

@@ -3,10 +3,11 @@
  * meta (categoría · comuna) + rating con estrella ámbar. Toca → store/[id].
  */
 import { View } from 'react-native';
-import { Star, BadgeCheck } from 'lucide-react-native';
+import { Star } from 'lucide-react-native';
 import { Card } from '@/ui/Card';
 import { Text } from '@/ui/Text';
 import { RemoteImage } from '@/ui/RemoteImage';
+import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { colors } from '@/ui/theme';
 import type { Store } from '@/features/stores/types';
 import { formatStoreAddressShort } from '@/features/stores/formatStoreAddress';
@@ -32,7 +33,7 @@ export function StoreCard({ store, onPress }: { store: Store; onPress: () => voi
             {store.name}
           </Text>
           {store.verified ? (
-            <BadgeCheck size={16} color={colors.brand[500]} strokeWidth={2} />
+            <VerifiedBadge size={16} />
           ) : null}
         </View>
 
