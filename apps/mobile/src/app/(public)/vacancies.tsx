@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Store, Clock, MapPin } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
@@ -10,6 +10,7 @@ import { colors } from '@/ui/theme';
 import { useVacancies, useApplyToVacancy, useMyApplications } from '@/features/delivery/hooks';
 import { useSession } from '@/features/auth/session.store';
 import type { DeliveryVacancy } from '@/features/delivery/types';
+import { CategoryChips, type Category } from '@/components/CategoryChips';
 
 export default function VacanciesScreen() {
   const { data: vacancies, loading, refetch: refetchVacancies } = useVacancies();
@@ -17,6 +18,27 @@ export default function VacanciesScreen() {
   const user = useSession((s) => s.user);
   
   const { data: myApps, refetch: refetchMyApps } = useMyApplications(user?.id);
+
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [locationFilter, setLocationFilter] = useState<string | null>(null);
+
+  const locationOptions = useMemo<Category[]>(() => {
+    const locations = Array.from(
+      new Set(
+        vacancies
+          .filter(v => v.state_id !== '3')
+          .map(v => v.stores?.communes?.name)
+          .filter((n): n is string => !!n)
+      )
+    ).sort();
+    return [{ id: null, name: 'Todas' }, ...locations.map(n => ({ id: n, name: n }))];
+  }, [vacancies]);
+
+  const statusOptions: Category[] = [
+    { id: null, name: 'Todas' },
+    { id: 'disponibles', name: 'Disponibles' },
+    { id: 'postuladas', name: 'Postuladas' },
+  ];
 
   const handleApply = (vacancyId: string) => {
     if (!user) return;
@@ -94,7 +116,19 @@ export default function VacanciesScreen() {
     );
   }
 
-  const filteredData = vacancies.filter(v => v.state_id !== '3');
+  const filteredData = vacancies.filter(v => {
+    if (v.state_id === '3') return false; // Rejected/Inactive
+
+    // Location filter
+    if (locationFilter && v.stores?.communes?.name !== locationFilter) return false;
+
+    // Status filter
+    const hasApplied = myApps.some(app => app.vacancy_id === v.id);
+    if (statusFilter === 'disponibles' && hasApplied) return false;
+    if (statusFilter === 'postuladas' && !hasApplied) return false;
+
+    return true;
+  });
 
   return (
     <Screen>
@@ -102,6 +136,12 @@ export default function VacanciesScreen() {
         <Logo variant="plain" height={22} />
         <Text variant="title" className="text-brand-900 mt-3">Ofertas de Trabajo</Text>
         <Text variant="caption" className="text-gray-500 mt-1">Encuentra y postula a nuevas oportunidades</Text>
+      </View>
+      <View className="pb-3 border-b border-gray-100 bg-white mb-2">
+        <View className="mb-3">
+          <CategoryChips categories={statusOptions} selectedId={statusFilter} onSelect={setStatusFilter} />
+        </View>
+        <CategoryChips categories={locationOptions} selectedId={locationFilter} onSelect={setLocationFilter} />
       </View>
       <FlatList
         data={filteredData}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, SectionList, ActivityIndicator, Linking } from 'react-native';
 import { Store, CheckCircle } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
@@ -11,6 +11,7 @@ import { useMyApplications } from '@/features/delivery/hooks';
 import { useSession } from '@/features/auth/session.store';
 import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
 import type { CourierApplication } from '@/features/delivery/types';
+import { CategoryChips, type Category } from '@/components/CategoryChips';
 
 const GREEN = '#10b981';
 
@@ -18,11 +19,42 @@ export default function ApplicationsScreen() {
   const user = useSession((s) => s.user);
   const { data, loading, refetch } = useMyApplications(user?.id);
 
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [locationFilter, setLocationFilter] = useState<string | null>(null);
+
+  const locationOptions = useMemo<Category[]>(() => {
+    const locations = Array.from(
+      new Set(
+        data
+          .map(a => a.delivery_vacancies?.stores?.communes?.name)
+          .filter((n): n is string => !!n)
+      )
+    ).sort();
+    return [{ id: null, name: 'Todas' }, ...locations.map(n => ({ id: n, name: n }))];
+  }, [data]);
+
+  const statusOptions: Category[] = [
+    { id: null, name: 'Todas' },
+    { id: 'nuevas', name: 'Nuevas (Pendientes)' },
+    { id: 'aceptadas', name: 'Aceptadas (Trabajando)' },
+  ];
+
   // "Trabajando" = postulaciones aceptadas (state_id 2). El resto (pendientes,
   // rechazadas) va en "Mis postulaciones". Solo se muestran secciones no vacías.
   const sections = useMemo(() => {
-    const activas = data.filter((a) => String(a.state_id) === '2');
-    const postulaciones = data.filter((a) => String(a.state_id) !== '2');
+    const filteredData = data.filter(a => {
+      // Location filter
+      if (locationFilter && a.delivery_vacancies?.stores?.communes?.name !== locationFilter) return false;
+      
+      // Status filter
+      if (statusFilter === 'nuevas' && String(a.state_id) !== '1') return false;
+      if (statusFilter === 'aceptadas' && String(a.state_id) !== '2') return false;
+
+      return true;
+    });
+
+    const activas = filteredData.filter((a) => String(a.state_id) === '2');
+    const postulaciones = filteredData.filter((a) => String(a.state_id) !== '2');
     return [
       { title: 'Trabajando', data: activas },
       { title: 'Mis postulaciones', data: postulaciones },
@@ -103,6 +135,12 @@ export default function ApplicationsScreen() {
         <Logo variant="plain" height={22} />
         <Text variant="title" className="text-brand-900 mt-3">Mis Postulaciones</Text>
         <Text variant="caption" className="text-gray-500 mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
+      </View>
+      <View className="pb-3 border-b border-gray-100 bg-white mb-2">
+        <View className="mb-3">
+          <CategoryChips categories={statusOptions} selectedId={statusFilter} onSelect={setStatusFilter} />
+        </View>
+        <CategoryChips categories={locationOptions} selectedId={locationFilter} onSelect={setLocationFilter} />
       </View>
       <SectionList
         sections={sections}
