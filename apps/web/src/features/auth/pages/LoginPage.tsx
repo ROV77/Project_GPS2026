@@ -29,7 +29,7 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: 'demo@caserita.cl', password: '', remember: true },
+    defaultValues: { email: '', password: '', remember: true },
   });
 
   const onSubmit = async (values: LoginInput) => {
@@ -50,13 +50,6 @@ export function LoginPage() {
     <AuthLayout>
       <h2 className="text-center text-2xl font-bold text-slate-900">Inicia sesión</h2>
       <p className="mt-1 text-center text-slate-500">Ingresa al panel de tu comercio.</p>
-
-      <Alert
-        className="mt-5"
-        type="info"
-        title="Cuenta de demostración"
-        description="Usa demo@caserita.cl con la contraseña demo123 (datos del seed)."
-      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
         <Field label="Correo electrónico" required error={errors.email?.message} className="mb-5">

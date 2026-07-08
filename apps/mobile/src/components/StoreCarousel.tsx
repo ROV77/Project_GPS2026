@@ -20,7 +20,21 @@ export function StoreCarousel({ title, icon, stores, autoScroll = false }: Store
   const [isInteracting, setIsInteracting] = useState(false);
   const scrollOffset = useSharedValue(0);
   const maxScroll = useSharedValue(0);
-  
+  const layoutWidth = useSharedValue(0);
+  const interactionTimeout = useRef<NodeJS.Timeout>();
+
+  const handleInteractionStart = () => {
+    setIsInteracting(true);
+    if (interactionTimeout.current) clearTimeout(interactionTimeout.current);
+  };
+
+  const handleInteractionEnd = () => {
+    if (interactionTimeout.current) clearTimeout(interactionTimeout.current);
+    interactionTimeout.current = setTimeout(() => {
+      setIsInteracting(false);
+    }, 1000);
+  };
+
   // Basic auto-scroll implementation using JS timer (or RAF) for simplicity and reliability in plain RN.
   useEffect(() => {
     if (!autoScroll || stores.length === 0 || isInteracting) return;
@@ -40,9 +54,20 @@ export function StoreCarousel({ title, icon, stores, autoScroll = false }: Store
       
       // If we reach the end, reset to start or reverse
       // For an infinite effect, we'd need to loop the data.
-      // Here we just stop at the end or smoothly reset.
-      if (maxScroll.value > 0 && scrollOffset.value > maxScroll.value) {
+      // The true maximum scroll offset is contentWidth - containerWidth.
+      const trueMax = maxScroll.value - layoutWidth.value;
+      if (trueMax > 0 && scrollOffset.value > trueMax) {
         scrollOffset.value = 0;
+        if (listRef.current) {
+          listRef.current.scrollToOffset({ offset: 0, animated: true });
+        }
+        // Pausar el auto-scroll simulando una interacción para dejar que termine la animación de rebobinado
+        setIsInteracting(true);
+        if (interactionTimeout.current) clearTimeout(interactionTimeout.current);
+        interactionTimeout.current = setTimeout(() => {
+          setIsInteracting(false);
+        }, 1200); // 1.2s pause gives enough time for the native animated rewind to finish
+        return;
       }
 
       // We must call scrollTo on the UI thread, or just use JS if not intensive
@@ -73,12 +98,22 @@ export function StoreCarousel({ title, icon, stores, autoScroll = false }: Store
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 12 }}
-        snapToInterval={220} // assuming card width is roughly 220 + 8 margin
-        decelerationRate="fast"
-        onTouchStart={() => setIsInteracting(true)}
-        onTouchEnd={() => setIsInteracting(false)}
-        onScrollBeginDrag={() => setIsInteracting(true)}
-        onScrollEndDrag={() => setIsInteracting(false)}
+        showsHorizontalScrollIndicator={false}
+        onLayout={(e) => {
+          layoutWidth.value = e.nativeEvent.layout.width;
+        }}
+        onTouchStart={handleInteractionStart}
+        onTouchEnd={handleInteractionEnd}
+        onScrollBeginDrag={handleInteractionStart}
+        onScrollEndDrag={handleInteractionEnd}
+        onMomentumScrollBegin={handleInteractionStart}
+        onMomentumScrollEnd={handleInteractionEnd}
+        onScroll={(e) => {
+          if (isInteracting) {
+            scrollOffset.value = e.nativeEvent.contentOffset.x;
+          }
+        }}
+        scrollEventThrottle={16}
         onContentSizeChange={(w, h) => {
           maxScroll.value = w; // Approximate, actual max offset is w - screenWidth
         }}
