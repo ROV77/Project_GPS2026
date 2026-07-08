@@ -16,6 +16,7 @@ import { UpgradeBanner } from '@/features/subscriptions/components/UpgradeBanner
 import { useDashboardStats } from '../hooks/useDashboardStats';
 import { DashboardStatsCards } from '../components/DashboardStatsCards';
 import { FeaturedProductsPanel } from '../components/FeaturedProductsPanel';
+import { AnalyticsSupportCard } from '../components/AnalyticsSupportCard';
 
 const CHART_COLORS = [
   'var(--chart-1)',
@@ -173,6 +174,9 @@ export function DashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Soporte analítico: visible solo para planes Pro/Premium (canViewStats). */}
+      <AnalyticsSupportCard />
       </PlanGate>
     </div>
   );
