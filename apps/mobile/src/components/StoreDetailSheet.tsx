@@ -67,6 +67,8 @@ export const StoreDetailSheet = forwardRef<BottomSheet, Props>(function StoreDet
       enablePanDownToClose
       backdropComponent={renderBackdrop}
       onChange={handleChange}
+      backgroundStyle={{ backgroundColor: colors.card }}
+      handleIndicatorStyle={{ backgroundColor: colors.border }}
     >
       {store && style ? (
         <BottomSheetView style={{ paddingHorizontal: 20, paddingBottom: 24, gap: 12 }}>
