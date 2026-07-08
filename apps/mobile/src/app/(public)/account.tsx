@@ -8,7 +8,7 @@
  * Las TIENDAS no se crean aquí: el mobile es solo cliente/repartidor. Una tarjeta
  * deriva al web (caseritapp.cl) para crear/configurar un negocio.
  */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { View, ActivityIndicator, Alert, Linking, TouchableOpacity, Switch, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bike, User, Phone, Store as StoreIcon, Star, ChevronRight, Moon, Calendar, LogOut } from 'lucide-react-native';
@@ -55,7 +55,20 @@ export default function AccountScreen() {
   const [quitting, setQuitting] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme, triggerTransition } = useThemeStore();
+
+  const switchRef = useRef<View>(null);
+
+  const handleThemeToggle = (val: boolean) => {
+    const nextTheme = val ? 'dark' : 'light';
+    if (switchRef.current) {
+      switchRef.current.measure((fx, fy, width, height, px, py) => {
+        triggerTransition(px + width / 2, py + height / 2, nextTheme);
+      });
+    } else {
+      setTheme(nextTheme);
+    }
+  };
 
   const isAuth = status === 'authenticated' && !!user;
   const isCourier = !!user?.roles.includes('delivery');
@@ -179,12 +192,14 @@ export default function AccountScreen() {
                   <Moon size={20} color={colors.foreground} />
                   <Text variant="body" className="text-foreground">Modo oscuro</Text>
                 </View>
-                <Switch 
-                  value={theme === 'dark'}
-                  onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
-                  trackColor={{ false: colors.border, true: colors.brand[500] }}
-                  thumbColor={colors.white}
-                />
+                <View ref={switchRef} collapsable={false}>
+                  <Switch 
+                    value={theme === 'dark'}
+                    onValueChange={handleThemeToggle}
+                    trackColor={{ false: colors.border, true: colors.brand[500] }}
+                    thumbColor={colors.white}
+                  />
+                </View>
               </View>
               
               {isAuth && user?.phone && (
