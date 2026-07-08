@@ -1,24 +1,14 @@
 import { useState } from 'react';
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import {
-  LogOut,
-  Bell,
-  ChevronDown,
-  PanelLeftClose,
-  PanelLeftOpen,
-  User,
-} from 'lucide-react';
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
+import { PanelLeftClose, PanelLeftOpen, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DropdownMenu } from '@/shared/ui';
 import { navItems } from '@/shared/config/navigation';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useCapabilities } from '@/features/subscriptions/hooks/useSubscription';
-import { useMyAccount } from '@/features/user/hooks/useUser';
-import { getInitials } from '@/shared/lib/format';
+import { useMyStore } from '@/features/stores/hooks/useStores';
 import { CloudinaryImg } from '@/shared/ui/CloudinaryImg';
 import logoNavy from '@/assets/icons/logo-caseritapp_navy.png';
-import { SidebarProfile } from './SidebarProfile';
+import { SidebarLogout } from './SidebarProfile';
 
 /**
  * Shell del panel: sidebar (marca + nav + perfil) + header (título + acciones) +
@@ -31,8 +21,8 @@ export function AdminLayout() {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const { data: account } = useMyAccount();
   const capabilities = useCapabilities();
+  const { data: store } = useMyStore();
 
   // El panel de tienda no aplica a repartidores: van a su propio dashboard.
   if (user?.roles?.includes('delivery')) {
@@ -56,8 +46,6 @@ export function AdminLayout() {
     logout();
     navigate('/login', { replace: true });
   };
-
-  const initials = getInitials(user?.name) || 'U';
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -109,13 +97,7 @@ export function AdminLayout() {
           })}
         </nav>
 
-        <SidebarProfile
-          account={account}
-          displayName={user?.name}
-          collapsed={collapsed}
-          active={isAccountPage}
-          onClick={() => navigate('/mi-cuenta')}
-        />
+        <SidebarLogout collapsed={collapsed} onLogout={handleLogout} />
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -130,70 +112,33 @@ export function AdminLayout() {
           <h1 className="text-lg font-semibold text-slate-800">{currentLabel}</h1>
 
           <div className="ml-auto flex items-center gap-1.5">
-            {/* Notificaciones (estado vacío — pendiente de conectar a la API) */}
-            <Popover className="relative">
-              <PopoverButton
-                aria-label="Notificaciones"
-                className="flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
-              >
-                <Bell className="size-5" />
-              </PopoverButton>
-              <PopoverPanel
-                anchor="bottom end"
-                transition
-                className="z-50 w-72 rounded-lg border border-slate-200 bg-white shadow-lg [--anchor-gap:0.5rem] transition duration-100 ease-out focus:outline-hidden data-[closed]:opacity-0"
-              >
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <p className="text-sm font-semibold text-slate-800">Notificaciones</p>
-                </div>
-                <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-                  <span className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                    <Bell className="size-5" />
-                  </span>
-                  <p className="text-sm text-slate-500">No tienes notificaciones nuevas.</p>
-                </div>
-              </PopoverPanel>
-            </Popover>
-
-            {/* Menú de usuario */}
-            <DropdownMenu
-              anchor="bottom end"
-              trigger={
-                <div className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 hover:bg-slate-100">
-                  <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-700 text-sm font-semibold text-white">
-                    {account?.avatar_url ? (
-                      <CloudinaryImg
-                        src={account.avatar_url}
-                        alt={account.name ?? 'Avatar'}
-                        displayWidthPx={40}
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      initials
-                    )}
-                  </span>
-                  <span className="hidden text-sm font-medium text-slate-700 sm:inline">
-                    {user?.name ?? 'Usuario'}
-                  </span>
-                  <ChevronDown className="size-4 text-slate-400" />
-                </div>
-              }
-              items={[
-                {
-                  key: 'account',
-                  label: 'Mi perfil',
-                  icon: <User className="size-4" />,
-                  onClick: () => navigate('/mi-cuenta'),
-                },
-                {
-                  key: 'logout',
-                  label: 'Cerrar sesión',
-                  icon: <LogOut className="size-4" />,
-                  danger: true,
-                  onClick: handleLogout,
-                },
-              ]}
-            />
+            {/* Burbuja con el logo de la tienda. Usa el mismo useMyStore() que
+                /mi-tienda (key ['my-store']), así cuando se actualiza el logo
+                ahí, se refresca solo acá. Al presionar lleva a /mi-tienda. */}
+            <button
+              type="button"
+              onClick={() => navigate('/mi-tienda')}
+              aria-label="Mi tienda"
+              className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-slate-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-700 text-white">
+                {store?.logo_url ? (
+                  <CloudinaryImg
+                    src={store.logo_url}
+                    alt={store.name ?? 'Mi tienda'}
+                    displayWidthPx={36}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <Store className="size-4" strokeWidth={2} />
+                )}
+              </span>
+              {!collapsed && (
+                <span className="hidden text-sm font-medium text-slate-700 sm:inline">
+                  {store?.name ?? 'Mi tienda'}
+                </span>
+              )}
+            </button>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-6">
