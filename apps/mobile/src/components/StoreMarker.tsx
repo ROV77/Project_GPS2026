@@ -15,7 +15,7 @@
 import { memo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Marker } from 'react-native-maps';
-import { colors } from '@/ui/theme';
+import { useThemeColors, colors } from '@/ui/theme';
 import { getCategoryStyle } from '@/features/stores/categoryStyle';
 import type { Store } from '@/features/stores/types';
 
@@ -27,6 +27,7 @@ interface Props {
 }
 
 function StoreMarkerImpl({ store, coordinate, selected, onPress }: Props) {
+  const colors = useThemeColors();
   const { Icon, color } = getCategoryStyle(store.category_name);
 
   return (

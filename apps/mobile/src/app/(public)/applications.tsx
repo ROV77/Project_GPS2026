@@ -6,7 +6,7 @@ import { Text } from '@/ui/Text';
 import { Card } from '@/ui/Card';
 import { Button } from '@/ui/Button';
 import { Logo } from '@/ui/Logo';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 import { useMyApplications } from '@/features/delivery/hooks';
 import { useSession } from '@/features/auth/session.store';
 import { buildWhatsAppUrl } from '@/shared/lib/whatsapp';
@@ -16,6 +16,7 @@ import { CategoryChips, type Category } from '@/components/CategoryChips';
 const GREEN = '#10b981';
 
 export default function ApplicationsScreen() {
+  const colors = useThemeColors();
   const user = useSession((s) => s.user);
   const { data, loading, refetch } = useMyApplications(user?.id);
 

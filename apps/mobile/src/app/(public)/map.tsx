@@ -32,7 +32,8 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
-import { colors } from '@/ui/theme';
+import { useThemeColors, colors } from '@/ui/theme';
+import { useThemeStore } from '@/ui/themeStore';
 import { useStores } from '@/features/stores/hooks';
 import { StoreMarker } from '@/components/StoreMarker';
 import { ClusterMarker } from '@/components/ClusterMarker';
@@ -49,12 +50,17 @@ const DEFAULT_REGION = {
   longitudeDelta: 0.25,
 };
 
+const CARTO_URL_LIGHT = 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png';
+const CARTO_URL_DARK = 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png';
+
 // Altura del bloque SearchBar + CategoryChips (fija por diseño, ver componentes).
 const FILTERS_HEIGHT = 108;
 
 type PermState = 'undetermined' | 'granted' | 'denied';
 
 export default function MapScreen() {
+  const colors = useThemeColors();
+  const { theme } = useThemeStore();
   const insets = useSafeAreaInsets();
   // ponytail: carga total de tiendas de una vez; si algún día superan ~500,
   // crear endpoint nearby con bounding box en la API.
@@ -318,7 +324,7 @@ export default function MapScreen() {
               edgePadding={{ top: 50, left: 50, right: 50, bottom: 50 }}
             >
               <UrlTile
-                urlTemplate="https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+                urlTemplate={theme === 'dark' ? CARTO_URL_DARK : CARTO_URL_LIGHT}
                 maximumZ={19}
                 flipY={false}
                 tileSize={256}

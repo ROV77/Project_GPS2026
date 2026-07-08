@@ -9,9 +9,10 @@ import Animated, {
   withTiming,
   withDelay,
 } from 'react-native-reanimated';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 
 export function VerifiedBadge({ size = 16 }: { size?: number }) {
+  const colors = useThemeColors();
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.1);
 

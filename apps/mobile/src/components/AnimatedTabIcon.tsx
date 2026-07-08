@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import type { LucideIcon } from 'lucide-react-native';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 
 interface Props {
   Icon: LucideIcon;
@@ -17,6 +17,7 @@ interface Props {
 }
 
 export function AnimatedTabIcon({ Icon, color, size, focused }: Props) {
+  const colors = useThemeColors();
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {

@@ -5,7 +5,7 @@ import { Bike, ClipboardList, CheckCircle } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 import { useSession } from '@/features/auth/session.store';
 
 const ONBOARDING_STEPS = [
@@ -27,6 +27,7 @@ const ONBOARDING_STEPS = [
 ];
 
 export default function CourierOnboardingScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const becomeCourier = useSession((s) => s.becomeCourier);
   const status = useSession((s) => s.status);

@@ -6,13 +6,14 @@ import { Text } from '@/ui/Text';
 import { Card } from '@/ui/Card';
 import { Button } from '@/ui/Button';
 import { Logo } from '@/ui/Logo';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 import { useVacancies, useApplyToVacancy, useMyApplications } from '@/features/delivery/hooks';
 import { useSession } from '@/features/auth/session.store';
 import type { DeliveryVacancy } from '@/features/delivery/types';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
 
 export default function VacanciesScreen() {
+  const colors = useThemeColors();
   const { data: vacancies, loading, refetch: refetchVacancies } = useVacancies();
   const { mutate: apply, loading: applying } = useApplyToVacancy();
   const user = useSession((s) => s.user);

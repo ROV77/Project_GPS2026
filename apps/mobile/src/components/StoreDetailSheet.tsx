@@ -16,7 +16,7 @@ import { Star, BadgeCheck, MapPin } from 'lucide-react-native';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { RemoteImage } from '@/ui/RemoteImage';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
 import { getCategoryStyle } from '@/features/stores/categoryStyle';
 import { formatStoreAddress } from '@/features/stores/formatStoreAddress';
 import type { Store } from '@/features/stores/types';
@@ -30,6 +30,7 @@ export const StoreDetailSheet = forwardRef<BottomSheet, Props>(function StoreDet
   { store, onClose },
   ref,
 ) {
+  const colors = useThemeColors();
   const router = useRouter();
   const snapPoints = useMemo(() => ['1%', '42%', '75%'], []);
 

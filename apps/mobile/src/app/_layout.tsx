@@ -15,12 +15,17 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { useSession } from '@/features/auth/session.store';
+import { useThemeStore } from '@/ui/themeStore';
+import { useColorScheme } from 'nativewind';
 
 // Mantener el splash hasta que las fuentes Inter estén listas (evita un parpadeo
 // con la fuente del sistema). Ver app.json → plugin expo-splash-screen.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const { theme, loadTheme } = useThemeStore();
+  const { setColorScheme } = useColorScheme();
+
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -35,11 +40,16 @@ export default function RootLayout() {
     if (fontsLoaded || fontError) SplashScreen.hideAsync();
   }, [fontsLoaded, fontError]);
 
-  // Rehidratar la sesión al abrir la app: si hay token guardado, carga el perfil
-  // (GET /auth/me); si no, deja la sesión en estado anónimo. No bloquea la UI.
+  // Rehidratar la sesión y el tema al abrir la app.
   useEffect(() => {
     void useSession.getState().hydrate();
+    void loadTheme();
   }, []);
+
+  // Aplicar el tema actual (claro/oscuro) a NativeWind cada vez que cambie.
+  useEffect(() => {
+    setColorScheme(theme);
+  }, [theme, setColorScheme]);
 
   // Mientras no haya resolución (ni cargadas ni error) mantenemos el splash. Ante
   // error seguimos adelante con la fuente del sistema en vez de bloquear la app.
@@ -48,7 +58,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         {/* Cada grupo de rutas maneja su propio header; aquí solo el contenedor. */}
         <Stack screenOptions={{ headerShown: false }} />
       </SafeAreaProvider>

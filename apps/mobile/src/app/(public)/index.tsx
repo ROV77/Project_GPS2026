@@ -24,7 +24,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Logo } from '@/ui/Logo';
 import { BrandGradient } from '@/ui/BrandGradient';
-import { colors } from '@/ui/theme';
+import { useThemeColors, colors } from '@/ui/theme';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
 import { StoreCard } from '@/components/StoreCard';
@@ -49,6 +49,7 @@ const FLOAT_SHADOW = {
 } as const;
 
 export default function HomeScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { stores, loading, refreshing, error, reload, refresh } = useStores({ limit: 50 });
@@ -244,6 +245,7 @@ export default function HomeScreen() {
 /** Placeholders de carga: rectángulos neutros, no spinner a pantalla completa.
  *  Reutiliza <Card> para no duplicar el estilo de superficie de StoreCard. */
 function SkeletonList() {
+  const colors = useThemeColors();
   return (
     <View className="gap-3 px-5">
       {[0, 1, 2, 3, 4].map((i) => (
@@ -260,6 +262,7 @@ function SkeletonList() {
 }
 
 function EmptyState() {
+  const colors = useThemeColors();
   return (
     <View className="items-center gap-2 px-8 pt-16">
       <MapPin size={40} color={colors.mutedForeground} strokeWidth={1.5} />

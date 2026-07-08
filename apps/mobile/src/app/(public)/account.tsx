@@ -9,16 +9,17 @@
  * deriva al web (caseritapp.cl) para crear/configurar un negocio.
  */
 import { useState } from 'react';
-import { View, ActivityIndicator, Alert, Linking, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, Alert, Linking, TouchableOpacity, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike, User, Phone, Store as StoreIcon, Star, ChevronRight } from 'lucide-react-native';
+import { Bike, User, Phone, Store as StoreIcon, Star, ChevronRight, Moon } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Avatar } from '@/ui/Avatar';
 import { BrandGradient } from '@/ui/BrandGradient';
-import { colors } from '@/ui/theme';
+import { useThemeColors } from '@/ui/theme';
+import { useThemeStore } from '@/ui/themeStore';
 import { useSession } from '@/features/auth/session.store';
 import { pickAndUploadAvatar } from '@/features/auth/avatar';
 import { getApiErrorMessage } from '@/shared/api/errors';
@@ -47,6 +48,7 @@ function memberSince(iso: string | null): string | null {
 }
 
 export default function AccountScreen() {
+  const colors = useThemeColors();
   const router = useRouter();
   const status = useSession((s) => s.status);
   const user = useSession((s) => s.user);
@@ -54,6 +56,8 @@ export default function AccountScreen() {
   const quitCourier = useSession((s) => s.quitCourier);
   const [quitting, setQuitting] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  
+  const { theme, setTheme } = useThemeStore();
 
   const isAuth = status === 'authenticated' && !!user;
   const isCourier = !!user?.roles.includes('delivery');
@@ -145,6 +149,28 @@ export default function AccountScreen() {
       </BrandGradient>
 
       <View className="gap-3 px-5">
+        <Card elevated>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3">
+              <View className="h-11 w-11 items-center justify-center rounded-full bg-brand-50">
+                <Moon size={22} color={colors.brand[700]} strokeWidth={2} />
+              </View>
+              <View>
+                <Text variant="subtitle">Modo oscuro</Text>
+                <Text variant="caption" className="mt-0.5">
+                  Alternar tema claro/oscuro
+                </Text>
+              </View>
+            </View>
+            <Switch 
+              value={theme === 'dark'}
+              onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
+              trackColor={{ false: colors.border, true: colors.brand[500] }}
+              thumbColor={colors.white}
+            />
+          </View>
+        </Card>
+
         {isAuth ? (
           <Card elevated>
             {memberSince(user.created_at) && (

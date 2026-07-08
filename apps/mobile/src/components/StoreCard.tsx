@@ -8,7 +8,7 @@ import { Card } from '@/ui/Card';
 import { Text } from '@/ui/Text';
 import { RemoteImage } from '@/ui/RemoteImage';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
-import { colors } from '@/ui/theme';
+import { useThemeColors, colors } from '@/ui/theme';
 import type { Store } from '@/features/stores/types';
 import { formatStoreAddressShort } from '@/features/stores/formatStoreAddress';
 
