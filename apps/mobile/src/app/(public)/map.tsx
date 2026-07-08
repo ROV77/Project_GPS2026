@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, ActivityIndicator, Linking, Platform, Pressable, Keyboard } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import * as Location from 'expo-location';
 import ClusteredMapView from 'react-native-map-clustering';
@@ -55,6 +56,7 @@ const FILTERS_HEIGHT = 108;
 type PermState = 'undetermined' | 'granted' | 'denied';
 
 export default function MapScreen() {
+  const insets = useSafeAreaInsets();
   // ponytail: carga total de tiendas de una vez; si algún día superan ~500,
   // crear endpoint nearby con bounding box en la API.
   const { stores, loading, error, reload } = useStores({ limit: 500 });
@@ -235,29 +237,28 @@ export default function MapScreen() {
   };
 
   return (
-    <Screen>
-      {/* Título + estado de carga/error (siempre visible, no colapsa) */}
-      <View className="px-5 pb-2 pt-3">
-        <Text variant="title">Mapa de tiendas</Text>
-        {error && (
-          <>
-            <Text variant="caption" className="mt-1" style={{ color: colors.destructive }}>
-              Error al cargar tiendas
-            </Text>
-            <View className="mt-2">
+    <View className="flex-1 bg-background relative">
+      {/* Error state if needed */}
+      {error && (
+        <View style={{ position: 'absolute', top: insets.top + 130, left: 20, right: 20, zIndex: 40 }} className="items-center">
+          <Card elevated className="w-full items-center">
+            <Text variant="subtitle" style={{ color: colors.destructive }}>Error al cargar tiendas</Text>
+            <View className="mt-3 w-full">
               <Button label="Reintentar" variant="secondary" onPress={reload} />
             </View>
-          </>
-        )}
-      </View>
+          </Card>
+        </View>
+      )}
 
       {/* Buscador + chips de categoría: se colapsan mientras se arrastra el mapa.
           El desplegable de resultados va fuera del área que colapsa (overflow) y
           se posiciona bajo el buscador. */}
-      <View style={{ zIndex: 20 }}>
+      <View style={{ position: 'absolute', top: Math.max(insets.top, 16), left: 0, right: 0, zIndex: 20 }}>
         <Animated.View style={filtersStyle}>
           <View className="px-5 pb-3">
-            <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar tiendas en el mapa" />
+            <View style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 }}>
+              <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar aquí" />
+            </View>
           </View>
           <View className="pb-3">
             <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
@@ -286,7 +287,7 @@ export default function MapScreen() {
         )}
       </View>
 
-      <View className="mx-5 flex-1 overflow-hidden rounded-2xl border bg-card" style={{ borderColor: colors.border }}>
+      <View className="flex-1 bg-card">
         {locating ? (
           <View className="flex-1 items-center justify-center gap-3">
             <ActivityIndicator color={colors.brand[700]} />
@@ -369,7 +370,7 @@ export default function MapScreen() {
             <View
               style={{
                 position: 'absolute',
-                top: 6,
+                top: insets.top + 130, // Just below the search area
                 right: 8,
                 backgroundColor: 'rgba(255,255,255,0.75)',
                 borderRadius: 4,
@@ -378,7 +379,7 @@ export default function MapScreen() {
               }}
             >
               <Text variant="caption" style={{ fontSize: 9, color: colors.mutedForeground }}>
-                &copy; CARTO &copy; OpenStreetMap
+                &copy; CARTO &copy; OSM
               </Text>
             </View>
           </View>
@@ -410,6 +411,6 @@ export default function MapScreen() {
       )}
 
       <StoreDetailSheet ref={sheetRef} store={selectedStore} onClose={() => setSelectedId(null)} />
-    </Screen>
+    </View>
   );
 }
