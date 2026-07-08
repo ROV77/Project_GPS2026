@@ -23,7 +23,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, ActivityIndicator, Linking, Platform, Pressable, Keyboard } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import * as Location from 'expo-location';
 import ClusteredMapView from 'react-native-map-clustering';
 import { UrlTile } from 'react-native-maps';
@@ -84,22 +83,6 @@ export default function MapScreen() {
   // `undefined`: `mapRef` revienta al montar/desmontar y `clusteringEnabled`
   // (falsy) desactiva el clustering en silencio. Se pasan todos a mano.
   const superClusterRef = useRef(null);
-  const filtersHeight = useSharedValue(FILTERS_HEIGHT);
-
-  const filtersStyle = useAnimatedStyle(() => ({
-    height: filtersHeight.value,
-    overflow: 'hidden',
-  }));
-
-  // Arrastrar el mapa colapsa el buscador/chips para dar más espacio.
-  const handlePanDrag = useCallback(() => {
-    filtersHeight.value = withTiming(0, { duration: 180 });
-  }, [filtersHeight]);
-
-  // Al soltar el gesto, el buscador/chips reaparecen tras una pausa breve.
-  const handleRegionChangeComplete = useCallback(() => {
-    filtersHeight.value = withDelay(400, withTiming(FILTERS_HEIGHT, { duration: 220 }));
-  }, [filtersHeight]);
 
   // Tocar un marker selecciona la tienda y abre el sheet — sin mover el mapa
   // ni depender de ningún otro componente (evita el rebote del carrusel).
@@ -250,11 +233,9 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* Buscador + chips de categoría: se colapsan mientras se arrastra el mapa.
-          El desplegable de resultados va fuera del área que colapsa (overflow) y
-          se posiciona bajo el buscador. */}
+      {/* Buscador + chips de categoría */}
       <View style={{ position: 'absolute', top: Math.max(insets.top, 16), left: 0, right: 0, zIndex: 20 }}>
-        <Animated.View style={filtersStyle}>
+        <View>
           <View className="px-5 pb-3">
             <View style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 }}>
               <SearchBar value={search} onChangeText={setSearch} placeholder="Buscar aquí" />
@@ -263,7 +244,7 @@ export default function MapScreen() {
           <View className="pb-3">
             <CategoryChips categories={categories} selectedId={category} onSelect={setCategory} />
           </View>
-        </Animated.View>
+        </View>
 
         {searchMatches.length > 0 && (
           <View style={{ position: 'absolute', top: 54, left: 20, right: 20, zIndex: 30 }}>
@@ -316,8 +297,6 @@ export default function MapScreen() {
               )}
               initialRegion={region}
               onPress={handleMapPress}
-              onPanDrag={handlePanDrag}
-              onRegionChangeComplete={handleRegionChangeComplete}
               showsUserLocation={perm === 'granted'}
               showsMyLocationButton={perm === 'granted'}
               showsPointsOfInterest={false}
