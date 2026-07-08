@@ -17,8 +17,6 @@ import {
 import { useSession } from '@/features/auth/session.store';
 import { useThemeStore } from '@/ui/themeStore';
 import { useColorScheme } from 'nativewind';
-import { LayoutAnimation } from 'react-native';
-import { ThemeTransitionOverlay } from '@/components/ThemeTransitionOverlay';
 
 // Mantener el splash hasta que las fuentes Inter estén listas (evita un parpadeo
 // con la fuente del sistema). Ver app.json → plugin expo-splash-screen.
@@ -50,7 +48,6 @@ export default function RootLayout() {
 
   // Aplicar el tema actual (claro/oscuro) a NativeWind cada vez que cambie.
   useEffect(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setColorScheme(theme);
   }, [theme, setColorScheme]);
 
@@ -62,8 +59,8 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-        <ThemeTransitionOverlay />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }} />
+        {/* Cada grupo de rutas maneja su propio header; aquí solo el contenedor. */}
+        <Stack screenOptions={{ headerShown: false }} />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

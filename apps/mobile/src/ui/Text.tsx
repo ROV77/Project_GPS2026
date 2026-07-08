@@ -29,7 +29,7 @@ export function Text({ variant = 'body', className, style, ...rest }: TextProps)
   const v = VARIANT[variant];
   return (
     <RNText
-      className={`transition-colors duration-500 ${v.color} ${className ?? ''}`}
+      className={`${v.color} ${className ?? ''}`}
       style={[{ fontFamily: v.family, fontSize: v.size, lineHeight: v.line }, style]}
       {...rest}
     />

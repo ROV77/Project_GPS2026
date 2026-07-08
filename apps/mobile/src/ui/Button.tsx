@@ -33,7 +33,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
-      className={`h-12 flex-row items-center justify-center rounded-lg px-5 transition-colors duration-500 ${
+      className={`h-12 flex-row items-center justify-center rounded-lg px-5 ${
         isPrimary ? 'bg-brand-700' : 'border border-border bg-card'
       }`}
       style={({ pressed }) => ({

@@ -1,47 +1,20 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { LayoutAnimation, Platform, UIManager } from 'react-native';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-export type Theme = 'light' | 'dark';
-
-export interface ThemeTransition {
-  active: boolean;
-  oldTheme: Theme;
-  nextTheme: Theme;
-}
+type Theme = 'light' | 'dark';
 
 interface ThemeState {
   theme: Theme;
-  transition: ThemeTransition | null;
-  triggerTransition: (nextTheme: Theme) => void;
-  clearTransition: () => void;
+  setTheme: (theme: Theme) => void;
   loadTheme: () => Promise<void>;
 }
 
-export const useThemeStore = create<ThemeState>((set, get) => ({
+export const useThemeStore = create<ThemeState>((set) => ({
   theme: 'light',
-  transition: null,
-  
-  triggerTransition: (nextTheme) => {
-    const oldTheme = get().theme;
-    if (oldTheme === nextTheme) return;
-    
-    // Inicia la animación y cambia el tema de inmediato para Tailwind crossfade
-    set({ 
-      theme: nextTheme,
-      transition: { active: true, oldTheme, nextTheme } 
-    });
-    SecureStore.setItemAsync('app_theme', nextTheme).catch(console.error);
+  setTheme: (theme) => {
+    set({ theme });
+    SecureStore.setItemAsync('app_theme', theme).catch(console.error);
   },
-
-  clearTransition: () => {
-    set({ transition: null });
-  },
-  
   loadTheme: async () => {
     try {
       const storedTheme = await SecureStore.getItemAsync('app_theme');

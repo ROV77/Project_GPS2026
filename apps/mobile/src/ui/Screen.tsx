@@ -16,7 +16,7 @@ export function Screen({
   const insets = useSafeAreaInsets();
   return (
     <View
-      className="flex-1 bg-transparent"
+      className="flex-1 bg-background"
       style={{
         paddingTop: edges.top ? insets.top : 0,
         paddingBottom: edges.bottom ? insets.bottom : 0,

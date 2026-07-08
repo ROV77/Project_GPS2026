@@ -55,7 +55,7 @@ export default function AccountScreen() {
   const [quitting, setQuitting] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   
-  const { theme, setTheme, triggerTransition } = useThemeStore();
+  const { theme, setTheme } = useThemeStore();
 
   const isAuth = status === 'authenticated' && !!user;
   const isCourier = !!user?.roles.includes('delivery');
@@ -179,14 +179,12 @@ export default function AccountScreen() {
                   <Moon size={20} color={colors.foreground} />
                   <Text variant="body" className="text-foreground">Modo oscuro</Text>
                 </View>
-                <View collapsable={false}>
-                  <Switch 
-                    value={theme === 'dark'}
-                    onValueChange={(val) => triggerTransition(val ? 'dark' : 'light')}
-                    trackColor={{ false: colors.border, true: colors.brand[500] }}
-                    thumbColor={colors.white}
-                  />
-                </View>
+                <Switch 
+                  value={theme === 'dark'}
+                  onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
+                  trackColor={{ false: colors.border, true: colors.brand[500] }}
+                  thumbColor={colors.white}
+                />
               </View>
               
               {isAuth && user?.phone && (
