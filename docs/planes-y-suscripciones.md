@@ -295,6 +295,8 @@ Aquí hubo dos cosas encadenadas:
 
 **La clave conceptual:** que no vuelva a la web **no rompe nada**. La activación del plan viaja por un canal **independiente** — el **webhook** (servidor→servidor, vía el túnel de ngrok del `:3000`). La redirección del navegador es solo cosmética. Por eso, tras pagar, basta **recargar `/planes`** manualmente y el plan ya aparece activo.
 
+> **Actualización (tercera iteración, §14).** Ese "basta recargar manualmente" era verdad **solo mientras el webhook llegara**. Resultó que ese único canal era también un **único punto de falla**: si el webhook no llegaba (algo frecuente en sandbox), el plan quedaba en `pending` para siempre. En §14 lo corregimos agregando un **segundo canal de respaldo** — reconciliar el pago al volver del checkout — para que la activación ya **no dependa exclusivamente** del webhook.
+
 ### 10.4 Ideas para resolverlo de verdad
 
 Ordenadas de más recomendable a más "parche":
@@ -432,7 +434,7 @@ Desde el panel de developers de MercadoPago puedes **simular manualmente** una n
 | `400 auto_return invalid. back_url.success must be defined` | `auto_return` activo con `WEB_PUBLIC_URL=localhost` | Ya lo dejamos comentado; si reapareció, revisa §10.3 |
 | `403 PA_UNAUTHORIZED_RESULT_FROM_POLICIES` al crear preference | Token/cuenta no válidos para ese cobro | Usa el Access Token de **prueba** de la app; revisa que la app esté bien creada |
 | *"Una de las partes… es de prueba"* al pagar | Estás pagando con tu cuenta real | Paga con el **usuario comprador de prueba** (incógnito) |
-| El pago se acredita pero `/planes` sigue en Gratis | El webhook no llegó | ¿Sigue vivo `ngrok http 3000`? ¿`API_PUBLIC_URL` coincide con la URL actual de ngrok? |
+| El pago se acredita pero `/planes` sigue en Gratis | Fallaron **ambos** canales: no llegó el webhook **y** tampoco se confirmó al volver (§14) | ¿Volviste al panel para que corra la confirmación? ¿Sigue vivo el túnel y `API_PUBLIC_URL` coincide? Si ya quedó atascada, destrábala con `set-plan.ts` (§14.11) |
 | Webhook responde `500` al aprobar | Falta el estado `canceled` en la base | Corre `pnpm --filter api dev:reset` |
 | `ERR_NGROK_105` al guardar authtoken | Copiaste el **ID** `cr_...` en vez del authtoken | Saca el authtoken real de *Your Authtoken* (§10.1) |
 | `ERR_NGROK_334` al abrir túnel | Ya hay un túnel online / dos túneles en plan free | Cierra el otro; en local basta un túnel al `:3000` (§10.2) |
@@ -516,3 +518,139 @@ Hoy las ventajas viven como **strings de texto libre** en `plans.features` (`'Ve
 4. **Verificación destacada y Soporte prioritario** (Premium): normalmente son más "de negocio" que técnicas (un badge, una cola de soporte distinta), pero el candado de acceso es el mismo patrón.
 
 > En resumen: **la infraestructura de cobro ya está; falta la contraparte que la justifica.** Mientras los planes no restrinjan nada, pagar no cambia nada para el vendedor. Este es el punto donde el módulo pasa de "funciona técnicamente" a "tiene sentido de producto".
+
+---
+
+## 14. Tercera iteración: reconciliar el pago al volver (arreglar «pagué y el plan no se actualizó»)
+
+> Esta sección documenta un arreglo posterior a la segunda iteración (§9). El nombre "tercera iteración" es cronológico; convive con el trabajo pendiente de §13.
+
+### 14.1 El síntoma
+
+Levantando el stack con Docker, entrando al panel web y mejorando un perfil de **Gratis → Pro**: el Checkout de MercadoPago funcionó perfecto, se pagó con las cuentas de prueba, y MercadoPago ofreció volver al panel. **El pago se realizó, pero el plan del perfil no se actualizó** — seguía en `pending`, nunca pasó a `active`.
+
+### 14.2 El diagnóstico: un solo canal es también un solo punto de falla
+
+Repasando §4: la activación del plan **solo** ocurría dentro de `handleWebhook`, que **solo** se dispara cuando MercadoPago llama al `notification_url` (webhook servidor→servidor). El retorno del navegador a `back_urls.success` era **puramente cosmético**: la pantalla `/planes` únicamente leía el query param `status`, mostraba un *toast* y hacía **un** `refetch` — nunca confirmaba el pago contra el backend.
+
+Eso deja al webhook como **único punto de falla**, con dos modos de rotura:
+
+1. **Carrera (aunque el webhook funcione):** el usuario vuelve al panel y el frontend refetchea *de inmediato*, pero el webhook puede llegar segundos después. Como no hay reintento, el usuario ve el plan viejo y ahí se queda.
+2. **El webhook no llega ni se procesa:** en sandbox, la entrega de webhooks de MercadoPago es **poco confiable** (a veces no lo envía, o deja de reintentar si el túnel parpadeó un instante). Y como no hay cron ni ningún respaldo, la suscripción queda en `pending` **para siempre**. Este era exactamente el caso.
+
+**Cómo lo confirmamos (registro honesto, al estilo §10).** Inspeccionando la base de datos aparecieron suscripciones `Pro` atascadas en `pending` **sin ninguna fila en `payments`** — es decir, `handleWebhook` nunca corrió para ellas. En paralelo probamos que el endpoint del webhook **sí era alcanzable** desde internet (`POST` al `notification_url` a través del túnel → `HTTP 200`), lo que **descartó** un problema de ngrok/nginx y dejó a la vista la verdadera causa: no era plomería rota, era la **fragilidad de depender de un solo canal asíncrono sin respaldo**.
+
+### 14.3 La idea del arreglo: usar lo que MercadoPago ya te devuelve
+
+Cuando MercadoPago redirige el navegador de vuelta, **adjunta a la URL** los datos del pago como query params: `payment_id`, `status`, `external_reference`, `collection_id`, `merchant_order_id`, etc. Es decir, **el navegador ya vuelve con el id del pago en la mano.**
+
+En vez de *confiar* en que el webhook ya corrió, ahora el frontend **usa ese `payment_id` para pedirle al backend que reconcilie el pago en el acto.** La activación pasa de ser una *espera pasiva* ("ojalá llegue el webhook") a una *confirmación activa* ("volví, confirma este pago ahora"). El webhook **no se elimina**: queda como **respaldo** para el caso en que el usuario cierre la pestaña antes de volver.
+
+Dicho de otra forma: ahora hay **dos caminos independientes** que llevan al mismo lugar, y basta con que **uno** de los dos funcione.
+
+```
+                 ┌─(A) webhook  (servidor→servidor, async, sin sesión)──┐
+pago aprobado ───┤                                                      ├──► reconcilePayment() ──► plan activo
+                 └─(B) confirm   (browser→API al volver, con sesión) ───┘
+```
+
+### 14.4 Reusar, no duplicar: `reconcilePayment()`
+
+La lógica de activación (re-consultar el pago, ubicar la suscripción por `external_reference`, activar si está aprobado, cerrar otras activas) **vivía inline dentro de `handleWebhook`**. Como ahora la necesitan **dos** entradas, la extrajimos a una función compartida — es la heurística de §6 otra vez: *el segundo uso es la señal de extraer*.
+
+```ts
+// apps/api/src/services/subscriptions.service.ts
+
+// Núcleo compartido. `expectedStoreId` es opcional (ver 14.5).
+async function reconcilePayment(paymentId: string, expectedStoreId?: bigint) {
+  const payment = await getPayment(paymentId);           // ← regla de oro §4: re-preguntar a MP
+  const subscriptionId = payment.external_reference;
+  ...
+  if (subscription.state_id === activeStateId) return;   // ← idempotencia §4 (ahora entre 2 canales)
+  if (payment.status === 'approved') { /* misma transacción de siempre */ }
+}
+
+// Las dos entradas quedan mínimas y comparten TODAS las garantías:
+async handleWebhook(paymentId: string) {
+  await reconcilePayment(paymentId);                     // webhook: sin sesión
+},
+async confirmCheckout(storeId: bigint, paymentId: string) {
+  await reconcilePayment(paymentId, storeId);            // confirm: con sesión → pasa el store
+  return this.getCurrentSubscription(storeId);           // devuelve el estado ya actualizado
+},
+```
+
+Ambos caminos heredan las mismas dos reglas de oro de §4: **nunca confiar en quien invoca** (siempre `getPayment()` con el `access_token` privado) e **idempotencia por estado de negocio** (si ya está `active`, no reprocesar).
+
+### 14.5 La guarda `expectedStoreId` (seguridad de la confirmación autenticada)
+
+El webhook es anónimo (lo llama MercadoPago), así que se guía **solo** por el pago real. Pero `/confirm` lo llama un usuario **con sesión**, y podría intentar pasar un `payment_id` **ajeno**. Para eso `confirmCheckout` le pasa a `reconcilePayment` el `storeId` de la sesión, y la función **se niega a activar una suscripción que no sea de esa tienda**:
+
+```ts
+if (expectedStoreId !== undefined && subscription.store_id !== expectedStoreId) return;
+```
+
+Es *defensa en profundidad*: aunque el peor caso sería activar una suscripción **que igual ya está pagada** (no se regala nada), preferimos que la sesión de una tienda no pueda tocar la suscripción de otra. El webhook omite la guarda a propósito (no tiene sesión con la cuál comparar).
+
+### 14.6 Idempotencia entre los dos canales
+
+Antes la idempotencia protegía contra "MercadoPago avisa el mismo pago dos veces". Ahora protege, además, contra "el webhook **y** la confirmación llegan casi a la vez para el mismo pago". La defensa es la misma línea de siempre (`if (state_id === active) return`): el primero que llega activa; el segundo ve que ya está activa y no hace nada. **No hizo falta ninguna columna nueva.**
+
+### 14.7 El endpoint nuevo y el frontend
+
+- **`POST /api/subscriptions/confirm`** (autenticado: `requireAuth` + `withStore` + `validateBody`). Body `{ payment_id }`. Devuelve la suscripción vigente con sus `capabilities`, **igual que `GET /me`**, para que el frontend actualice la UI de una.
+- **`confirmSchema`** en `packages/validations/src/subscriptions.schema.ts` (misma convención que `checkoutSchema`).
+- **Frontend** (`apps/web/src/features/subscriptions/`): método `subscriptionsApi.confirm(paymentId)` y hook `useConfirmCheckout`, que al confirmar **deja la suscripción devuelta directo en la cache** (`queryClient.setQueryData`) — el banner "Tu plan actual" cambia a Pro sin esperar otro request.
+- **`PlansListPage.tsx`**: al volver con `status=success`, lee `payment_id` (o `collection_id` en integraciones antiguas) de la URL y llama a `confirm`. Si **no** viene `payment_id`, cae al comportamiento anterior (*toast* + `refetch`, confiando en el webhook) — degradación elegante, nunca peor que antes.
+
+### 14.8 Cómo queda el flujo ahora (agrega esto a §11)
+
+```
+MERCADOPAGO
+  el usuario paga en su Checkout (sandbox)
+  ├─ (A, respaldo) POST notification_url  → webhook → handleWebhook → reconcilePayment(id)
+  └─ (B, principal) redirige al navegador a back_urls.success?...&payment_id=XXX
+
+FRONTEND — al volver (PlansListPage.tsx, useEffect sobre searchParams)
+  status === 'success' && paymentId
+    └─ useConfirmCheckout().mutate(paymentId)     → POST /api/subscriptions/confirm
+
+BACKEND — confirmar (ruta AUTENTICADA)
+  controllers/subscriptions.controller.ts  confirmCheckout()
+    └─ res.locals.storeId + res.locals.body.payment_id
+  services/subscriptions.service.ts  confirmCheckout(storeId, paymentId)
+    ├─ reconcilePayment(paymentId, storeId)       → activa el plan en el acto (idempotente)
+    └─ getCurrentSubscription(storeId)            → devuelve el estado ya actualizado
+```
+
+### 14.9 Por qué esto sí funciona de punta a punta en el stack Docker actual
+
+La §10 describía el setup **viejo** (`pnpm dev` + túnel personal, con `WEB_PUBLIC_URL=http://localhost:5173`), donde MercadoPago **ni siquiera mostraba** el botón "Volver al sitio" porque el `back_url` era `localhost`. El stack Docker actual (ver `docs/docker-guia.md`) es distinto: `WEB_PUBLIC_URL` es el **dominio ngrok público** del equipo, así que MercadoPago **sí** redirige de vuelta al panel **con los query params**. Por eso la confirmación al volver (canal B) funciona de verdad hoy, sin depender de reactivar `auto_return`.
+
+### 14.10 Archivos tocados en esta iteración
+
+| Archivo | Cambio |
+|---|---|
+| `apps/api/src/services/subscriptions.service.ts` | Extraído `reconcilePayment(paymentId, expectedStoreId?)`; `handleWebhook` ahora delega en él; nuevo `confirmCheckout(storeId, paymentId)` |
+| `apps/api/src/controllers/subscriptions.controller.ts` | Handler `confirmCheckout` (lee `storeId` + `payment_id`, responde con la suscripción + capacidades) |
+| `apps/api/src/routes/subscriptions.routes.ts` | Ruta `POST /confirm` (autenticada, con `validateBody(confirmSchema)`) |
+| `packages/validations/src/subscriptions.schema.ts` | `confirmSchema` + tipo `ConfirmInput` |
+| `apps/web/src/features/subscriptions/api/subscriptionsApi.ts` | Método `confirm(paymentId)` → `POST /subscriptions/confirm` |
+| `apps/web/src/features/subscriptions/hooks/useSubscription.ts` | Hook `useConfirmCheckout` (deja el resultado en la cache) |
+| `apps/web/src/features/plans/pages/PlansListPage.tsx` | Al volver del checkout, confirma con el `payment_id` de la URL en vez de solo refetchear |
+
+### 14.11 Dato operativo: destrabar suscripciones que ya quedaron en `pending`
+
+Las suscripciones que se atascaron **antes** de este arreglo no se reparan solas (su pago en MercadoPago ya expiró como notificación). Para dejar a esa tienda en el plan que pagó, usa el script de desarrollo del equipo:
+
+```
+docker compose exec api npx tsx set-plan.ts <email-del-vendedor> Pro
+```
+
+`set-plan.ts` cierra cualquier activa previa y crea la suscripción activa por un mes (sin pasar por MercadoPago). Los intentos de checkout abandonados que hayan quedado en `pending` son inofensivos (`getCurrentSubscription` solo mira las `active`), pero conviene marcarlos `canceled` para no confundir a quien depure la tabla más adelante.
+
+### 14.12 Deuda técnica / mejoras futuras de este arreglo
+
+- **Feedback de "activando…" en la UI:** hoy la confirmación es rápida, pero si el `getPayment` de MercadoPago tarda, la tarjeta no muestra un estado intermedio. Un spinner mientras `confirm.isPending` mejoraría la percepción.
+- **Reintento si el pago aún está `pending` al volver:** si el usuario vuelve muy rápido y MercadoPago todavía reporta `in_process`, `reconcilePayment` no activa (correcto) y quedamos a la espera del webhook. Un *polling* corto de `GET /me` tras confirmar cubriría ese hueco sin depender del webhook.
+- **Guardar el `payment_id` externo:** seguimos sin persistir el id del pago de MercadoPago (la idempotencia es por estado de negocio, §4). Si algún día hay reembolsos/contracargos, ahí sí conviene una columna con el id externo para conciliaciones más finas.

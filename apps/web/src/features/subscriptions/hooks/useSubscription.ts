@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { subscriptionsApi } from '../api/subscriptionsApi';
 import { RESTRICTED_CAPABILITIES } from '../lib/capabilities';
-import type { PlanCapabilities } from '../types';
+import type { PlanCapabilities, Subscription } from '../types';
 
 const KEY = 'subscription';
 
@@ -29,6 +29,21 @@ export function useCheckout() {
   return useMutation({
     mutationFn: subscriptionsApi.checkout,
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+/**
+ * Confirma el pago al volver del checkout de MercadoPago. Activa el plan en el
+ * acto (sin esperar al webhook) y deja la suscripción vigente en la cache.
+ */
+export function useConfirmCheckout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: subscriptionsApi.confirm,
+    onSuccess: (data: Subscription) => {
+      qc.setQueryData([KEY], data);
+      qc.invalidateQueries({ queryKey: [KEY] });
+    },
   });
 }
 

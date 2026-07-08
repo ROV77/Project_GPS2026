@@ -61,6 +61,85 @@ async function endActiveSubscriptions(storeId: bigint, stateName: 'expired' | 'c
   });
 }
 
+/**
+ * Núcleo de reconciliación de un pago de MercadoPago. NUNCA confía en quien lo
+ * invoca: vuelve a pedir el pago real a la API de MercadoPago con el id
+ * recibido y de ahí saca `status`/`external_reference`. Ubica la suscripción
+ * `pending` por ese external_reference y, si el pago está aprobado, la activa.
+ * Es idempotente (si ya está activa, no hace nada), así que da igual si lo
+ * dispara el webhook, la confirmación al volver del checkout, o ambos.
+ *
+ * `expectedStoreId` lo pasa SOLO la confirmación autenticada: evita que una
+ * tienda, con su propia sesión, active una suscripción de OTRA tienda pasando
+ * un payment_id ajeno. El webhook (sin sesión) lo omite.
+ */
+async function reconcilePayment(paymentId: string, expectedStoreId?: bigint): Promise<void> {
+  const payment = await getPayment(paymentId);
+  const subscriptionId = payment.external_reference;
+  if (!subscriptionId) return;
+
+  const subscription = await prisma.subscriptions.findUnique({
+    where: { id: BigInt(subscriptionId) },
+    include: { plans: true },
+  });
+  if (!subscription) return;
+  if (expectedStoreId !== undefined && subscription.store_id !== expectedStoreId) return;
+  if (!subscription.plans) {
+    throw new HttpError(500, 'La suscripción no tiene un plan asociado');
+  }
+
+  const activeStateId = await getSubscriptionStateId('active');
+  if (subscription.state_id === activeStateId) return; // ya procesado (idempotencia)
+
+  if (payment.status === 'approved') {
+    const [approvedStateId, canceledStateId, expiresAt] = await Promise.all([
+      getPaymentStateId('approved'),
+      getSubscriptionStateId('canceled'),
+      Promise.resolve(addBillingPeriod(new Date(), subscription.plans.billing_period)),
+    ]);
+    await prisma.$transaction([
+      prisma.payments.create({
+        data: {
+          subscription_id: subscription.id,
+          amount: subscription.plans.price,
+          currency: 'CLP',
+          state_id: approvedStateId,
+          paid_at: new Date(),
+        },
+      }),
+      // Cambio de plan: cierra cualquier OTRA suscripción activa de la tienda
+      // (ej. el Pro vigente al contratar Premium), para no dejar dos activas.
+      prisma.subscriptions.updateMany({
+        where: {
+          store_id: subscription.store_id,
+          state_id: activeStateId,
+          id: { not: subscription.id },
+        },
+        data: { state_id: canceledStateId },
+      }),
+      prisma.subscriptions.update({
+        where: { id: subscription.id },
+        data: { state_id: activeStateId, starts_at: new Date(), expires_at: expiresAt },
+      }),
+    ]);
+    return;
+  }
+
+  if (payment.status === 'rejected') {
+    const rejectedStateId = await getPaymentStateId('rejected');
+    await prisma.payments.create({
+      data: {
+        subscription_id: subscription.id,
+        amount: subscription.plans.price,
+        currency: 'CLP',
+        state_id: rejectedStateId,
+        paid_at: null,
+      },
+    });
+  }
+  // pending / in_process: sin acción, MercadoPago reenviará otra notificación.
+}
+
 export const subscriptionsService = {
   /**
    * Suscripción vigente de la tienda. Si nunca contrató nada, es el plan
@@ -129,74 +208,22 @@ export const subscriptionsService = {
   },
 
   /**
-   * Procesa una notificación de MercadoPago. NUNCA confía en el body del
-   * webhook: vuelve a pedir el pago real a la API de MercadoPago con el id
-   * recibido, y de ahí saca `status`/`external_reference`.
+   * Webhook de MercadoPago (async, sin sesión). Delega en la reconciliación
+   * compartida, que vuelve a consultar el pago real antes de activar nada.
    */
   async handleWebhook(paymentId: string): Promise<void> {
-    const payment = await getPayment(paymentId);
-    const subscriptionId = payment.external_reference;
-    if (!subscriptionId) return;
+    await reconcilePayment(paymentId);
+  },
 
-    const subscription = await prisma.subscriptions.findUnique({
-      where: { id: BigInt(subscriptionId) },
-      include: { plans: true },
-    });
-    if (!subscription) return;
-    if (!subscription.plans) {
-      throw new HttpError(500, 'La suscripción no tiene un plan asociado');
-    }
-
-    const activeStateId = await getSubscriptionStateId('active');
-    if (subscription.state_id === activeStateId) return; // ya procesado (idempotencia)
-
-    if (payment.status === 'approved') {
-      const [approvedStateId, canceledStateId, expiresAt] = await Promise.all([
-        getPaymentStateId('approved'),
-        getSubscriptionStateId('canceled'),
-        Promise.resolve(addBillingPeriod(new Date(), subscription.plans.billing_period)),
-      ]);
-      await prisma.$transaction([
-        prisma.payments.create({
-          data: {
-            subscription_id: subscription.id,
-            amount: subscription.plans.price,
-            currency: 'CLP',
-            state_id: approvedStateId,
-            paid_at: new Date(),
-          },
-        }),
-        // Cambio de plan: cierra cualquier OTRA suscripción activa de la tienda
-        // (ej. el Pro vigente al contratar Premium), para no dejar dos activas.
-        prisma.subscriptions.updateMany({
-          where: {
-            store_id: subscription.store_id,
-            state_id: activeStateId,
-            id: { not: subscription.id },
-          },
-          data: { state_id: canceledStateId },
-        }),
-        prisma.subscriptions.update({
-          where: { id: subscription.id },
-          data: { state_id: activeStateId, starts_at: new Date(), expires_at: expiresAt },
-        }),
-      ]);
-      return;
-    }
-
-    if (payment.status === 'rejected') {
-      const rejectedStateId = await getPaymentStateId('rejected');
-      await prisma.payments.create({
-        data: {
-          subscription_id: subscription.id,
-          amount: subscription.plans.price,
-          currency: 'CLP',
-          state_id: rejectedStateId,
-          paid_at: null,
-        },
-      });
-    }
-    // pending / in_process: sin acción, MercadoPago reenviará otra notificación.
+  /**
+   * Confirmación al volver del Checkout (síncrona, con sesión de la tienda).
+   * Reconcilia el pago en el acto en vez de esperar al webhook —que en modo
+   * prueba puede tardar o no llegar nunca— y devuelve la suscripción vigente
+   * ya actualizada. Es idempotente: si el webhook se adelantó, no duplica nada.
+   */
+  async confirmCheckout(storeId: bigint, paymentId: string) {
+    await reconcilePayment(paymentId, storeId);
+    return this.getCurrentSubscription(storeId);
   },
 
   /**
