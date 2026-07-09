@@ -247,6 +247,94 @@ export async function findStoreByIdWithRating(
 }
 
 /**
+ * Tiendas con el mismo shape enriquecido que el listado/detalle, acotadas a un
+ * conjunto de IDs (usado por el listado de favoritos). Reutiliza el mismo SELECT
+ * + JOINs y el enriquecido de semáforo. Devuelve las tiendas en el MISMO orden en
+ * que llegan los IDs (el llamador ya los ordena por "más recién marcado").
+ *
+ * Si `ids` viene vacío, devuelve `[]` sin tocar la db.
+ */
+export async function findStoresByIdsWithRating(
+  ids: bigint[],
+): Promise<StoreWithRating[]> {
+  if (ids.length === 0) return [];
+
+  const rawStores = await prisma.$queryRaw<StoreRawRow[]>`
+    SELECT
+      s.id,
+      s.name,
+      s.description,
+      s.logo_url,
+      s.verified,
+      s.store_phone,
+      s.latitude,
+      s.longitude,
+      s.opening_time,
+      s.closing_time,
+      s.metadata->>'address' AS address,
+      s.metadata->>'street' AS address_street,
+      s.metadata->>'number' AS address_number,
+      r.name  AS region_name,
+      c.name  AS commune_name,
+      c.city  AS commune_city,
+      cat.name AS category_name,
+      COALESCE(ROUND(AVG(rv.rating)::NUMERIC, 1), 0) AS avg_rating,
+      COUNT(rv.id)::INT                               AS review_count
+    FROM   stores s
+    LEFT JOIN regions    r   ON r.id   = s.region_id
+    LEFT JOIN communes   c   ON c.id   = s.commune_id
+    LEFT JOIN categories cat ON cat.id = s.category_id
+    LEFT JOIN reviews    rv  ON rv.store_id = s.id
+    WHERE  s.id IN (${Prisma.join(ids)})
+    GROUP BY s.id, s.metadata, r.name, c.name, c.city, cat.name
+  `;
+
+  const dayOfWeek = getCurrentDayOfWeek();
+  const storeIds = rawStores.map((s) => s.id);
+  const [schedules, verifiedByPlan] = await Promise.all([
+    findTodaySchedulesForStores(storeIds, dayOfWeek),
+    findVerifiedByPlanStoreIds(storeIds),
+  ]);
+  const schedulesMap = new Map(schedules.map((s) => [s.store_id.toString(), s]));
+
+  const enriched = rawStores.map((store) => {
+    const schedule = schedulesMap.get(store.id.toString());
+
+    let openingStr: string | null = null;
+    let closingStr: string | null = null;
+    let isClosed = false;
+
+    if (schedule) {
+      isClosed = schedule.is_closed;
+      openingStr = schedule.opening_time
+        ? schedule.opening_time.toISOString().substring(11, 19)
+        : null;
+      closingStr = schedule.closing_time
+        ? schedule.closing_time.toISOString().substring(11, 19)
+        : null;
+    } else {
+      openingStr = store.opening_time;
+      closingStr = store.closing_time;
+    }
+
+    const statusResult = calculateStoreStatus(openingStr, closingStr, { isClosed });
+    return {
+      ...store,
+      verified: store.verified || verifiedByPlan.has(store.id.toString()),
+      status: statusResult.status,
+      color: statusResult.color,
+      minutesUntilClose: statusResult.minutesUntilClose,
+    };
+  });
+
+  // Reordenar según el orden de `ids` (favoritos más recientes primero).
+  const byId = new Map(enriched.map((s) => [s.id.toString(), s]));
+  return ids
+    .map((id) => byId.get(id.toString()))
+    .filter((s): s is StoreWithRating => s !== undefined);
+}
+
+/**
  * Métricas agregadas de una tienda para el dashboard:
  * conteo de productos activos, stock total, número de reseñas y rating promedio.
  */

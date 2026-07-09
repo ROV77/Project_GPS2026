@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { View, ActivityIndicator, Alert, Linking, TouchableOpacity, Switch, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bike, User, Phone, Store as StoreIcon, Star, ChevronRight, Moon, Calendar, LogOut } from 'lucide-react-native';
+import { Bike, User, Phone, Store as StoreIcon, Star, ChevronRight, Moon, Calendar, LogOut, Heart } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { Button } from '@/ui/Button';
@@ -197,6 +197,30 @@ export default function AccountScreen() {
                   <Button label="Crear cuenta" variant="secondary" onPress={() => router.push('/register')} />
                 </View>
               </View>
+            </View>
+          )}
+
+          {/* Mis favoritos (solo con sesión) */}
+          {isAuth && (
+            <View className="gap-2">
+              <Text variant="caption" className="px-2 text-muted-foreground uppercase font-bold tracking-wider">Actividad</Text>
+              <TouchableOpacity
+                className="bg-card rounded-2xl border border-border p-4 flex-row items-center justify-between active:opacity-80"
+                onPress={() => router.push('/favorites')}
+              >
+                <View className="flex-row items-center gap-3">
+                  <View className="h-12 w-12 bg-brand-500 rounded-full items-center justify-center">
+                    <Heart size={22} color={colors.white} fill={colors.white} />
+                  </View>
+                  <View>
+                    <Text variant="subtitle" className="text-foreground">Mis favoritos</Text>
+                    <Text variant="caption" className="text-muted-foreground mt-0.5">
+                      Las tiendas que guardaste.
+                    </Text>
+                  </View>
+                </View>
+                <ChevronRight size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
             </View>
           )}
 
