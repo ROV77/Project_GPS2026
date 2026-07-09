@@ -14,7 +14,6 @@
     },
     "android": {
       "package": "cl.caserita.app",
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo-caserita.png",
         "backgroundColor": "#0f1d2e"
@@ -48,6 +47,14 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Caserita usa tu ubicación para mostrarte las tiendas cercanas en el mapa.",
           "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],
