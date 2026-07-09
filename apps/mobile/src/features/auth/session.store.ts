@@ -9,6 +9,8 @@
  */
 import { create } from 'zustand';
 import { getToken, setToken, deleteToken } from '@/shared/lib/secureToken';
+import { useFavorites } from '@/features/favorites/favorites.store';
+import { useNotifications } from '@/features/notifications/notifications.store';
 import { getMe, becomeCourier, quitCourier } from './api';
 import type { Profile, SessionStoreInfo } from './types';
 
@@ -57,6 +59,9 @@ export const useSession = create<SessionState & { becomeCourier: () => Promise<v
         return;
       }
       set({ user, store, status: 'authenticated' });
+      // Cargar favoritos y notificaciones en segundo plano (no bloquea la sesión).
+      void useFavorites.getState().hydrate();
+      void useNotifications.getState().hydrate();
     } catch {
       await deleteToken();
       set({ user: null, store: null, status: 'anonymous' });
@@ -66,6 +71,8 @@ export const useSession = create<SessionState & { becomeCourier: () => Promise<v
   logout: async () => {
     await deleteToken();
     set({ user: null, store: null, status: 'anonymous' });
+    useFavorites.getState().clear();
+    useNotifications.getState().clear();
   },
 
   becomeCourier: async () => {

@@ -25,6 +25,7 @@ import { useStoreDetail } from '@/features/stores/useStoreDetail';
 import { useCart, cartCount, cartTotal } from '@/features/cart/cart.store';
 import { ProductCard } from '@/components/ProductCard';
 import { CartSheet } from '@/components/CartSheet';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import type { Product, Store } from '@/features/stores/types';
 
 export default function StoreDetailScreen() {
@@ -54,7 +55,7 @@ export default function StoreDetailScreen() {
 
   return (
     <Screen>
-      {/* Header con botón volver (consistente con el resto de la app) */}
+      {/* Header con botón volver (consistente con el resto de la app) + corazón */}
       <View className="flex-row items-center gap-2 px-3 py-2">
         <Pressable
           onPress={() => router.back()}
@@ -65,7 +66,8 @@ export default function StoreDetailScreen() {
         >
           <ChevronLeft size={24} color={colors.foreground} />
         </Pressable>
-        <Text variant="heading">Tienda</Text>
+        <Text variant="heading" className="flex-1">Tienda</Text>
+        {store ? <FavoriteButton store={store} /> : null}
       </View>
 
       {store ? (

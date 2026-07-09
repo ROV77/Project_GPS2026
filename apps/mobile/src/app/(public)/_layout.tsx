@@ -89,6 +89,8 @@ export default function PublicLayout() {
       <Tabs.Screen name="store/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       <Tabs.Screen name="courier-onboarding" options={{ href: null }} />
       <Tabs.Screen name="courier-reviews" options={{ href: null, title: 'Mis Reseñas' }} />
+      <Tabs.Screen name="favorites" options={{ href: null, title: 'Mis favoritos' }} />
+      <Tabs.Screen name="notifications" options={{ href: null, title: 'Notificaciones' }} />
     </Tabs>
   );
 }
