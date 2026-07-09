@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { View, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { Store, Clock, MapPin } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
@@ -22,19 +22,6 @@ export default function VacanciesScreen() {
   const { data: myApps, refetch: refetchMyApps } = useMyApplications(user?.id);
 
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [locationFilter, setLocationFilter] = useState<string | null>(null);
-
-  const locationOptions = useMemo<Category[]>(() => {
-    const locations = Array.from(
-      new Set(
-        vacancies
-          .filter(v => v.state_id !== '3')
-          .map(v => v.stores?.communes?.name)
-          .filter((n): n is string => !!n)
-      )
-    ).sort();
-    return [{ id: null, name: 'Todas' }, ...locations.map(n => ({ id: n, name: n }))];
-  }, [vacancies]);
 
   const statusOptions: Category[] = [
     { id: null, name: 'Todas' },
@@ -140,10 +127,6 @@ export default function VacanciesScreen() {
   const filteredData = vacancies.filter(v => {
     if (v.state_id === '3') return false; // Rejected/Inactive
 
-    // Location filter
-    if (locationFilter && v.stores?.communes?.name !== locationFilter) return false;
-
-    // Status filter
     const hasApplied = myApps.some(app => app.vacancy_id === v.id);
     if (statusFilter === 'disponibles' && hasApplied) return false;
     if (statusFilter === 'postuladas' && !hasApplied) return false;
@@ -159,10 +142,7 @@ export default function VacanciesScreen() {
         <Text variant="caption" className="text-muted-foreground mt-1">Encuentra y postula a nuevas oportunidades</Text>
       </View>
       <View className="pb-3 border-b border-border bg-background mb-2">
-        <View className="mb-3">
-          <CategoryChips categories={statusOptions} selectedId={statusFilter} onSelect={setStatusFilter} />
-        </View>
-        <CategoryChips categories={locationOptions} selectedId={locationFilter} onSelect={setLocationFilter} />
+        <CategoryChips categories={statusOptions} selectedId={statusFilter} onSelect={setStatusFilter} />
       </View>
       <FlatList
         data={filteredData}

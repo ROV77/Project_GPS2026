@@ -21,7 +21,6 @@ export default function ApplicationsScreen() {
   const user = useSession((s) => s.user);
   const { data, loading, refetch } = useMyApplications(user?.id);
 
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [locationFilter, setLocationFilter] = useState<string | null>(null);
 
   const locationOptions = useMemo<Category[]>(() => {
@@ -35,23 +34,11 @@ export default function ApplicationsScreen() {
     return [{ id: null, name: 'Todas' }, ...locations.map(n => ({ id: n, name: n }))];
   }, [data]);
 
-  const statusOptions: Category[] = [
-    { id: null, name: 'Todas' },
-    { id: 'nuevas', name: 'Nuevas (Pendientes)' },
-    { id: 'aceptadas', name: 'Aceptadas (Trabajando)' },
-  ];
-
   // "Trabajando" = postulaciones aceptadas (state_id 2). El resto (pendientes,
   // rechazadas) va en "Mis postulaciones". Solo se muestran secciones no vacías.
   const sections = useMemo(() => {
     const filteredData = data.filter(a => {
-      // Location filter
       if (locationFilter && a.delivery_vacancies?.stores?.communes?.name !== locationFilter) return false;
-      
-      // Status filter
-      if (statusFilter === 'nuevas' && String(a.state_id) !== '1') return false;
-      if (statusFilter === 'aceptadas' && String(a.state_id) !== '2') return false;
-
       return true;
     });
 
@@ -61,7 +48,7 @@ export default function ApplicationsScreen() {
       { title: 'Trabajando', data: activas },
       { title: 'Mis postulaciones', data: postulaciones },
     ].filter((s) => s.data.length > 0);
-  }, [data, locationFilter, statusFilter]);
+  }, [data, locationFilter]);
 
   const getStatusText = (stateId: string | number | null) => {
     switch (String(stateId)) {
@@ -159,9 +146,6 @@ export default function ApplicationsScreen() {
         <Text variant="caption" className="text-muted-foreground mt-1">Revisa tus trabajos activos y el estado de tus solicitudes</Text>
       </View>
       <View className="pb-3 border-b border-border bg-background mb-2">
-        <View className="mb-3">
-          <CategoryChips categories={statusOptions} selectedId={statusFilter} onSelect={setStatusFilter} />
-        </View>
         <CategoryChips categories={locationOptions} selectedId={locationFilter} onSelect={setLocationFilter} />
       </View>
       <SectionList

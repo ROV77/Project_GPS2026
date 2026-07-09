@@ -39,16 +39,16 @@ export function CategoryChips({
               justifyContent: 'center',
               borderRadius: 9999,
               paddingHorizontal: 16,
-              backgroundColor: active ? colors.card : colors.brand[700],
-              borderWidth: active ? 1 : 0,
-              borderColor: active ? colors.brand[500] : 'transparent',
+              backgroundColor: active ? colors.brand[700] : colors.card,
+              borderWidth: active ? 0 : 1,
+              borderColor: active ? 'transparent' : colors.brand[500],
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 13,
-                color: active ? colors.brand[500] : colors.white,
+                color: active ? colors.white : colors.brand[500],
               }}
             >
               {cat.name}
