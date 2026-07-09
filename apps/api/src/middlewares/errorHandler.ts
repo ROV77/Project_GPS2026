@@ -47,7 +47,7 @@ export function errorHandler(
   res.status(500).json({
     error: 'Error interno del servidor',
     ...(isDev && {
-      details: err instanceof Error ? err.message : String(err),
+      details: err instanceof Error ? err.message : (typeof err === 'object' ? JSON.stringify(err) : String(err)),
       stack: err instanceof Error ? err.stack : undefined,
     }),
   });

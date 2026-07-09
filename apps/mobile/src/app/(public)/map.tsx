@@ -37,6 +37,8 @@ import { StoreDetailSheet } from '@/components/StoreDetailSheet';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryChips, type Category } from '@/components/CategoryChips';
 import type { Store } from '@/features/stores/types';
+import { Skeleton } from '@/ui/Skeleton';
+import { useDebounce } from '@/shared/hooks/useDebounce';
 
 // Punto por defecto si el usuario no otorga permiso o la geolocalización falla.
 const DEFAULT_REGION = {
@@ -52,15 +54,17 @@ type PermState = 'undetermined' | 'granted' | 'denied';
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+
   // ponytail: carga total de tiendas de una vez; si algún día superan ~500,
   // crear endpoint nearby con bounding box en la API.
-  const { stores, loading, error, reload } = useStores({ limit: 500 });
+  const { stores, loading, error, reload } = useStores({ limit: 500, q: debouncedSearch || undefined });
 
   const [perm, setPerm] = useState<PermState>('undetermined');
   const [region, setRegion] = useState(DEFAULT_REGION);
   const [locating, setLocating] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
 
   const params = useLocalSearchParams<{ focusId?: string; focusLat?: string; focusLng?: string }>();
@@ -165,15 +169,13 @@ export default function MapScreen() {
     return [{ id: null, name: 'Todos' }, ...names.map((n) => ({ id: n, name: n }))];
   }, [geoStores]);
 
-  // Tiendas filtradas por búsqueda + categoría. Alimenta los markers.
+  // Tiendas filtradas por categoría (el texto ya lo filtra la API). Alimenta los markers.
   const filteredStores: Store[] = useMemo(() => {
-    const q = search.trim().toLowerCase();
     return geoStores.filter((s) => {
       const byCat = !category || s.category_name === category;
-      const byText = !q || s.name.toLowerCase().includes(q);
-      return byCat && byText;
+      return byCat;
     });
-  }, [geoStores, search, category]);
+  }, [geoStores, category]);
 
   const selectedStore = useMemo(
     () => geoStores.find((s) => s.id === selectedId) ?? null,

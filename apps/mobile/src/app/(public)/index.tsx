@@ -33,6 +33,7 @@ import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { useStores } from '@/features/stores/hooks';
 import type { Store } from '@/features/stores/types';
 import { Skeleton } from '@/ui/Skeleton';
+import { useDebounce } from '@/shared/hooks/useDebounce';
 
 // Umbral de scroll (px) en el que la barra compacta reemplaza al header grande.
 const COMPACT_FROM = 80;
@@ -50,9 +51,10 @@ export default function HomeScreen() {
   const colors = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { stores, loading, refreshing, error, reload, refresh } = useStores({ limit: 50 });
-
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const { stores, loading, refreshing, error, reload, refresh } = useStores({ limit: 50, q: debouncedSearch || undefined });
+
   const [category, setCategory] = useState<string | null>(null);
   // `compact` alterna solo al cruzar el umbral (no en cada frame): controla el
   // color de la barra de estado (claro sobre el hero navy, oscuro sobre la barra
@@ -93,13 +95,11 @@ export default function HomeScreen() {
   }, [stores]);
 
   const filtered = useMemo<Store[]>(() => {
-    const q = search.trim().toLowerCase();
     return stores.filter((s) => {
       const byCat = !category || s.category_name === category;
-      const byText = !q || s.name.toLowerCase().includes(q);
-      return byCat && byText;
+      return byCat;
     });
-  }, [stores, search, category]);
+  }, [stores, category]);
 
   // Derived sections for the Netflix-style layout
   const verifiedStores = useMemo(() => {

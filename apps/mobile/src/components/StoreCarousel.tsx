@@ -21,7 +21,7 @@ export function StoreCarousel({ title, icon, stores, autoScroll = false }: Store
   const scrollOffset = useSharedValue(0);
   const maxScroll = useSharedValue(0);
   const layoutWidth = useSharedValue(0);
-  const interactionTimeout = useRef<NodeJS.Timeout>();
+  const interactionTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleInteractionStart = () => {
     setIsInteracting(true);
@@ -98,7 +98,6 @@ export function StoreCarousel({ title, icon, stores, autoScroll = false }: Store
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 12 }}
-        showsHorizontalScrollIndicator={false}
         onLayout={(e) => {
           layoutWidth.value = e.nativeEvent.layout.width;
         }}
