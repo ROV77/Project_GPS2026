@@ -6,9 +6,9 @@
  *   - GET /api/stores/:id           (ficha enriquecida)
  *   - GET /api/stores/:id/products  (catálogo público)
  */
-import { useMemo, useRef } from 'react';
-import { View, Pressable, Linking, FlatList } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useRef } from 'react';
+import { View, Pressable, Linking, FlatList, RefreshControl } from 'react-native';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type BottomSheet from '@gorhom/bottom-sheet';
 import { ChevronLeft, Star, BadgeCheck, MapPin, PackageOpen, ChevronRight, Tag } from 'lucide-react-native';
@@ -43,8 +43,22 @@ export default function StoreDetailScreen() {
     }
   }, [storeParam]);
 
-  const { store, products, loading, error, reload } = useStoreDetail(id, initialStore);
+  const { store, products, loading, refreshing, error, reload, refresh } = useStoreDetail(id, initialStore);
   const cartRef = useRef<BottomSheet>(null);
+
+  // Recargar (silencioso) al volver a enfocar la pantalla, para reflejar
+  // promociones/stock creados después de la primera carga sin recargar la app.
+  // Se salta el primer foco (la carga inicial ya la hace useStoreDetail).
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      void refresh();
+    }, [refresh]),
+  );
 
   // Carrito acotado a esta tienda: solo when hay items mostramos OrderBar y
   // montamos CartSheet. Antes estos se renderizaban siempre (con index={-1} el
@@ -77,6 +91,9 @@ export default function StoreDetailScreen() {
             keyExtractor={(p: Product) => p.id}
             contentContainerStyle={{ paddingBottom: 96 }}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.brand[700]} />
+            }
             ListHeaderComponent={
               <>
                 <StoreHeader store={store} />

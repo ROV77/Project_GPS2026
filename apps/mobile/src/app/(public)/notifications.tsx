@@ -4,9 +4,9 @@
  * trae `store_id` en metadata, navega a la tienda. Pull-to-refresh recarga.
  * Se llega desde la campana del header de Explorar; oculta de la TabBar.
  */
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Pressable, FlatList, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ChevronLeft, BellOff, CheckCheck } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
@@ -39,6 +39,14 @@ export default function NotificationsScreen() {
   const markRead = useNotifications((s) => s.markRead);
   const markAllRead = useNotifications((s) => s.markAllRead);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Recargar el buzón cada vez que se abre la pantalla (no solo al iniciar sesión),
+  // así se ven los avisos creados después del login sin tener que refrescar a mano.
+  useFocusEffect(
+    useCallback(() => {
+      void hydrate();
+    }, [hydrate]),
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
