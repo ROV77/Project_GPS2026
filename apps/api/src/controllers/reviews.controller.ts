@@ -74,12 +74,11 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    const customerIdString = res.locals.user?.id;
-    if (!customerIdString) {
+    const customerId = res.locals.userId as bigint;
+    if (!customerId) {
       res.status(401).json({ error: 'No autenticado' });
       return;
     }
-    const customerId = BigInt(customerIdString);
 
     const storeExists = await prisma.stores.findUnique({ where: { id: storeId } });
     if (!storeExists) {
