@@ -35,6 +35,7 @@ import { useCart, cartCount, cartTotal } from '@/features/cart/cart.store';
 import { ProductCard } from '@/components/ProductCard';
 import { CartSheet } from '@/components/CartSheet';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { ReviewsSheet } from '@/components/ReviewsSheet';
 import type { Product, Store } from '@/features/stores/types';
 
 export default function StoreDetailScreen() {
@@ -55,6 +56,7 @@ export default function StoreDetailScreen() {
 
   const { store, products, loading, refreshing, error, reload, refresh } = useStoreDetail(id, initialStore);
   const cartRef = useRef<BottomSheet>(null);
+  const reviewsRef = useRef<BottomSheet>(null);
 
   // Recargar (silencioso) al volver a enfocar la pantalla, para reflejar
   // promociones/stock creados después de la primera carga sin recargar la app.
@@ -151,7 +153,7 @@ export default function StoreDetailScreen() {
             }
             ListHeaderComponent={
               <>
-                <StoreHeader store={store} scrollY={scrollY} />
+                <StoreHeader store={store} scrollY={scrollY} onPressRating={() => reviewsRef.current?.expand()} />
                 {/* Promociones primero: lo primero visible del catálogo. */}
                 <PromotionsSection products={products} store={store} />
                 <View className="px-5 pb-2">
@@ -168,6 +170,7 @@ export default function StoreDetailScreen() {
           />
           {cartActive && <OrderBar store={store} onPress={() => cartRef.current?.expand()} />}
           {cartActive && <CartSheet ref={cartRef} store={store} />}
+          <ReviewsSheet ref={reviewsRef} storeId={store.id} />
         </>
       ) : error ? (
         <ErrorState onRetry={reload} />
@@ -213,7 +216,7 @@ function OrderBar({ store, onPress }: { store: Store; onPress: () => void }) {
 }
 
 /** Ficha superior: logo, nombre, categoría, rating, ubicación, descripción y CTA. */
-function StoreHeader({ store, scrollY }: { store: Store; scrollY?: SharedValue<number> }) {
+function StoreHeader({ store, scrollY, onPressRating }: { store: Store; scrollY?: SharedValue<number>; onPressRating?: () => void }) {
   const colors = useThemeColors();
   const router = useRouter();
   const style = getCategoryStyle(store.category_name);
@@ -276,7 +279,11 @@ function StoreHeader({ store, scrollY }: { store: Store; scrollY?: SharedValue<n
           </View>
 
           <View className="mt-2 flex-row flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            <View className="flex-row items-center gap-1">
+            <Pressable 
+              className="flex-row items-center gap-1 bg-black/20 px-2 py-0.5 rounded-full"
+              onPress={onPressRating}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
               <Star size={14} color={colors.amber} fill={colors.amber} strokeWidth={0} />
               <Text variant="caption" className="font-medium text-white">
                 {rating > 0 ? rating.toFixed(1) : 'Nuevo'}
@@ -286,7 +293,7 @@ function StoreHeader({ store, scrollY }: { store: Store; scrollY?: SharedValue<n
                   ({store.review_count})
                 </Text>
               ) : null}
-            </View>
+            </Pressable>
             <View className="flex-row items-center gap-1">
               <style.Icon size={13} color="#FFF" strokeWidth={2.25} />
               <Text variant="caption" style={{ color: '#FFF' }}>

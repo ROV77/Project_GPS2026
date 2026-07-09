@@ -16,6 +16,7 @@ import {
   getStoreDetail,
   getStoreProducts,
 } from '../controllers/store.controller';
+import { getStoreReviews, createReview } from '../controllers/reviews.controller';
 import { validateQuery, validateBody } from '../middlewares/validate';
 import { requireAuth } from '../middlewares/requireAuth';
 import { withStore } from '../middlewares/withStore';
@@ -85,6 +86,19 @@ storesRouter.get(
  * Catálogo público de la tienda (sin auth) — usado por el detalle en mobile.
  */
 storesRouter.get('/:id/products', getStoreProducts);
+
+/**
+ * GET /stores/:id/reviews
+ * Lista de reseñas de la tienda.
+ */
+storesRouter.get('/:id/reviews', getStoreReviews);
+
+/**
+ * POST /stores/:id/reviews
+ * Crear o actualizar una reseña (requiere auth).
+ */
+import { createReviewSchema } from '@caserita/validations';
+storesRouter.post('/:id/reviews', requireAuth, validateBody(createReviewSchema), createReview);
 
 /**
  * GET /stores/:id/schedules
