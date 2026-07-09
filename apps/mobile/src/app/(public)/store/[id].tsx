@@ -6,8 +6,8 @@
  *   - GET /api/stores/:id           (ficha enriquecida)
  *   - GET /api/stores/:id/products  (catálogo público)
  */
-import { useCallback, useMemo, useRef } from 'react';
-import { View, Pressable, Linking, FlatList, RefreshControl } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { View, Pressable, Linking, RefreshControl, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   type SharedValue,
@@ -19,7 +19,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type BottomSheet from '@gorhom/bottom-sheet';
 import { ChevronLeft, Star, BadgeCheck, MapPin, PackageOpen, ChevronRight, Tag } from 'lucide-react-native';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
@@ -35,8 +34,13 @@ import { useCart, cartCount, cartTotal } from '@/features/cart/cart.store';
 import { ProductCard } from '@/components/ProductCard';
 import { CartSheet } from '@/components/CartSheet';
 import { FavoriteButton } from '@/components/FavoriteButton';
-import { ReviewsSheet } from '@/components/ReviewsSheet';
+import { Avatar } from '@/ui/Avatar';
+import { useReviews } from '@/features/reviews/useReviews';
+import { useSession } from '@/features/auth/session.store';
+import type { Review } from '@/features/reviews/types';
 import type { Product, Store } from '@/features/stores/types';
+
+type Tab = 'productos' | 'resenas';
 
 export default function StoreDetailScreen() {
   const { id, store: storeParam } = useLocalSearchParams<{ id: string; store?: string }>();
@@ -55,8 +59,9 @@ export default function StoreDetailScreen() {
   }, [storeParam]);
 
   const { store, products, loading, refreshing, error, reload, refresh } = useStoreDetail(id, initialStore);
-  const cartRef = useRef<BottomSheet>(null);
-  const reviewsRef = useRef<BottomSheet>(null);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>('productos');
+  const reviews = useReviews(id);
 
   // Recargar (silencioso) al volver a enfocar la pantalla, para reflejar
   // promociones/stock creados después de la primera carga sin recargar la app.
@@ -142,35 +147,59 @@ export default function StoreDetailScreen() {
       {store ? (
         <>
           <Animated.FlatList
-            data={products}
-            keyExtractor={(p: Product) => p.id}
+            data={tab === 'productos' ? products : reviews.reviews}
+            keyExtractor={(item: Product | Review) => item.id}
             contentContainerStyle={{ paddingBottom: 96 }}
             showsVerticalScrollIndicator={false}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.brand[700]} />
+              <RefreshControl
+                refreshing={tab === 'productos' ? refreshing : reviews.refreshing}
+                onRefresh={tab === 'productos' ? refresh : reviews.refresh}
+                tintColor={colors.brand[700]}
+              />
             }
             ListHeaderComponent={
               <>
-                <StoreHeader store={store} scrollY={scrollY} onPressRating={() => reviewsRef.current?.expand()} />
-                {/* Promociones primero: lo primero visible del catálogo. */}
-                <PromotionsSection products={products} store={store} />
-                <View className="px-5 pb-2">
-                  <Text variant="title" style={{ fontSize: 26, fontFamily: 'Inter_700Bold' }}>Catálogo</Text>
-                </View>
+                <StoreHeader store={store} scrollY={scrollY} onPressRating={() => setTab('resenas')} />
+                <TabBar tab={tab} onChange={setTab} reviewCount={store.review_count} />
+                {tab === 'productos' ? (
+                  <>
+                    {/* Promociones primero: lo primero visible del catálogo. */}
+                    <PromotionsSection products={products} store={store} />
+                    <View className="px-5 pb-2">
+                      <Text variant="title" style={{ fontSize: 26, fontFamily: 'Inter_700Bold' }}>Catálogo</Text>
+                    </View>
+                  </>
+                ) : (
+                  <ReviewForm onSubmit={reviews.submitReview} />
+                )}
               </>
             }
-            renderItem={({ item }) => (
-              <View className="px-5 pb-3">
-                <ProductCard product={item} store={store} />
-              </View>
-            )}
-            ListEmptyComponent={loading ? <CatalogSkeleton /> : <CatalogEmpty />}
+            renderItem={({ item }) =>
+              tab === 'productos' ? (
+                <View className="px-5 pb-3">
+                  <ProductCard product={item as Product} store={store} />
+                </View>
+              ) : (
+                <View className="px-5 pb-3">
+                  <ReviewCard review={item as Review} />
+                </View>
+              )
+            }
+            ListEmptyComponent={
+              tab === 'productos'
+                ? loading
+                  ? <CatalogSkeleton />
+                  : <CatalogEmpty />
+                : reviews.loading
+                  ? null
+                  : <ReviewsEmpty />
+            }
           />
-          {cartActive && <OrderBar store={store} onPress={() => cartRef.current?.expand()} />}
-          {cartActive && <CartSheet ref={cartRef} store={store} />}
-          <ReviewsSheet ref={reviewsRef} storeId={store.id} />
+          {cartActive && <OrderBar store={store} onPress={() => setCartOpen(true)} />}
+          <CartSheet open={cartOpen} onClose={() => setCartOpen(false)} store={store} />
         </>
       ) : error ? (
         <ErrorState onRetry={reload} />
@@ -363,6 +392,141 @@ function PromotionsSection({ products, store }: { products: Product[]; store: St
       {promoted.map((p) => (
         <ProductCard key={p.id} product={p} store={store} />
       ))}
+    </View>
+  );
+}
+
+/** Selector de pestañas Productos / Reseñas dentro del detalle. */
+function TabBar({ tab, onChange, reviewCount }: { tab: Tab; onChange: (t: Tab) => void; reviewCount?: number }) {
+  return (
+    <View className="flex-row gap-2 px-5 pb-4">
+      <TabButton label="Productos" active={tab === 'productos'} onPress={() => onChange('productos')} />
+      <TabButton
+        label={reviewCount ? `Reseñas (${reviewCount})` : 'Reseñas'}
+        active={tab === 'resenas'}
+        onPress={() => onChange('resenas')}
+      />
+    </View>
+  );
+}
+
+function TabButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      className={`flex-1 items-center rounded-full py-2.5 ${active ? 'bg-brand-700' : 'bg-muted'}`}
+      style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
+    >
+      <Text variant="label" className={active ? 'text-white' : 'text-muted-foreground'}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** Fila de 5 estrellas. Con `onPress` es editable (para calificar). */
+function StarRow({ rating, size = 16, onPress }: { rating: number; size?: number; onPress?: (star: number) => void }) {
+  const colors = useThemeColors();
+  return (
+    <View className="flex-row items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Pressable key={star} onPress={() => onPress?.(star)} disabled={!onPress} hitSlop={4}>
+          <Star
+            size={size}
+            color={star <= rating ? colors.amber : colors.muted}
+            fill={star <= rating ? colors.amber : 'transparent'}
+            strokeWidth={star <= rating ? 0 : 2}
+          />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+/** Formulario para publicar una reseña (o CTA de login si no hay sesión). */
+function ReviewForm({ onSubmit }: { onSubmit: (input: { rating: number; comment: string }) => Promise<unknown> }) {
+  const colors = useThemeColors();
+  const router = useRouter();
+  const status = useSession((s) => s.status);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  if (status !== 'authenticated') {
+    return (
+      <View className="mx-5 mb-4 items-center rounded-2xl border border-border bg-card p-5">
+        <Text variant="body" className="mb-3 text-center text-muted-foreground">
+          Inicia sesión para calificar esta tienda y dejar tu opinión.
+        </Text>
+        <Button label="Iniciar sesión" variant="secondary" onPress={() => router.push('/login')} />
+      </View>
+    );
+  }
+
+  const submit = async () => {
+    setSubmitting(true);
+    try {
+      await onSubmit({ rating, comment });
+      setComment('');
+    } catch {
+      Alert.alert('Error', 'No se pudo enviar la reseña.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <View className="mx-5 mb-4 rounded-2xl border border-border bg-card p-5">
+      <Text variant="body" className="mb-2 text-muted-foreground">
+        ¿Cómo calificarías tu experiencia?
+      </Text>
+      <StarRow rating={rating} size={28} onPress={setRating} />
+      <TextInput
+        value={comment}
+        onChangeText={setComment}
+        placeholder="Escribe tu opinión (opcional)"
+        placeholderTextColor={colors.mutedForeground}
+        multiline
+        className="mt-4 min-h-[80px] rounded-xl border border-border bg-background p-3"
+        style={{ color: colors.foreground, textAlignVertical: 'top' }}
+      />
+      <View className="mt-4">
+        <Button label={submitting ? 'Enviando...' : 'Publicar reseña'} onPress={submit} loading={submitting} />
+      </View>
+    </View>
+  );
+}
+
+/** Tarjeta de una reseña individual. */
+function ReviewCard({ review }: { review: Review }) {
+  return (
+    <View className="rounded-2xl border border-border bg-card p-4">
+      <View className="mb-2 flex-row items-center gap-3">
+        <Avatar uri={review.user.avatar_url} size={40} />
+        <View className="flex-1">
+          <Text variant="body" style={{ fontFamily: 'Inter_600SemiBold' }}>
+            {review.user.name || 'Usuario'}
+          </Text>
+          <StarRow rating={review.rating} size={14} />
+        </View>
+        <Text variant="label">{new Date(review.created_at).toLocaleDateString()}</Text>
+      </View>
+      {!!review.comment && (
+        <Text variant="body" className="mt-1 text-muted-foreground">
+          {review.comment}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function ReviewsEmpty() {
+  return (
+    <View className="items-center px-8 py-10">
+      <Text variant="body" className="text-center text-muted-foreground">
+        Aún no hay reseñas para esta tienda.
+      </Text>
     </View>
   );
 }
