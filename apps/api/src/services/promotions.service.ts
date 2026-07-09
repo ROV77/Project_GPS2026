@@ -1,9 +1,50 @@
 import type { CreatePromotionInput, UpdatePromotionInput } from '@caserita/validations';
 import { prisma } from '../config/prisma';
 import { HttpError } from '../lib/httpError';
+import { notificationsService } from './notifications.service';
 
 /** Campos del producto que acompañan a cada promoción en las respuestas. */
 const productSelect = { id: true, name: true, price: true, image_url: true } as const;
+
+/** Texto legible del beneficio, según el tipo de promoción. */
+function promoOffer(discountType: string, discountValue: number | null): string {
+  if (discountType === 'percentage' && discountValue != null) {
+    return `${discountValue}% de descuento`;
+  }
+  return discountType; // '2x1' | '3x2'
+}
+
+/**
+ * Avisa (buzón in-app) a los usuarios que tienen la tienda como favorita que hay
+ * una nueva promoción. Es "fire-and-forget": cualquier error se registra pero NO
+ * interrumpe la creación de la promoción (el aviso es secundario).
+ */
+async function notifyFavoritesOfPromotion(
+  storeId: bigint,
+  promotion: { id: bigint; discount_type: string; discount_value: unknown; products: { name: string } },
+): Promise<void> {
+  try {
+    const store = await prisma.stores.findUnique({
+      where: { id: storeId },
+      select: { name: true },
+    });
+    const storeName = store?.name ?? 'Una tienda';
+    const value = promotion.discount_value != null ? Number(promotion.discount_value) : null;
+    const offer = promoOffer(promotion.discount_type, value);
+
+    await notificationsService.notifyStoreFavorites(storeId, {
+      title: `Nueva promoción en ${storeName}`,
+      body: `${promotion.products.name}: ${offer}`,
+      type: 'promotion',
+      metadata: {
+        store_id: storeId.toString(),
+        promotion_id: promotion.id.toString(),
+      },
+    });
+  } catch (err) {
+    console.error('[promotions] fallo al avisar a favoritos:', err);
+  }
+}
 
 /** Verifica que el producto exista y sea de la tienda; devuelve su id. */
 async function assertOwnedProduct(storeId: bigint, productId: number): Promise<bigint> {
@@ -57,7 +98,7 @@ export const promotionsService = {
     const isActive = input.is_active ?? true;
     if (isActive) await assertNoActiveConflict(productId);
 
-    return prisma.promotions.create({
+    const promo = await prisma.promotions.create({
       data: {
         store_id: storeId,
         product_id: productId,
@@ -69,6 +110,11 @@ export const promotionsService = {
       },
       include: { products: { select: productSelect } },
     });
+
+    // Solo una promo activa genera avisos (una pausada no molesta a nadie).
+    if (promo.is_active) await notifyFavoritesOfPromotion(storeId, promo);
+
+    return promo;
   },
 
   async update(storeId: bigint, id: bigint, input: UpdatePromotionInput) {

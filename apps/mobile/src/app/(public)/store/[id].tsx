@@ -6,17 +6,18 @@
  *   - GET /api/stores/:id           (ficha enriquecida)
  *   - GET /api/stores/:id/products  (catálogo público)
  */
-import { useMemo, useRef } from 'react';
-import { View, Pressable, Linking } from 'react-native';
+import { useCallback, useMemo, useRef } from 'react';
+import { View, Pressable, Linking, FlatList, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
+  type SharedValue,
   Extrapolation,
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type BottomSheet from '@gorhom/bottom-sheet';
 import { ChevronLeft, Star, BadgeCheck, MapPin, PackageOpen, ChevronRight, Tag } from 'lucide-react-native';
@@ -33,17 +34,41 @@ import { useStoreDetail } from '@/features/stores/useStoreDetail';
 import { useCart, cartCount, cartTotal } from '@/features/cart/cart.store';
 import { ProductCard } from '@/components/ProductCard';
 import { CartSheet } from '@/components/CartSheet';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import type { Product, Store } from '@/features/stores/types';
 
 export default function StoreDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, store: storeParam } = useLocalSearchParams<{ id: string; store?: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const colors = useThemeColors();
+
+  // Hidratación instantánea: Home/mapa pasan el Store serializado por params.
+  const initialStore = useMemo<Store | null>(() => {
+    if (!storeParam) return null;
+    try {
+      return JSON.parse(storeParam) as Store;
+    } catch {
+      return null;
+    }
+  }, [storeParam]);
+
+  const { store, products, loading, refreshing, error, reload, refresh } = useStoreDetail(id, initialStore);
   const cartRef = useRef<BottomSheet>(null);
 
-  const { store, products, loading, error, reload } = useStoreDetail(id!);
-
+  // Recargar (silencioso) al volver a enfocar la pantalla, para reflejar
+  // promociones/stock creados después de la primera carga sin recargar la app.
+  // Se salta el primer foco (la carga inicial ya la hace useStoreDetail).
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      void refresh();
+    }, [refresh]),
+  );
   const itemCount = useCart((s) => (s.storeId === store?.id ? Object.keys(s.items).length : 0));
   const cartActive = itemCount > 0;
 
@@ -87,13 +112,17 @@ export default function StoreDetailScreen() {
         </Text>
       </Animated.View>
 
-      {/* Botón volver flotante estilo UberEats */}
+      {/* Botones flotantes (Volver y Favoritos) */}
       <View
         style={{
           position: 'absolute',
           top: Math.max(insets.top + 8, 16),
           left: 16,
+          right: 16,
           zIndex: 50,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          pointerEvents: 'box-none'
         }}
       >
         <Pressable
@@ -105,6 +134,7 @@ export default function StoreDetailScreen() {
         >
           <ChevronLeft size={24} color="#FFF" />
         </Pressable>
+        {store ? <FavoriteButton store={store} /> : null}
       </View>
 
       {store ? (
@@ -116,6 +146,9 @@ export default function StoreDetailScreen() {
             showsVerticalScrollIndicator={false}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.brand[700]} />
+            }
             ListHeaderComponent={
               <>
                 <StoreHeader store={store} scrollY={scrollY} />
@@ -172,7 +205,7 @@ function OrderBar({ store, onPress }: { store: Store; onPress: () => void }) {
           <Text variant="label" className="text-white">
             Ver pedido
           </Text>
-          <ChevronRight size={18} color={colors.white} strokeWidth={2.5} />
+          <ChevronRight size={18} color={themeColors.white} strokeWidth={2.5} />
         </View>
       </Pressable>
     </View>
@@ -180,7 +213,7 @@ function OrderBar({ store, onPress }: { store: Store; onPress: () => void }) {
 }
 
 /** Ficha superior: logo, nombre, categoría, rating, ubicación, descripción y CTA. */
-function StoreHeader({ store, scrollY }: { store: Store; scrollY?: Animated.SharedValue<number> }) {
+function StoreHeader({ store, scrollY }: { store: Store; scrollY?: SharedValue<number> }) {
   const colors = useThemeColors();
   const router = useRouter();
   const style = getCategoryStyle(store.category_name);
@@ -371,22 +404,23 @@ function StoreHeaderSkeleton() {
         <View className="flex-1 gap-2">
           <View className="h-5 w-2/3 rounded bg-muted" />
           <View className="h-3 w-1/3 rounded bg-muted" />
-          <View className="h-3 w-1/4 rounded bg-muted" />
+          <View className="h-4 w-10 rounded-md bg-muted" />
         </View>
+        <ChevronRight size={20} color={colors.mutedForeground} />
       </View>
-      <View className="h-4 w-1/2 rounded bg-muted" />
       <View className="h-16 w-full rounded bg-muted" />
     </View>
   );
 }
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const { destructive } = useThemeColors();
   return (
     <View className="items-center gap-3 px-8 pt-16">
       <Text variant="subtitle" className="text-center">
         No pudimos cargar la tienda
       </Text>
-      <Text variant="caption" className="text-center" style={{ color: colors.destructive }}>
+      <Text variant="caption" className="text-center" style={{ color: destructive }}>
         Revisa tu conexión o que la API esté disponible.
       </Text>
       <View className="w-40 pt-2">

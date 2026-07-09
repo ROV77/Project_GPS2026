@@ -30,6 +30,7 @@ import { CategoryChips, type Category } from '@/components/CategoryChips';
 import { StoreCard } from '@/components/StoreCard';
 import { StoreCarousel } from '@/components/StoreCarousel';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useStores } from '@/features/stores/hooks';
 import type { Store } from '@/features/stores/types';
 import { Skeleton } from '@/ui/Skeleton';
@@ -137,9 +138,12 @@ export default function HomeScreen() {
           style={{ backgroundColor: colors.background, borderColor: colors.border, paddingTop: insets.top + 8 }}
         >
           <Logo variant="plain" height={26} />
-          <Pressable onPress={scrollToTop} hitSlop={10} accessibilityRole="button" accessibilityLabel="Buscar">
-            <SearchIcon size={20} color={colors.brand[700]} strokeWidth={2} />
-          </Pressable>
+          <View className="flex-row items-center gap-4">
+            <NotificationBell color={colors.brand[700]} size={20} />
+            <Pressable onPress={scrollToTop} hitSlop={10} accessibilityRole="button" accessibilityLabel="Buscar">
+              <SearchIcon size={20} color={colors.brand[700]} strokeWidth={2} />
+            </Pressable>
+          </View>
         </View>
       </Animated.View>
 
@@ -164,9 +168,12 @@ export default function HomeScreen() {
               >
                 <View className="flex-row items-center justify-between">
                   <Logo variant="border" height={40} />
-                  <View className="flex-row items-center gap-1">
-                    <MapPin size={14} color="#c7d6ef" strokeWidth={2} />
-                    <Text variant="caption" style={{ color: '#c7d6ef' }}>Concepción</Text>
+                  <View className="flex-row items-center gap-4">
+                    <View className="flex-row items-center gap-1">
+                      <MapPin size={14} color="#c7d6ef" strokeWidth={2} />
+                      <Text variant="caption" style={{ color: '#c7d6ef' }}>Concepción</Text>
+                    </View>
+                    <NotificationBell color={colors.white} size={22} />
                   </View>
                 </View>
 
