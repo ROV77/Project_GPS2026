@@ -43,12 +43,15 @@ export default function StoreDetailScreen() {
     }
   }, [storeParam]);
 
-  const { store, products, loading, refreshing, error, reload, refresh } = useStoreDetail(id, initialStore);
+  const { store, products, loading, refreshing, error, reload, refresh, silentRefresh } =
+    useStoreDetail(id, initialStore);
   const cartRef = useRef<BottomSheet>(null);
 
-  // Recargar (silencioso) al volver a enfocar la pantalla, para reflejar
-  // promociones/stock creados después de la primera carga sin recargar la app.
-  // Se salta el primer foco (la carga inicial ya la hace useStoreDetail).
+  // Recargar EN SILENCIO (sin el spinner del RefreshControl) al volver a enfocar
+  // la pantalla, para reflejar promociones/stock nuevos sin recargar la app y sin
+  // que aparezca el círculo de recarga. Se salta el primer foco (la carga inicial
+  // ya la hace useStoreDetail). `silentRefresh` es estable, así que el efecto NO
+  // se re-dispara en cada render (eso causaba el spinner apareciendo "a cada rato").
   const firstFocus = useRef(true);
   useFocusEffect(
     useCallback(() => {
@@ -56,8 +59,8 @@ export default function StoreDetailScreen() {
         firstFocus.current = false;
         return;
       }
-      void refresh();
-    }, [refresh]),
+      void silentRefresh();
+    }, [silentRefresh]),
   );
 
   // Carrito acotado a esta tienda: solo when hay items mostramos OrderBar y

@@ -9,23 +9,30 @@
  * se pinta de inmediato y se refetchea en segundo plano por si cambió. Un
  * deep-link directo (sin initialStore) funciona igual: carga todo desde la API.
  *
- * Expone dos recargas:
- *  - `reload()`  → con skeleton (botón "Reintentar", carga inicial).
- *  - `refresh()` → silenciosa (pull-to-refresh y al volver a enfocar la pantalla),
- *    para traer promociones/stock nuevos sin recargar la app entera.
+ * Expone tres recargas, según qué indicador visual muestran:
+ *  - `reload()`        → con skeleton (carga inicial / botón "Reintentar").
+ *  - `refresh()`       → con el spinner del RefreshControl (pull-to-refresh MANUAL).
+ *  - `silentRefresh()` → SIN indicador visible (al volver a enfocar la pantalla),
+ *    para traer promociones/stock nuevos sin molestar al usuario con un spinner.
+ *
+ * Las tres funciones son estables (useCallback) para no re-disparar efectos que
+ * dependan de ellas en cada render (ver useFocusEffect en store/[id].tsx).
  */
 import { useCallback, useEffect, useState } from 'react';
 import { getStoreById, getStoreProducts } from './api';
 import type { Product, Store } from './types';
 
+type LoadMode = 'initial' | 'refresh' | 'silent';
+
 interface UseStoreDetailState {
   store: Store | null;
   products: Product[];
   loading: boolean; // primera carga (o reintento) → skeletons
-  refreshing: boolean; // pull-to-refresh → spinner del RefreshControl
+  refreshing: boolean; // pull-to-refresh MANUAL → spinner del RefreshControl
   error: boolean;
-  reload: () => void; // recarga con skeleton (botón "Reintentar")
-  refresh: () => Promise<void>; // recarga silenciosa (foco / pull-to-refresh)
+  reload: () => Promise<void>; // recarga con skeleton (botón "Reintentar")
+  refresh: () => Promise<void>; // pull-to-refresh manual (muestra spinner)
+  silentRefresh: () => Promise<void>; // recarga en segundo plano (sin spinner)
 }
 
 export function useStoreDetail(
@@ -41,9 +48,10 @@ export function useStoreDetail(
   const [error, setError] = useState(false);
 
   const load = useCallback(
-    async (mode: 'initial' | 'refresh') => {
-      if (mode === 'refresh') setRefreshing(true);
-      else setLoading(true);
+    async (mode: LoadMode) => {
+      // 'silent' no enciende ningún indicador: recarga invisible en segundo plano.
+      if (mode === 'initial') setLoading(true);
+      else if (mode === 'refresh') setRefreshing(true);
       setError(false);
       try {
         // Ficha y catálogo (con promociones) en paralelo.
@@ -55,11 +63,11 @@ export function useStoreDetail(
         setProducts(productsData);
       } catch (err) {
         console.error('[useStoreDetail] Error al cargar el detalle:', err);
-        // Un refresh silencioso que falla no rompe la pantalla ya poblada.
+        // Un refresh (manual o silencioso) que falla no rompe la pantalla ya poblada.
         if (mode === 'initial') setError(true);
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (mode === 'initial') setLoading(false);
+        else if (mode === 'refresh') setRefreshing(false);
       }
     },
     [id],
@@ -69,13 +77,10 @@ export function useStoreDetail(
     load('initial');
   }, [load]);
 
-  return {
-    store,
-    products,
-    loading,
-    refreshing,
-    error,
-    reload: () => load('initial'),
-    refresh: () => load('refresh'),
-  };
+  // Referencias estables: solo cambian si cambia `id` (no en cada render).
+  const reload = useCallback(() => load('initial'), [load]);
+  const refresh = useCallback(() => load('refresh'), [load]);
+  const silentRefresh = useCallback(() => load('silent'), [load]);
+
+  return { store, products, loading, refreshing, error, reload, refresh, silentRefresh };
 }
