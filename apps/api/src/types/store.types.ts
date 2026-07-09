@@ -4,6 +4,7 @@ export interface StoreFilters {
   communeId?: number;
   categoryId?: number;
   verifiedOnly?: boolean;
+  q?: string;
 }
 
 /** Parámetros de paginación estándar */

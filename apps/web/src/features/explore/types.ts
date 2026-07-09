@@ -48,4 +48,5 @@ export interface StoreSearchParams {
   verified_only?: boolean;
   page?: number;
   limit?: number;
+  q?: string;
 }

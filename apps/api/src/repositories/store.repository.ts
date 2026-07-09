@@ -56,7 +56,7 @@ export async function findStoresWithRating(
   filters: StoreFilters,
   pagination: PaginationParams,
 ): Promise<PaginatedResponse<StoreWithRating>> {
-  const { regionId, communeId, categoryId, verifiedOnly = false } = filters;
+  const { regionId, communeId, categoryId, verifiedOnly = false, q } = filters;
   const { page = 1, limit = 20 } = pagination;
   const offset = (page - 1) * limit;
 
@@ -66,6 +66,19 @@ export async function findStoresWithRating(
   if (communeId) conditions.push(Prisma.sql`s.commune_id = ${BigInt(communeId)}`);
   if (categoryId) conditions.push(Prisma.sql`s.category_id = ${BigInt(categoryId)}`);
   if (verifiedOnly) conditions.push(Prisma.sql`s.verified = true`);
+
+  if (q) {
+    const likeQuery = `%${q}%`;
+    conditions.push(Prisma.sql`(
+      s.name ILIKE ${likeQuery}
+      OR EXISTS (
+        SELECT 1 FROM products p
+        WHERE p.store_id = s.id
+          AND p.deleted_at IS NULL
+          AND p.name ILIKE ${likeQuery}
+      )
+    )`);
+  }
 
   const whereClause =
     conditions.length > 0

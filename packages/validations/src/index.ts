@@ -8,3 +8,4 @@ export * from './schedule.schema';
 export * from './subscriptions.schema';
 export * from './promotions.schema';
 export * from './favorites.schema';
+export * from './reviews.schema';

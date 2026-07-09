@@ -69,13 +69,16 @@ export function useStoreDetail(
     load('initial');
   }, [load]);
 
+  const reload = useCallback(() => load('initial'), [load]);
+  const refresh = useCallback(() => load('refresh'), [load]);
+
   return {
     store,
     products,
     loading,
     refreshing,
     error,
-    reload: () => load('initial'),
-    refresh: () => load('refresh'),
+    reload,
+    refresh,
   };
 }

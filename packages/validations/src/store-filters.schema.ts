@@ -23,6 +23,7 @@ export const StoreFiltersSchema = z.object({
     .transform((v) => v === 'true')
     .optional()
     .default('false'),
+  q: z.string().optional(),
   page: z
     .string()
     .regex(/^\d+$/)

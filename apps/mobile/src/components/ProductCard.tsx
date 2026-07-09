@@ -50,7 +50,7 @@ export function ProductCard({ product, store }: { product: Product; store: Store
 
   return (
     <Card className="flex-row items-center gap-3">
-      <RemoteImage uri={product.image_url} size={64} rounded={12} />
+      <RemoteImage uri={product.image_url} size={96} rounded={16} />
 
       <View className="flex-1">
         <View className="flex-row items-center gap-1">

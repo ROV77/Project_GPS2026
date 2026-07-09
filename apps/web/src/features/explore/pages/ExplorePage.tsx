@@ -9,7 +9,6 @@ import { ExploreResultsBar } from '../components/ExploreResultsBar';
 import { PublicStoreCard } from '../components/PublicStoreCard';
 import { DownloadAppPanel } from '../components/DownloadAppPanel';
 import { ExplorePageShell } from '../components/ExplorePageShell';
-import { filterStoresByKeyword } from '../lib/filterStores';
 import {
   computeCategoryChips,
   filterStoresByCategory,
@@ -63,8 +62,9 @@ export function ExplorePage() {
     () => ({
       region_id: urlRegionId ? Number(urlRegionId) : undefined,
       commune_id: urlCommuneId ? Number(urlCommuneId) : undefined,
+      q: urlQ || undefined,
     }),
-    [urlRegionId, urlCommuneId],
+    [urlRegionId, urlCommuneId, urlQ],
   );
 
   const { data, isLoading, isError, refetch } = usePublicStores(apiParams);
@@ -77,9 +77,8 @@ export function ExplorePage() {
   );
 
   const stores = useMemo(() => {
-    const byCategory = filterStoresByCategory(baseStores, urlCategoryId, categories.options);
-    return filterStoresByKeyword(byCategory, urlQ);
-  }, [baseStores, urlCategoryId, urlQ, categories.options]);
+    return filterStoresByCategory(baseStores, urlCategoryId, categories.options);
+  }, [baseStores, urlCategoryId, categories.options]);
 
   const storeStats = useMemo(() => computeExploreStoreStats(stores), [stores]);
 
