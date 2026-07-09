@@ -9,7 +9,6 @@ import { ExploreResultsBar } from '../components/ExploreResultsBar';
 import { PublicStoreCard } from '../components/PublicStoreCard';
 import { DownloadAppPanel } from '../components/DownloadAppPanel';
 import { ExplorePageShell } from '../components/ExplorePageShell';
-import { filterStoresByKeyword } from '../lib/filterStores';
 import {
   computeCategoryChips,
   filterStoresByCategory,

@@ -5,7 +5,7 @@ import { User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '@/layouts/AuthLayout';
-import { Alert, Button, Checkbox, Field, Input, PasswordInput } from '@/shared/ui';
+import { Button, Checkbox, Field, Input, PasswordInput } from '@/shared/ui';
 import { getApiErrorMessage } from '@/shared/api/errors';
 import { useAuthStore, homePathForRoles } from '../stores/authStore';
 import { authApi } from '../api/authApi';
