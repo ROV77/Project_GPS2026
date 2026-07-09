@@ -155,16 +155,19 @@ vite.config.ts.timestamp-*
 
 # Graphify (análisis de codebase personal)
 graphify-out/
+AGENTS.md
+.opencode/
 # Carpeta de notas personales (no versionar)
 cosita/
 
 # Claude Code (configuración personal local)
-.claude/settings.local.json
-.claude/settings.json
-.claude/skills/
+.claude/
 .agents/
 .superpowers/
 .mcp.json
 skills-lock.json
 CLAUDE.md
+
+# Notas de despliegue con credenciales reales (ver README del archivo)
+Servidor_contexto.md
 opencode.json
