@@ -14,5 +14,34 @@ Se armó una estructura tipo monorepo, para que cada uno pueda avanzar de manera
 2.  Ejecuten un `npm install` en la carpeta principal para instalar todo lo necesario.
 3.  **Muy importante**: Cada uno trabaje en su carpeta asignada dentro de `/apps` o `/packages` según el módulo que le tocó. Tratemos de no mover carpetas de lugar para no romper la estructura que configuramos.
 
+## Configurar el backend (`apps/api`)
+
+### Requisitos previos
+- PostgreSQL instalado y corriendo en tu máquina.
+
+### Pasos en orden
+
+1. **Crear la base de datos**:
+   ```bash
+   createdb caseritApp
+   ```
+
+2. **Cargar el esquema SQL** (crea todas las tablas):
+   ```bash
+   psql -d caseritApp -f docs/caseritapp_schema.sql
+   ```
+
+3. **Configurar las variables de entorno**:
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   ```
+   Editen el `.env` y reemplacen `TU_PASSWORD` con su contraseña de PostgreSQL.
+
+4. **Generar el cliente de Prisma**:
+   ```bash
+   cd apps/api
+   npx prisma generate
+   ```
+
 ## El tema del CI (Integración Continua)
 Fabián dejó andando el pipeline de integración continua, así que el sistema va a revisar automáticamente lo que subamos. Antes de hacer un `push` a la rama `main`, asegúrense de que su código esté bien para que no nos salten errores en el pipeline.

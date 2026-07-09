@@ -1,0 +1,71 @@
+{
+  "expo": {
+    "name": "Caserita",
+    "slug": "caserita-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "caserita",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./assets/images/logo-caserita.png",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "cl.caserita.app"
+    },
+    "android": {
+      "package": "cl.caserita.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo-caserita.png",
+        "backgroundColor": "#0f1d2e"
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/logo-caserita.png",
+          "backgroundColor": "#0f1d2e",
+          "imageWidth": 180
+        }
+      ],
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Caserita usa tus fotos para que elijas tu foto de perfil."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Caserita usa tu ubicación para mostrarte las tiendas cercanas en el mapa.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4e57efb8-1613-4fc7-8290-daec9565e6b9"
+      }
+    }
+  }
+}

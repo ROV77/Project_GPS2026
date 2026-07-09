@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/.expo
+**/android
+**/ios
+.git
+.claude
+.agents
+.github
+docs
+*.md
+bash.exe.stackdump
+**/*.log
+.env
+.env.*
+!.env.example

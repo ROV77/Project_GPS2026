@@ -1,0 +1,24 @@
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native (generados por `expo prebuild`)
+/android
+/ios
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Env locales
+.env*.local
+
+# TypeScript
+*.tsbuildinfo
